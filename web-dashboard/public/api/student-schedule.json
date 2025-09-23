@@ -1,0 +1,220 @@
+{
+    "semester": [
+        {
+            "row": {
+                "promotion_no": 2023,
+                "stage": "3",
+                "group": "A",
+                "year": 3,
+                "term_no": 2,
+                "code": "3005",
+                "start_date": "2025-01-01",
+                "mid_term_start_date": "2025-03-15",
+                "mid_term_end_date": "2025-03-25",
+                "final_exam_date": "2025-06-20",
+                "new_term_start_date": "2025-09-01",
+                "room_name": "Room 101"
+            },
+            "schedule": [
+                {
+                    "id": 1,
+                    "day": "Monday",
+                    "timeSlot": "7:20-8:50",
+                    "subject": "Mobile Application Development",
+                    "credit": 3,
+                    "room": "Room A",
+                    "tel": "012-345-678",
+                    "instructor": "Dr. Lor Sorth"
+                },
+                {
+                    "id": 2,
+                    "day": "Monday",
+                    "timeSlot": "9:05-10:35",
+                    "subject": "Mobile Application Development",
+                    "credit": 3,
+                    "room": "Room A",
+                    "tel": "012-345-678",
+                    "instructor": "Dr. Lor Sorth"
+                },
+                {
+                    "id": 3,
+                    "day": "Tuesday",
+                    "timeSlot": "7:20-8:50",
+                    "subject": "Web Development",
+                    "credit": 3,
+                    "room": "Room B",
+                    "tel": "012-345-679",
+                    "instructor": "Dr. Sokha Vann"
+                },
+                {
+                    "id": 4,
+                    "day": "Tuesday",
+                    "timeSlot": "9:05-10:35",
+                    "subject": "Web Development",
+                    "credit": 3,
+                    "room": "Room B",
+                    "tel": "012-345-679",
+                    "instructor": "Dr. Sokha Vann"
+                },
+                {
+                    "id": 5,
+                    "day": "Wednesday",
+                    "timeSlot": "7:20-8:50",
+                    "subject": "Database Systems",
+                    "credit": 3,
+                    "room": "Room C",
+                    "tel": "012-345-680",
+                    "instructor": "Dr. Vanna Kim"
+                },
+                {
+                    "id": 6,
+                    "day": "Wednesday",
+                    "timeSlot": "9:05-10:35",
+                    "subject": "Database Systems",
+                    "credit": 3,
+                    "room": "Room C",
+                    "tel": "012-345-680",
+                    "instructor": "Dr. Vanna Kim"
+                },
+                {
+                    "id": 7,
+                    "day": "Thursday",
+                    "timeSlot": "7:20-8:50",
+                    "subject": "Software Engineering",
+                    "credit": 3,
+                    "room": "Room D",
+                    "tel": "012-345-681",
+                    "instructor": "Dr. Sreymom Chea"
+                },
+                {
+                    "id": 8,
+                    "day": "Thursday",
+                    "timeSlot": "9:05-10:35",
+                    "subject": "Software Engineering",
+                    "credit": 3,
+                    "room": "Room D",
+                    "tel": "012-345-681",
+                    "instructor": "Dr. Sreymom Chea"
+                },
+                {
+                    "id": 9,
+                    "day": "Friday",
+                    "timeSlot": "7:20-8:50",
+                    "subject": "Computer Networks",
+                    "credit": 3,
+                    "room": "Room E",
+                    "tel": "012-345-682",
+                    "instructor": "Dr. Rithy Phan"
+                },
+                {
+                    "id": 10,
+                    "day": "Friday",
+                    "timeSlot": "9:05-10:35",
+                    "subject": "Computer Networks",
+                    "credit": 3,
+                    "room": "Room E",
+                    "tel": "012-345-682",
+                    "instructor": "Dr. Rithy Phan"
+                }
+            ]
+        },
+        {
+            "row": {
+                "promotion_no": 2022,
+                "stage": "3",
+                "group": "B",
+                "year": 3,
+                "term_no": 1,
+                "code": "3003",
+                "start_date": "2025-01-01",
+                "mid_term_start_date": "2025-03-15",
+                "mid_term_end_date": "2025-03-25",
+                "final_exam_date": "2025-06-20",
+                "new_term_start_date": "2025-09-01",
+                "room_name": "Room 102"
+            },
+            "schedule": [
+                {
+                    "id": 1,
+                    "day": "Monday",
+                    "timeSlot": "7:20-8:50",
+                    "subject": "Mobile Application Development",
+                    "credit": 3,
+                    "room": "Room A",
+                    "tel": "012-345-678",
+                    "instructor": "Dr. Lor Sorth"
+                },
+                {
+                    "id": 2,
+                    "day": "Monday",
+                    "timeSlot": "9:05-10:35",
+                    "subject": "Mobile Application Development",
+                    "credit": 3,
+                    "room": "Room A",
+                    "tel": "012-345-678",
+                    "instructor": "Dr. Lor Sorth"
+                },
+                {
+                    "id": 3,
+                    "day": "Tuesday",
+                    "timeSlot": "7:20-8:50",
+                    "subject": "Web Development",
+                    "credit": 3,
+                    "room": "Room B",
+                    "tel": "012-345-679",
+                    "instructor": "Dr. Sokha Vann"
+                },
+                {
+                    "id": 4,
+                    "day": "Tuesday",
+                    "timeSlot": "9:05-10:35",
+                    "subject": "Web Development",
+                    "credit": 3,
+                    "room": "Room B",
+                    "tel": "012-345-679",
+                    "instructor": "Dr. Sokha Vann"
+                },
+                {
+                    "id": 5,
+                    "day": "Wednesday",
+                    "timeSlot": "7:20-8:50",
+                    "subject": "Database Systems",
+                    "credit": 3,
+                    "room": "Room C",
+                    "tel": "012-345-680",
+                    "instructor": "Dr. Vanna Kim"
+                },
+                {
+                    "id": 6,
+                    "day": "Wednesday",
+                    "timeSlot": "9:05-10:35",
+                    "subject": "Database Systems",
+                    "credit": 3,
+                    "room": "Room C",
+                    "tel": "012-345-680",
+                    "instructor": "Dr. Vanna Kim"
+                },
+                {
+                    "id": 7,
+                    "day": "Thursday",
+                    "timeSlot": "7:20-8:50",
+                    "subject": "Software Engineering",
+                    "credit": 3,
+                    "room": "Room D",
+                    "tel": "012-345-681",
+                    "instructor": "Dr. Sreymom Chea"
+                },
+                {
+                    "id": 8,
+                    "day": "Thursday",
+                    "timeSlot": "9:05-10:35",
+                    "subject": "Software Engineering",
+                    "credit": 3,
+                    "room": "Room D",
+                    "tel": "012-345-681",
+                    "instructor": "Dr. Sreymom Chea"
+                }
+            ]
+        }
+    ]
+}

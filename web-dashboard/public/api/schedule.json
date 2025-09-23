@@ -1,0 +1,271 @@
+{
+  "rows":
+  [
+    {
+      "turn": "Morning",
+      "group": "1",
+      "groupLabel": "A1IT",
+      "schedule": [
+        {
+          "subject": "Python Programming",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Monday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "07:20",
+          "endTime": "08:50",
+          "id": "1750935452934"
+        },
+        {
+          "subject": "Internetworking I",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Youer Man",
+          "tel": "0883966290",
+          "day": "Tuesday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "",
+          "endTime": "",
+          "id": "1750935474429"
+        },
+        {
+          "subject": "Blockchain Technology",
+          "credits": 1,
+          "room": "C-101",
+          "lecturer": "Phann Kompeak",
+          "tel": "016272810",
+          "day": "Wednesday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "",
+          "endTime": "",
+          "id": "1750935971992"
+        },
+        {
+          "subject": "Research Methodology",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Asit. Prof Prum Sopheanoch",
+          "tel": "098550005",
+          "day": "Thursday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "",
+          "endTime": "",
+          "id": "1750936020389"
+        },
+        {
+          "subject": "Mobile Programming I",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Lor Soth",
+          "tel": "099484918",
+          "day": "Friday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "07:20",
+          "endTime": "08:50",
+          "id": "1750936062885"
+        },
+        {
+          "subject": "Python Programming",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Monday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082906091"
+        },
+        {
+          "subject": "Networking I",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Tuesday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082915491"
+        },
+        {
+          "subject": "Blockchain Technology",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Wednesday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082931594"
+        },
+        {
+          "subject": "Research Methodology",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Thursday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082941495"
+        },
+        {
+          "subject": "Mobile Programming I",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Friday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082956271"
+        }
+      ]
+    },
+    {
+      "turn": "Morning",
+      "group": "2",
+      "groupLabel": "A1IT",
+      "schedule": [
+        {
+          "subject": "Java Programming",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Monday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "07:20",
+          "endTime": "08:50",
+          "id": "1750935452934"
+        },
+        {
+          "subject": "Internetworking II",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Youer Man",
+          "tel": "0883966290",
+          "day": "Tuesday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "",
+          "endTime": "",
+          "id": "1750935474429"
+        },
+        {
+          "subject": "Cloud Computing",
+          "credits": 1,
+          "room": "C-101",
+          "lecturer": "Phann Kompeak",
+          "tel": "016272810",
+          "day": "Wednesday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "",
+          "endTime": "",
+          "id": "1750935971992"
+        },
+        {
+          "subject": "Data Science",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Asit. Prof Prum Sopheanoch",
+          "tel": "098550005",
+          "day": "Thursday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "",
+          "endTime": "",
+          "id": "1750936020389"
+        },
+        {
+          "subject": "Web Development",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Lor Soth",
+          "tel": "099484918",
+          "day": "Friday",
+          "timeSlot": "7:20-8:40",
+          "startTime": "07:20",
+          "endTime": "08:50",
+          "id": "1750936062885"
+        },
+        {
+          "subject": "Java Programming",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Monday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082906091"
+        },
+        {
+          "subject": "Networking II",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Tuesday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082915491"
+        },
+        {
+          "subject": "Cloud Computing",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Wednesday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082931594"
+        },
+        {
+          "subject": "Data Science",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Thursday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082941495"
+        },
+        {
+          "subject": "Web Development",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Friday",
+          "timeSlot": "9:05-10:35",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082956271"
+        },
+        {
+          "subject": "Web Development",
+          "credits": 3,
+          "room": "C-101",
+          "lecturer": "Mr. Khoeurt Sopha",
+          "tel": "0883966290",
+          "day": "Friday",
+          "timeSlot": "6:00-7:30",
+          "startTime": "",
+          "endTime": "",
+          "id": "1751082956271"
+        }
+      ]
+    }
+  ]
+}
