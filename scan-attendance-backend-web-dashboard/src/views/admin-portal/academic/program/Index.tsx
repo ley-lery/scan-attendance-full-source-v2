@@ -1,0 +1,206 @@
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { DataTable, ShowToast } from "@/components/hero-ui";
+import Form from "./Form";
+import View from "./View";
+import { useFetch } from "@/hooks/useFetch";
+import { useDisclosure } from "@/god-ui";
+import { useMutation } from "@/hooks/useMutation";
+
+// Custom hook for separate view dialog
+const useViewClosure = () => {
+  const { isOpen, onOpen, onClose, ...rest } = useDisclosure();
+  return {
+    isOpenView: isOpen,
+    onOpenView: onOpen,
+    onCloseView: onClose,
+    ...rest,
+  };
+};
+
+const Index = () => {
+
+  const { t } = useTranslation();
+
+  // ==== State Modal Management ====
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpenView, onOpenView, onCloseView } = useViewClosure();
+
+  // ==== State Management ====
+  const [isEdit, setIsEdit] = useState<boolean>(false);
+  const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const [editRow, setEditRow] = useState<any>(null);
+  const [viewRow, setViewRow] = useState<any>(null);
+
+  // ==== Pagination State ====
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
+  });
+
+  // ==== Fetch Data with useFetch ====
+  const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(
+    searchKeyword.trim() === "" ? "/program/list" : "/program/search", 
+    {
+      params: {
+        page: pagination.page,
+        limit: pagination.limit,
+        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }), // add keyword only for search
+      },
+      deps: [pagination.page, pagination.limit, searchKeyword], // trigger when keyword changes
+    }
+  );
+  
+  useEffect(() => {
+    console.log("Fetched data:", data?.data);
+  }, [data]);
+  
+  // ==== Table Data & Total Pages ====
+  const dataRows = data?.data?.rows;
+  const rows = dataRows || [];
+  const totalPage = Math.ceil((data?.data?.total || 0) / pagination.limit) || 1;
+
+  // ==== Columns Definitions ====
+  const cols = useMemo(
+    () => [
+      { name: "1", uid: "id", sortable: true },
+      { name: "programType", uid: "program_type", sortable: true },
+      { name: "facultyCode", uid: "faculty_code", sortable: true },
+      { name: "facultyNameKh", uid: "faculty_name_kh" },
+      { name: "facultyNameEn", uid: "faculty_name_en", sortable: true },
+      { name: "fieldId", uid: "field_id", sortable: true },
+      { name: "fieldCode", uid: "field_code", sortable: true },
+      { name: "fieldNameKh", uid: "field_name_kh" },
+      { name: "fieldNameEn", uid: "field_name_en", sortable: true },
+      { name: "courseId", uid: "course_id", sortable: true },
+      { name: "courseCode", uid: "course_code", sortable: true },
+      { name: "courseNameKh", uid: "course_name_kh" },
+      { name: "courseNameEn", uid: "course_name_en", sortable: true },
+      { name: "promotionNo", uid: "promotion_no", sortable: true },
+      { name: "termNo", uid: "term_no", sortable: true },
+      { name: "credits", uid: "credits", sortable: true },
+      { name: "status", uid: "status", sortable: true },
+      { name: "deletedDate", uid: "deleted_date" },
+      { name: t("action"), uid: "actions" },
+    ],
+    [t],
+  );
+
+  // ==== Default Visible Columns ====
+  const visibleCols = [ 
+    "program_type",  
+    "faculty_name_en", 
+    "faculty_name_kh", 
+    "field_name_en",  
+    "field_name_kh", 
+    "course_name_en", 
+    "course_name_kh", 
+    "promotion_no", 
+    "term_no", 
+    "credits", 
+    "status", 
+    "actions"
+  ];
+
+  const status = [
+    { name: "Active", uid: "Active" },
+    { name: "Inactive", uid: "Inactive" },
+  ];
+
+  // ==== Search Input Handlers ====
+  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleClearSearch = () => {
+    setSearchKeyword("");
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  // ==== Handle Create/Edit/View/Delete ====
+
+  const { mutate: deleteProgram } = useMutation();
+
+  const onCreate = () => {
+    setIsEdit(false);
+    onOpen();
+  };
+
+  const onEdit = (row: object) => {
+    setEditRow(row);
+    onOpen();
+    setIsEdit(true);
+  };
+
+  const onView = (row: object) => {
+    setViewRow(row);
+    setIsEdit(false);
+    onOpenView();
+  };
+
+  const onDelete = async (id: number) => {
+    try {
+
+      await deleteProgram(`/program/${id}`, id, "DELETE");
+      await refetch();
+      ShowToast({ color: "success", title: "Success", description: "Program deleted successfully" });
+
+    } catch (error) {
+
+      console.error(error);
+      ShowToast({ color: "error", title: "Error", description: "Failed to delete program" });
+
+    }
+  };
+
+  const formProps = {
+    isOpen,
+    onClose,
+    isEdit,
+    row: editRow,
+    loadList: refetch, // call refetch after CRUD
+  };
+  const viewProps = {
+    isOpen: isOpenView,
+    onClose: onCloseView,
+    row: viewRow,
+  };
+
+  return (
+    <div className="p-4">
+      <Form {...formProps} />
+      <View {...viewProps} />
+
+      <DataTable
+        loading={loading}
+        dataApi={rows}
+        cols={cols}
+        visibleCols={visibleCols}
+        onCreate={onCreate}
+        onEdit={onEdit}
+        onView={onView}
+        onDelete={(id: number) => onDelete(id)}
+        loadData={refetch}
+        selectRow={false}
+        permissionCreate="create:program"
+        permissionDelete="delete:program"
+        permissionEdit="update:program"
+        permissionView="view:program"
+        searchKeyword={searchKeyword}
+        onSearchInputChange={onSearchInputChange}
+        handleClearSearch={handleClearSearch}
+        handleSearch={refetch} 
+        initialPage={pagination.page}
+        totalPages={totalPage}
+        page={pagination.page}
+        onChangePage={(newPage: number) =>
+          setPagination((prev) => ({ ...prev, page: newPage }))
+        }
+        status={status}
+      />
+    </div>
+  );
+};
+
+export default Index;

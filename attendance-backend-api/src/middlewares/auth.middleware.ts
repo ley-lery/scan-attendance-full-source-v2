@@ -7,6 +7,7 @@ interface AuthUserPayload extends JwtPayload {
     email: string;
     username: string;
     assign_type: string;
+    assign_to: number;
 }
 
 interface RequestWithUser extends FastifyRequest {
@@ -40,7 +41,7 @@ const authenticateToken = async (req: RequestWithUser, res: FastifyReply): Promi
 };
 
 const authorizeRoles = (roles: string[]) => {
-  return async (req: RequestWithUser, res: FastifyReply): Promise<void> => {
+  return async (req: RequestWithUser, res: FastifyReply, next: Function): Promise<void> => {
     if (!req.user) {
       res.status(401).send({ message: "Access Denied: Not authenticated" });
       return;
@@ -50,6 +51,7 @@ const authorizeRoles = (roles: string[]) => {
       res.status(403).send({ message: "Forbidden: insufficient permissions" });
       return;
     }
+    next();
   };
 };
 export { authenticateToken, AuthUserPayload, RequestWithUser, authorizeRoles };

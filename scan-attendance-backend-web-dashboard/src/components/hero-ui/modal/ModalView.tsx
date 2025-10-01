@@ -1,0 +1,68 @@
+import {
+  Button,
+} from "@heroui/react";
+import { useTranslation } from "react-i18next";
+import React from "react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/god-ui";
+
+
+interface ModalViewUIProps {
+  children: React.ReactNode;
+  title?: string;
+  titleTwo?: string;
+  isEdit?: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "full";
+  radius?: "sm" | "md" | "lg";
+  backdrop?: "blur" | "regular" | "transparent";
+}
+
+const ModalViewUI = ({
+  children,
+  title = "Modal Title",
+  titleTwo = "Modal Title",
+  isEdit,
+  isOpen,
+  onClose,
+  size = "xl",
+  radius = "lg",
+  backdrop = "regular",
+}: ModalViewUIProps) => {
+  const { t } = useTranslation("common");
+  if (!isOpen) return null;
+  return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size={size}
+        radius={radius}
+        backdrop={backdrop}
+        position="top"
+        isDismissable={false}
+        isDraggable
+        
+      >
+        <ModalContent>
+          {() => (
+            <>
+              <ModalHeader>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">{isEdit ? titleTwo : title}</p>
+              </ModalHeader>
+              <ModalBody>
+                <div>{children}</div>
+              </ModalBody>
+              <ModalFooter className={`flex w-full items-center justify-end`}>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  {t("close")}
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+  );
+};
+
+export default ModalViewUI;
+//
