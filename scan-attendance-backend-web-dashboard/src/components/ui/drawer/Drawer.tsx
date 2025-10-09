@@ -37,15 +37,15 @@ type DrawerProps = {
 };
 
 const sizeMap: Record<string, string> = {
-  xs: "min-w-xs",
-  sm: "min-w-sm",
-  md: "min-w-md",
-  lg: "min-w-lg",
-  xl: "min-w-xl",
-  "2xl": "min-w-2xl",
-  "3xl": "min-w-3xl",
-  "4xl": "min-w-4xl",
-  "5xl": "min-w-5xl",
+  xs: "min-w-xs max-w-xs",
+  sm: "min-w-sm max-w-sm",
+  md: "min-w-md max-w-md",
+  lg: "min-w-lg max-w-lg",
+  xl: "min-w-xl max-w-xl",
+  "2xl": "min-w-2xl max-w-2xl",
+  "3xl": "min-w-3xl max-w-3xl",
+  "4xl": "min-w-4xl max-w-4xl",
+  "5xl": "min-w-5xl max-w-5xl",
   full: "w-screen h-screen",
 };
 

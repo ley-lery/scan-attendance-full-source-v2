@@ -16,6 +16,7 @@ interface ModalViewUIProps {
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "full";
   radius?: "sm" | "md" | "lg";
   backdrop?: "blur" | "regular" | "transparent";
+  animation?: "fade" | "fade-up" | "fade-down" | "scale" | "spring-scale" | "spring-up" | "spring-down" | "spring-left" | "spring-right" | "slide-up" | "slide-down" | "slide-left" | "slide-right";
 }
 
 const ModalViewUI = ({
@@ -28,6 +29,7 @@ const ModalViewUI = ({
   size = "xl",
   radius = "lg",
   backdrop = "regular",
+  animation = "slide-up"
 }: ModalViewUIProps) => {
   const { t } = useTranslation("common");
   if (!isOpen) return null;
@@ -41,7 +43,7 @@ const ModalViewUI = ({
         position="top"
         isDismissable={false}
         isDraggable
-        
+        animation={animation}
       >
         <ModalContent>
           {() => (

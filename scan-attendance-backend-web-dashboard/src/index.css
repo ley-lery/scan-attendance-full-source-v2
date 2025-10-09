@@ -65,9 +65,9 @@
     hover:[&::-webkit-scrollbar-track]:bg-zinc-100 
     [&::-webkit-scrollbar-thumb]:rounded-xl 
     [&::-webkit-scrollbar-thumb]:bg-transparent 
-    hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 
+    hover:dark:[&::-webkit-scrollbar-thumb]:bg-zinc-500 
     dark:[&::-webkit-scrollbar-track]:bg-transparent
-    dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500;
+    dark:[&::-webkit-scrollbar-thumb]:bg-transparent;
 }
 .has-scrollbar::-webkit-scrollbar-thumb {
     @apply rounded-full;

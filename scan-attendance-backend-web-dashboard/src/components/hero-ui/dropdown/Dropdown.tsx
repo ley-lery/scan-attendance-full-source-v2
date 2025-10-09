@@ -13,10 +13,11 @@ export const Dropdown = extendVariants(DropdownComponent, {
         content: 'border-white border shadow-lg shadow-zinc-200/50 dark:shadow-zinc-800/5 bg-white/50 backdrop-blur-sm dark:bg-zinc-800/80 dark:border-transparent rounded-3xl'
       },
     },
-    
   },
+  
   defaultVariants: {
     size: "md",
+    
   },
 })
 

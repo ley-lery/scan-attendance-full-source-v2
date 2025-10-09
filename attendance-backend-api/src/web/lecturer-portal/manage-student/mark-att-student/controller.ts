@@ -5,6 +5,11 @@ import { AuthUserPayload, RequestWithUser } from "../../../../middlewares/auth.m
 import { LecturerCourseModel } from "../../my-course/model";
 
 
+const sessions: { value: string; label: string }[] = [];
+for (let i = 1; i <= 60; i++) {
+    sessions.push({ value: `s${i}`, label: `Session ${i}` });
+}
+
 export const MarkAttStudentController = {
 
     async getAll(req: RequestWithUser, res: FastifyReply): Promise<void> {
@@ -12,7 +17,7 @@ export const MarkAttStudentController = {
         const data = req.body as any;
         try {
             const [rows, [{ total } = { total: 0 }]] = await MarkAttStudentModel.getAll(userPayload.assign_to, data);
-
+            console.log(rows, "rows")
             if (!rows?.length) {
                 res.send({ message: "No students found" });
                 return;
@@ -64,7 +69,7 @@ export const MarkAttStudentController = {
         try {
             const [courses] = await LecturerCourseModel.getAll(userPayload.assign_to);
 
-            sendSuccessResponse(res, true, "Form load", { courses: courses }, 200);
+            sendSuccessResponse(res, true, "Form load", { courses: courses, sessions: sessions }, 200);
         } catch (e) {
             handleError(res, e as Error, "Error loading form", 500);
         }

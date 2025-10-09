@@ -56,17 +56,14 @@ const Permission = ({ isOpen = false, onClose, userId }: PermissionProps) => {
   
   const { t } = useTranslation();
   
-  // Update permission
+  // ====== API Calls: Update, Load, Exists ======
   const { mutate: updatePermission, loading: applying } = useMutation();
-
-  // Load all permissions available
   const { data: formLoad, loading: formLoadLoading } = useFetch<{ data: FormLoadData }>("/userpermission/formload");
-  
-  // Load user's existing permissions
   const { data: userPermissionExists, loading: userPermLoading } = useFetch<{ data: UserPermissionData }>(
     userId ? `/userpermission/${userId}` : ""
   );
 
+  // ====== Effects: Load, Exists ======
   useEffect(() => {
     console.log("formLoad permission", formLoad);
     if (formLoad?.data) {
@@ -194,6 +191,9 @@ const Permission = ({ isOpen = false, onClose, userId }: PermissionProps) => {
 
   // student leave actions for request, approve, reject
   const studentLeaveActions = ["request", "approve", "reject", "cancel"];
+  
+  // student attendance actions for present, absent, late, permission, view
+  const studentAttendanceActions = ["present", "absent", "late", "permission", "view"];
 
   const isLoading = formLoadLoading || userPermLoading;
 
@@ -341,6 +341,62 @@ const Permission = ({ isOpen = false, onClose, userId }: PermissionProps) => {
                         ))}
                     </tbody>
                   </table>
+
+                  {/* Student Attendance Permissions */}
+                  <table className="w-full border-collapse">
+                      <thead className="sticky top-0 z-10 bg-white dark:bg-[#18181b] ">
+                        <tr className="bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl">
+                          <th className="p-3 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                            {t("studentAttendance")}
+                          </th>
+                          {studentAttendanceActions.map((action) => (
+                            <th key={action} className="p-3 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                              {t(action)}
+                            </th>
+                          ))}
+                          <th className="p-3 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                            {t("all")}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      {Object.entries(groupedPermissions)
+                        .filter(([resource]) => resource === "attendance")
+                        .map(([resource, perms]) => (
+                          <tr key={resource}>
+                            <td className="p-3 font-medium capitalize text-zinc-800 dark:text-zinc-100">
+                              {t(resource)}
+                            </td>
+    
+                            {studentAttendanceActions.map((action) => {
+                              const perm = perms.find((p: Permission) => getActionFromPermission(p.name) === action);
+                              return (
+                                <td key={action} className="p-3">
+                                  {perm ? (
+                                    <Checkbox
+                                      className="ml-1"
+                                      isSelected={isChecked(perm.id)}
+                                      onChange={(e) => handleChange(perm.id, e.target.checked)}
+                                    />
+                                  ) : (
+                                    <Chip color="danger" variant="flat" size="sm" radius="sm" className="ml-2.5">--</Chip>
+                                  )}
+                                </td>
+                              );
+                            })}
+    
+                            <td className="p-3">
+                              <Checkbox
+                                isSelected={isAllChecked(resource)}
+                                onChange={(e) => handleAllChange(resource, e.target.checked)}
+                                className="pl-2"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+
               </ScrollShadow>
             </ModalBody>
             <ModalFooter>

@@ -3,6 +3,7 @@ import { Message } from "../../../../utils";
 
 type Fields = {
     course: number
+    session: number
     page: number
     limit: number
 }
@@ -30,8 +31,8 @@ type MarkMultiRecord = {
 export const MarkAttStudentModel = {
 
     async getAll(lecturerId: number, data: Fields): Promise<any> {
-        const { course, page, limit } = data;
-        const [result] = await db.query(`Call sp_lecturer_course_student_get(?, ?, ?, ?)`, [lecturerId, course, page, limit]);
+        const { course, session, page, limit } = data;
+        const [result] = await db.query(`Call sp_lecturer_student_list_by_course(?, ?, ?, ?, ?)`, [lecturerId, course, session, page, limit]);
         return result;
     },
     async markSingleRecord(data: MarkSingleRecord): Promise<any> {
