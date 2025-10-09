@@ -111,6 +111,12 @@ export const roleMenus = {
         { icon: Bolt, title: "overview", to: "/system/dashboard", items: [] },
       ],
     },
+    {
+      group: "Student",
+      items: [
+        { icon: Bolt, title: "markStudentAttendance", to: "/lecturer/student/mark-attendance-student", items: [] },
+      ],
+    },
  
   ] as MenuSection[],
 

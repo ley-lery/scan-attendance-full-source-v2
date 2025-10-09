@@ -64,7 +64,7 @@ const ButtonView = ({ onPress, permissionType }: ButtonProps) => {
         </Tooltip>
       ) : (
         <Button
-          color="secondary"
+          color="success"
           radius="full"
           size="sm"
           variant="light"

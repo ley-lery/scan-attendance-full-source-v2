@@ -1,13 +1,11 @@
-import { Button, ModalBody, ModalContent, ModalFooter, ModalHeader, useDraggable } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { Suspense, lazy, type FC, useRef } from "react";
-const Modal = lazy(() =>
-  import("@heroui/react").then((mod) => ({ default: mod.Modal }))
-);
+import { type FC } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  onClose: () => void;
   confirm: () => void;
   confirmLabel?: string;
   confirmIcon?: React.ReactNode;
@@ -17,7 +15,7 @@ interface ConfirmDialogProps {
 
 const ConfirmDialog: FC<ConfirmDialogProps> = ({
   isOpen = false,
-  onOpenChange,
+  onClose,
   confirm,
   confirmLabel = "Ok",
   confirmIcon,
@@ -25,52 +23,81 @@ const ConfirmDialog: FC<ConfirmDialogProps> = ({
   message = "Message",
 }) => {
   const { t } = useTranslation();
-  const targetRef = useRef(null);
-  const { moveProps } = useDraggable({ targetRef: targetRef as any, isDisabled: !isOpen });
 
-  const handleConfirm = (onClose: () => void) => {
-    onOpenChange(false);
+  const handleConfirm = () => {
     confirm();
     onClose();
   };
+
   return (
-    <Suspense fallback={<div className="absolute left-0 top-0 w-full bg-black/50 h-full" />}>
-      <Modal
-        ref={targetRef}
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        size="xs"
-        radius="lg"
-        closeButton={false}
-        classNames={{ closeButton: "hidden" }}
-        backdrop="opaque"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader {...moveProps} className="flex flex-col gap-1 text-center pb-1">
-                <h2 className="text-base font-medium">{title}</h2>
-              </ModalHeader>
-              <ModalBody >
-                <p className="text-center text-sm text-zinc-800 dark:text-zinc-300">
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Overlay with fade animation */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            onClick={onClose}
+            className="fixed inset-0 z-40 flex items-center justify-center bg-black/10 dark:bg-black/50"
+          />
+
+          {/* Dialog container */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{
+                duration: 0.25,
+                ease: [0.4, 0, 0.2, 1],
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="pointer-events-auto max-w-xs w-full mx-4"
+            >
+              <div className="backdrop-blur-sm transform-gpu p-6 bg-zinc-100/80 dark:bg-zinc-900/80 rounded-3xl border border-white/40 dark:border-zinc-800/50 shadow-xl">
+                {/* Title */}
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                  className="flex flex-col gap-1 text-center pb-2"
+                >
+                  <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
+                    {title}
+                  </h2>
+                </motion.div>
+
+                {/* Message */}
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: .3, duration: 0.3 }}
+                  className="text-center text-sm text-zinc-700 dark:text-zinc-300 mb-6"
+                >
                   {message}
-                </p>
-              </ModalBody>
-              <ModalFooter className="mt-2 justify-start  p-0 dark:border-white/10">
-                <div className="flex w-full items-center justify-center gap-2 p-4 pt-0">
+                </motion.p>
+
+                {/* Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                  className="flex w-full items-center justify-center gap-3"
+                >
                   <Button
                     type="button"
                     onPress={onClose}
                     className="btn-small-ui"
                     color="primary"
                     radius="full"
-                    >
+                  >
                     {t("cancel")}
                   </Button>
-                  {/* <i className="flex h-full w-px bg-black/10 dark:bg-white/10" /> */}
                   <Button
                     type="button"
-                    onPress={() => handleConfirm(onClose)}
+                    onPress={handleConfirm}
                     className="btn-small-ui"
                     color="danger"
                     radius="full"
@@ -78,13 +105,13 @@ const ConfirmDialog: FC<ConfirmDialogProps> = ({
                   >
                     {confirmLabel}
                   </Button>
-                </div>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-    </Suspense>
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 

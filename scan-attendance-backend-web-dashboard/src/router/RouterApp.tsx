@@ -1,15 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
-import  {
-  getProtectedRoutes,
-  redirectRoute,
-} from "./Index";
+import { getProtectedRoutes, redirectRoute } from "./Index";
 import ProtectedRoute from "@/router/ProtectedRoute";
 import Index from "@/views/Index";
 import NotFoundPage from "@/+not-found";
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import RouteFallback from "@/components/ui/RouteFallback";
-import { decodeToken } from "@/utils/jwt";
+import { useAuth } from "@/context/AuthContext";
 
 // Recursive function to render nested routes
 const renderRoutes = (routes: any[]) =>
@@ -32,14 +29,17 @@ const renderRoutes = (routes: any[]) =>
         element={route.component ? <route.component /> : null}
       />
     );
-  }
-);
+  });
 
 const RouterApp = () => {
+  const { activeAccount } = useAuth();
+  const role = activeAccount?.user?.assign_type;
 
-  // const dynamicRoutes = useDynamicRoutes();
-  const role = decodeToken()?.assign_type;
- 
+  // Memoize routes based on role - recalculates immediately when role changes
+  const protectedRoutes = useMemo(() => {
+    return getProtectedRoutes(role);
+  }, [role]);
+
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
@@ -55,7 +55,7 @@ const RouterApp = () => {
         {/* Protected authenticated routes */}
         <Route path="/" element={<ProtectedRoute component={Index} />}>
           <Route index element={<Navigate to="system/dashboard" replace />} />
-          {renderRoutes(getProtectedRoutes(role))}
+          {renderRoutes(protectedRoutes)}
         </Route>
 
         {/* Not found page */}

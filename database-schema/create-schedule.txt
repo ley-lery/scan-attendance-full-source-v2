@@ -1,0 +1,432 @@
+-- =============================================
+-- Student Schedule Management System
+-- Additional Tables Required
+-- =============================================
+
+-- Schedule Time Slots Table
+CREATE TABLE IF NOT EXISTS `tb_time_slot` (
+    `time_slot_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `time_slot_name` VARCHAR(50),
+    `start_time` TIME NOT NULL,
+    `end_time` TIME NOT NULL,
+    `deleted_date` DATE
+);
+
+-- Days of Week Table
+CREATE TABLE IF NOT EXISTS `tb_day_of_week` (
+    `day_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `day_name_en` VARCHAR(20) NOT NULL,
+    `day_name_kh` VARCHAR(50),
+    `day_order` INT NOT NULL
+);
+
+-- Schedule Sessions Table (Links classes to specific days and times)
+CREATE TABLE IF NOT EXISTS `tb_class_schedule_session` (
+    `session_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `class_schedule_id` INT NOT NULL,
+    `day_id` INT NOT NULL,
+    `time_slot_id` INT NOT NULL,
+    `deleted_date` DATE,
+    FOREIGN KEY (`class_schedule_id`) REFERENCES `tb_class_schedule` (`class_schedule_id`) ON DELETE CASCADE,
+    FOREIGN KEY (`day_id`) REFERENCES `tb_day_of_week` (`day_id`) ON DELETE CASCADE,
+    FOREIGN KEY (`time_slot_id`) REFERENCES `tb_time_slot` (`time_slot_id`) ON DELETE CASCADE
+);
+
+-- =============================================
+-- Stored Procedures
+-- =============================================
+
+DELIMITER $$
+
+-- =============================================
+-- 1. Initialize Days of Week
+-- =============================================
+CREATE PROCEDURE sp_init_days_of_week()
+BEGIN
+    INSERT IGNORE INTO tb_day_of_week (day_id, day_name_en, day_name_kh, day_order) VALUES
+    (1, 'Monday', 'ច័ន្ទ', 1),
+    (2, 'Tuesday', 'អង្គារ', 2),
+    (3, 'Wednesday', 'ពុធ', 3),
+    (4, 'Thursday', 'ព្រហស្បតិ៍', 4),
+    (5, 'Friday', 'សុក្រ', 5),
+    (6, 'Saturday', 'សៅរ៍', 6),
+    (7, 'Sunday', 'អាទិត្យ', 7);
+END$$
+
+-- =============================================
+-- 2. GET: Student's Personal Schedule
+-- =============================================
+CREATE PROCEDURE sp_student_schedule_get(
+    IN p_student_id INT,
+    IN p_start_date DATE,
+    IN p_end_date DATE
+)
+BEGIN
+    SELECT 
+        cs.class_schedule_id,
+        c.class_name,
+        c.room_name,
+        c.program_type,
+        c.promotion_no,
+        c.term_no,
+        tf.field_code,
+        tf.field_name_en,
+        tf.field_name_kh,
+        t.faculty_code,
+        t.faculty_name_en,
+        t.faculty_name_kh,
+        co.course_code,
+        co.course_name_en,
+        co.course_name_kh,
+        cs.credits,
+        l.lecturer_code,
+        l.lecturer_name_en,
+        l.lecturer_name_kh,
+        l.phone_number AS lecturer_phone,
+        l.email AS lecturer_email,
+        DATE_FORMAT(cs.start_date, '%Y-%m-%d') AS start_date,
+        DATE_FORMAT(cs.end_date, '%Y-%m-%d') AS end_date,
+        dow.day_name_en,
+        dow.day_name_kh,
+        TIME_FORMAT(ts.start_time, '%H:%i') AS start_time,
+        TIME_FORMAT(ts.end_time, '%H:%i') AS end_time,
+        ts.time_slot_name
+    FROM tb_class_student cst
+    INNER JOIN tb_class c ON cst.class_id = c.class_id
+    INNER JOIN tb_class_schedule cs ON c.class_id = cs.class_id
+    LEFT JOIN tb_class_schedule_session css ON cs.class_schedule_id = css.class_schedule_id
+    LEFT JOIN tb_day_of_week dow ON css.day_id = dow.day_id
+    LEFT JOIN tb_time_slot ts ON css.time_slot_id = ts.time_slot_id
+    LEFT JOIN tb_faculty t ON c.faculty_id = t.faculty_id
+    LEFT JOIN tb_field tf ON c.field_id = tf.field_id
+    INNER JOIN tb_course co ON cs.course_id = co.course_id
+    INNER JOIN tb_lecturer l ON cs.lecturer_id = l.lecturer_id
+    WHERE cst.student_id = p_student_id
+    AND cst.status = 'Active'
+    AND cst.deleted_date IS NULL
+    AND cs.deleted_date IS NULL
+    AND (css.deleted_date IS NULL OR css.deleted_date IS NOT NULL)
+    AND (
+        (p_start_date IS NULL AND p_end_date IS NULL) OR
+        (cs.start_date <= p_end_date AND cs.end_date >= p_start_date)
+    )
+    ORDER BY dow.day_order, ts.start_time;
+END$$
+
+-- =============================================
+-- 3. GET: Student Weekly Schedule View
+-- =============================================
+CREATE PROCEDURE sp_student_weekly_schedule(
+    IN p_student_id INT,
+    IN p_week_start_date DATE
+)
+BEGIN
+    DECLARE v_week_end_date DATE;
+    SET v_week_end_date = DATE_ADD(p_week_start_date, INTERVAL 6 DAY);
+    
+    SELECT 
+        dow.day_name_en,
+        dow.day_name_kh,
+        dow.day_order,
+        TIME_FORMAT(ts.start_time, '%H:%i') AS start_time,
+        TIME_FORMAT(ts.end_time, '%H:%i') AS end_time,
+        co.course_code,
+        co.course_name_en,
+        co.course_name_kh,
+        c.room_name,
+        l.lecturer_name_en,
+        l.lecturer_name_kh,
+        cs.credits
+    FROM tb_class_student cst
+    INNER JOIN tb_class c ON cst.class_id = c.class_id
+    INNER JOIN tb_class_schedule cs ON c.class_id = cs.class_id
+    INNER JOIN tb_class_schedule_session css ON cs.class_schedule_id = css.class_schedule_id
+    INNER JOIN tb_day_of_week dow ON css.day_id = dow.day_id
+    INNER JOIN tb_time_slot ts ON css.time_slot_id = ts.time_slot_id
+    INNER JOIN tb_course co ON cs.course_id = co.course_id
+    INNER JOIN tb_lecturer l ON cs.lecturer_id = l.lecturer_id
+    WHERE cst.student_id = p_student_id
+    AND cst.status = 'Active'
+    AND cst.deleted_date IS NULL
+    AND cs.deleted_date IS NULL
+    AND css.deleted_date IS NULL
+    AND cs.start_date <= v_week_end_date
+    AND cs.end_date >= p_week_start_date
+    ORDER BY dow.day_order, ts.start_time;
+END$$
+
+-- =============================================
+-- 4. CREATE: Add Schedule Session
+-- =============================================
+CREATE PROCEDURE sp_schedule_session_create(
+    IN p_class_schedule_id INT,
+    IN p_day_id INT,
+    IN p_time_slot_id INT,
+    IN p_changed_by_user_id INT,
+    IN p_client_ip VARCHAR(45),
+    IN p_session_info VARCHAR(255),
+    OUT p_messages_json JSON
+)
+BEGIN
+    DECLARE v_has_errors BOOLEAN DEFAULT FALSE;
+    DECLARE v_new_data JSON;
+    DECLARE v_session_id INT;
+
+    SET p_messages_json = '[]';
+
+    -- Validate class schedule exists
+    IF NOT EXISTS (SELECT 1 FROM tb_class_schedule WHERE class_schedule_id = p_class_schedule_id AND deleted_date IS NULL) THEN
+        SET v_has_errors = TRUE;
+        SET p_messages_json = JSON_ARRAY_APPEND(p_messages_json, '$',
+                                                JSON_OBJECT('code', -1, 'message', 'Error: Class schedule not found.'));
+    END IF;
+
+    -- Validate day exists
+    IF NOT EXISTS (SELECT 1 FROM tb_day_of_week WHERE day_id = p_day_id) THEN
+        SET v_has_errors = TRUE;
+        SET p_messages_json = JSON_ARRAY_APPEND(p_messages_json, '$',
+                                                JSON_OBJECT('code', -2, 'message', 'Error: Invalid day.'));
+    END IF;
+
+    -- Validate time slot exists
+    IF NOT EXISTS (SELECT 1 FROM tb_time_slot WHERE time_slot_id = p_time_slot_id AND deleted_date IS NULL) THEN
+        SET v_has_errors = TRUE;
+        SET p_messages_json = JSON_ARRAY_APPEND(p_messages_json, '$',
+                                                JSON_OBJECT('code', -3, 'message', 'Error: Time slot not found.'));
+    END IF;
+
+    -- Check for duplicate session
+    IF EXISTS (
+        SELECT 1 FROM tb_class_schedule_session 
+        WHERE class_schedule_id = p_class_schedule_id 
+        AND day_id = p_day_id 
+        AND time_slot_id = p_time_slot_id
+        AND deleted_date IS NULL
+    ) THEN
+        SET v_has_errors = TRUE;
+        SET p_messages_json = JSON_ARRAY_APPEND(p_messages_json, '$',
+                                                JSON_OBJECT('code', -4, 'message', 'Error: Schedule session already exists.'));
+    END IF;
+
+    IF NOT v_has_errors THEN
+        INSERT INTO tb_class_schedule_session (class_schedule_id, day_id, time_slot_id)
+        VALUES (p_class_schedule_id, p_day_id, p_time_slot_id);
+
+        SET v_session_id = LAST_INSERT_ID();
+
+        SET v_new_data = JSON_OBJECT(
+                'session_id', v_session_id,
+                'class_schedule_id', p_class_schedule_id,
+                'day_id', p_day_id,
+                'time_slot_id', p_time_slot_id
+                         );
+
+        CALL sp_audit_log_create(
+                'Table Class_Schedule_Session',
+                CAST(v_session_id AS CHAR),
+                'INSERT',
+                NULL,
+                v_new_data,
+                p_changed_by_user_id,
+                p_client_ip,
+                p_session_info,
+                CONCAT('Schedule session created for class schedule ID ', p_class_schedule_id)
+             );
+
+        SET p_messages_json = JSON_ARRAY(JSON_OBJECT('code', 0, 'message', 'Schedule session created successfully.', 'session_id', v_session_id));
+    END IF;
+END$$
+
+-- =============================================
+-- 5. GET: Student Schedule by Day
+-- =============================================
+CREATE PROCEDURE sp_student_schedule_by_day(
+    IN p_student_id INT,
+    IN p_day_name VARCHAR(20)
+)
+BEGIN
+    SELECT 
+        co.course_code,
+        co.course_name_en,
+        co.course_name_kh,
+        cs.credits,
+        c.room_name,
+        l.lecturer_name_en,
+        l.lecturer_name_kh,
+        l.phone_number AS lecturer_phone,
+        TIME_FORMAT(ts.start_time, '%H:%i') AS start_time,
+        TIME_FORMAT(ts.end_time, '%H:%i') AS end_time,
+        CONCAT(TIME_FORMAT(ts.start_time, '%H:%i'), ' - ', TIME_FORMAT(ts.end_time, '%H:%i')) AS time_range
+    FROM tb_class_student cst
+    INNER JOIN tb_class c ON cst.class_id = c.class_id
+    INNER JOIN tb_class_schedule cs ON c.class_id = cs.class_id
+    INNER JOIN tb_class_schedule_session css ON cs.class_schedule_id = css.class_schedule_id
+    INNER JOIN tb_day_of_week dow ON css.day_id = dow.day_id
+    INNER JOIN tb_time_slot ts ON css.time_slot_id = ts.time_slot_id
+    INNER JOIN tb_course co ON cs.course_id = co.course_id
+    INNER JOIN tb_lecturer l ON cs.lecturer_id = l.lecturer_id
+    WHERE cst.student_id = p_student_id
+    AND cst.status = 'Active'
+    AND cst.deleted_date IS NULL
+    AND cs.deleted_date IS NULL
+    AND css.deleted_date IS NULL
+    AND dow.day_name_en = p_day_name
+    AND CURDATE() BETWEEN cs.start_date AND cs.end_date
+    ORDER BY ts.start_time;
+END$$
+
+-- =============================================
+-- 6. GET: Student Current Classes (Today)
+-- =============================================
+CREATE PROCEDURE sp_student_today_schedule(
+    IN p_student_id INT
+)
+BEGIN
+    DECLARE v_today_day VARCHAR(20);
+    SET v_today_day = DAYNAME(CURDATE());
+    
+    SELECT 
+        co.course_code,
+        co.course_name_en,
+        co.course_name_kh,
+        c.room_name,
+        l.lecturer_name_en,
+        l.lecturer_name_kh,
+        l.phone_number AS lecturer_phone,
+        TIME_FORMAT(ts.start_time, '%H:%i') AS start_time,
+        TIME_FORMAT(ts.end_time, '%H:%i') AS end_time,
+        CASE 
+            WHEN CURTIME() < ts.start_time THEN 'Upcoming'
+            WHEN CURTIME() BETWEEN ts.start_time AND ts.end_time THEN 'Ongoing'
+            ELSE 'Completed'
+        END AS class_status,
+        CASE 
+            WHEN CURTIME() < ts.start_time THEN 
+                CONCAT(TIMESTAMPDIFF(MINUTE, CURTIME(), ts.start_time), ' mins until start')
+            WHEN CURTIME() BETWEEN ts.start_time AND ts.end_time THEN 
+                CONCAT(TIMESTAMPDIFF(MINUTE, CURTIME(), ts.end_time), ' mins remaining')
+            ELSE 'Class ended'
+        END AS time_info
+    FROM tb_class_student cst
+    INNER JOIN tb_class c ON cst.class_id = c.class_id
+    INNER JOIN tb_class_schedule cs ON c.class_id = cs.class_id
+    INNER JOIN tb_class_schedule_session css ON cs.class_schedule_id = css.class_schedule_id
+    INNER JOIN tb_day_of_week dow ON css.day_id = dow.day_id
+    INNER JOIN tb_time_slot ts ON css.time_slot_id = ts.time_slot_id
+    INNER JOIN tb_course co ON cs.course_id = co.course_id
+    INNER JOIN tb_lecturer l ON cs.lecturer_id = l.lecturer_id
+    WHERE cst.student_id = p_student_id
+    AND cst.status = 'Active'
+    AND cst.deleted_date IS NULL
+    AND cs.deleted_date IS NULL
+    AND css.deleted_date IS NULL
+    AND dow.day_name_en = v_today_day
+    AND CURDATE() BETWEEN cs.start_date AND cs.end_date
+    ORDER BY ts.start_time;
+END$$
+
+-- =============================================
+-- 7. GET: Student Schedule Summary
+-- =============================================
+CREATE PROCEDURE sp_student_schedule_summary(
+    IN p_student_id INT
+)
+BEGIN
+    SELECT 
+        COUNT(DISTINCT cs.class_schedule_id) AS total_courses,
+        SUM(cs.credits) AS total_credits,
+        COUNT(DISTINCT css.session_id) AS total_sessions_per_week,
+        COUNT(DISTINCT l.lecturer_id) AS total_lecturers,
+        MIN(cs.start_date) AS semester_start,
+        MAX(cs.end_date) AS semester_end
+    FROM tb_class_student cst
+    INNER JOIN tb_class c ON cst.class_id = c.class_id
+    INNER JOIN tb_class_schedule cs ON c.class_id = cs.class_id
+    LEFT JOIN tb_class_schedule_session css ON cs.class_schedule_id = css.class_schedule_id
+    INNER JOIN tb_lecturer l ON cs.lecturer_id = l.lecturer_id
+    WHERE cst.student_id = p_student_id
+    AND cst.status = 'Active'
+    AND cst.deleted_date IS NULL
+    AND cs.deleted_date IS NULL
+    AND CURDATE() BETWEEN cs.start_date AND cs.end_date;
+END$$
+
+-- =============================================
+-- 8. Time Slot Management
+-- =============================================
+CREATE PROCEDURE sp_time_slot_create(
+    IN p_time_slot_name VARCHAR(50),
+    IN p_start_time TIME,
+    IN p_end_time TIME,
+    OUT p_messages_json JSON
+)
+BEGIN
+    DECLARE v_has_errors BOOLEAN DEFAULT FALSE;
+    DECLARE v_time_slot_id INT;
+
+    SET p_messages_json = '[]';
+
+    IF p_start_time >= p_end_time THEN
+        SET v_has_errors = TRUE;
+        SET p_messages_json = JSON_ARRAY_APPEND(p_messages_json, '$',
+                                                JSON_OBJECT('code', -1, 'message', 'Error: Start time must be before end time.'));
+    END IF;
+
+    IF NOT v_has_errors THEN
+        INSERT INTO tb_time_slot (time_slot_name, start_time, end_time)
+        VALUES (p_time_slot_name, p_start_time, p_end_time);
+
+        SET v_time_slot_id = LAST_INSERT_ID();
+        SET p_messages_json = JSON_ARRAY(JSON_OBJECT('code', 0, 'message', 'Time slot created successfully.', 'time_slot_id', v_time_slot_id));
+    END IF;
+END$$
+
+-- =============================================
+-- 9. GET: All Time Slots
+-- =============================================
+CREATE PROCEDURE sp_time_slot_get_all()
+BEGIN
+    SELECT 
+        time_slot_id,
+        time_slot_name,
+        TIME_FORMAT(start_time, '%H:%i') AS start_time,
+        TIME_FORMAT(end_time, '%H:%i') AS end_time,
+        CONCAT(TIME_FORMAT(start_time, '%H:%i'), ' - ', TIME_FORMAT(end_time, '%H:%i')) AS time_range
+    FROM tb_time_slot
+    WHERE deleted_date IS NULL
+    ORDER BY start_time;
+END$$
+
+DELIMITER ;
+
+-- =============================================
+-- Initial Data Setup
+-- =============================================
+/*
+-- Initialize days of week
+CALL sp_init_days_of_week();
+
+-- Create time slots (based on the schedule image)
+CALL sp_time_slot_create('Evening Session 1', '18:00:00', '19:30:00', @msg);
+CALL sp_time_slot_create('Evening Session 2', '19:45:00', '21:15:00', @msg);
+
+-- Usage Examples:
+-- Get student's full schedule
+CALL sp_student_schedule_get(1, NULL, NULL);
+
+-- Get student's weekly schedule (starting from a specific date)
+CALL sp_student_weekly_schedule(1, '2025-05-05');
+
+-- Get today's schedule for a student
+CALL sp_student_today_schedule(1);
+
+-- Get schedule for specific day
+CALL sp_student_schedule_by_day(1, 'Monday');
+
+-- Get student schedule summary
+CALL sp_student_schedule_summary(1);
+
+-- Create schedule session (e.g., Monday 6:00-7:30 PM for Python Programming)
+CALL sp_schedule_session_create(1, 1, 1, 1, '127.0.0.1', 'session123', @msg);
+SELECT @msg;
+*/

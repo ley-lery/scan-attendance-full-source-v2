@@ -5,10 +5,11 @@ import ApiAxios from "@/axios/ApiAxios";
 interface UseFetchOptions {
   params?: Record<string, any>;
   deps?: any[];
+  enabled?: boolean;
 }
 
 export function useFetch<T = unknown>(url: string, options: UseFetchOptions = {}) {
-  const { params = {}, deps = [] } = options;
+  const { params = {}, deps = [], enabled = true } = options;
 
   const [data, setData] = useState<T | null | any>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -27,7 +28,9 @@ export function useFetch<T = unknown>(url: string, options: UseFetchOptions = {}
   }, [url, JSON.stringify(params)]);
 
   useEffect(() => {
-    fetchData();
+    if (enabled) {
+      fetchData();
+    }
   }, [fetchData, ...deps]);
 
   return { data, loading, error, refetch: fetchData };

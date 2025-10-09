@@ -26,14 +26,9 @@ import { CiCalendar, CiFilter, CiSearch } from "react-icons/ci";
 import { RiCheckLine, RiCloseLine, RiFilter2Fill, RiSettings6Line } from "react-icons/ri";
 import { useToggleStore } from "@/stores/userToggleStore";
 import { IoChevronBackOutline, IoChevronForward } from "react-icons/io5";
-import ButtonDelete from "../button-permission/ButtonDelete";
-import ButtonEdit from "../button-permission/ButtonEdit";
-import ButtonView from "../button-permission/ButtonView";
-import ButtonAdd from "../button-permission/ButtonAdd";
+import { ButtonAdd, ButtonEdit, ButtonView, ButtonDelete, ButtonCancelLeave, ButtonReqLeave, ButtonMarkPresent, ButtonMarkAbsent, ButtonMarkLate, ButtonMarkPermission } from "../button-permission";
 import { cn } from "@/lib/utils";
 import { PiSealWarning } from "react-icons/pi";
-import ButtonReqLeave from "../button-permission/ButtonReqLeave";
-import ButtonCancelLeave from "../button-permission/ButtonCancelLeave";
 
 export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
@@ -78,6 +73,10 @@ interface DataTableProps {
   onOpenFilter?: () => void;
   onReqLeave?: () => void;
   onCancelLeave?: (id: number) => void;
+  onMarkPresent?: (data: object) => void;
+  onMarkPermission?: (data: object) => void;
+  onMarkLate?: (data: object) => void;
+  onMarkAbsent?: (data: object) => void;
   // Permissions actions
   permissionCreate?: string;
   permissionEdit?: string;
@@ -87,6 +86,11 @@ interface DataTableProps {
   permissionApprove?: string;
   permissionReject?: string;
   permissionCancel?: string;
+  permissionMarkPresent?: string;
+  permissionMarkPermission?: string;
+  permissionMarkLate?: string;
+  permissionMarkAbsent?: string;
+
   // Search
   searchKeyword?: string;
   onSearchInputChange?: React.ChangeEventHandler<HTMLInputElement>;
@@ -104,6 +108,7 @@ interface DataTableProps {
     action?: React.ReactNode;
   }
   isFiltered?: boolean;
+  loadingButton?: boolean;
 }
 
 const DataTable = ({
@@ -128,6 +133,10 @@ const DataTable = ({
   onPermission,
   onOpenFilter,
   onReqLeave,
+  onMarkPresent,
+  onMarkPermission,
+  onMarkLate,
+  onMarkAbsent,
   isFiltered,
   loadData,
   permissionCreate,
@@ -135,9 +144,11 @@ const DataTable = ({
   permissionView,
   permissionDelete,
   permissionRequest,
-  permissionApprove,
-  permissionReject,
   permissionCancel,
+  permissionMarkPresent,
+  permissionMarkPermission,
+  permissionMarkLate,
+  permissionMarkAbsent,
   searchKeyword = "",
   onSearchInputChange,
   initialPage = 1,
@@ -149,6 +160,7 @@ const DataTable = ({
   loading = true,
   scrollable = false,
   customizes,
+  loadingButton = false,
 }: DataTableProps) => {
   const { t } = useTranslation();
   const useToggle = useToggleStore((state) => state.isOpen);
@@ -210,6 +222,7 @@ const DataTable = ({
     Rejected: "danger",
     Active: "success",
     Inactive: "danger",
+    Cancelled: "secondary",
   };
 
   const renderCell = React.useCallback(
@@ -378,10 +391,48 @@ const DataTable = ({
                  <ButtonCancelLeave
                     permissionType={permissionCancel}
                     onPress={() => onCancelLeave?.(data.id)}
-                    isDisabled={data.status !== "Pending"}
+                    isDisabled={data.status !== "Pending" || loadingButton}
+                    isLoading={loadingButton}
                  />
                 )
               }
+              {
+                permissionMarkPresent && (
+                 <ButtonMarkPresent
+                    permissionType={permissionMarkPresent}
+                    onPress={() => onMarkPresent?.(data)}
+                    isLoading={loadingButton}
+                 />
+                )
+              }
+              {
+                permissionMarkAbsent && (
+                 <ButtonMarkAbsent
+                    permissionType={permissionMarkAbsent}
+                    onPress={() => onMarkAbsent?.(data)}
+                    isLoading={loadingButton}
+                 />
+                )
+              }
+              {
+                permissionMarkLate && (
+                 <ButtonMarkLate
+                    permissionType={permissionMarkLate}
+                    onPress={() => onMarkLate?.(data)}
+                    isLoading={loadingButton}
+                 />
+                )
+              }
+              {
+                permissionMarkPermission && (
+                 <ButtonMarkPermission
+                    permissionType={permissionMarkPermission}
+                    onPress={() => onMarkPermission?.(data)}
+                    isLoading={loadingButton}
+                 />
+                )
+              }
+
 
               {customizes?.action}
             </div>
@@ -409,10 +460,8 @@ const DataTable = ({
 
   const handleSelectionChange = React.useCallback((keys: Selection) => {
     if (isControlled) {
-      // Call parent's handler if controlled
       controlledOnSelectionChange?.(keys);
     } else {
-      // Update internal state if uncontrolled
       setInternalSelectedKeys(keys);
     }
   }, [isControlled, controlledOnSelectionChange]);
@@ -447,7 +496,7 @@ const DataTable = ({
   };
 
   return (
-    <div className="relative h-[35rem]">
+    <div className="relative h-[35rem] ">
       <div className="flex flex-col gap-4">
         <div className="flex items-end justify-between gap-3">
           <div className="relative w-1/3">
@@ -558,20 +607,20 @@ const DataTable = ({
       <div
         className={`
           has-scrollbar 
-          h-[calc(100vh-190px)] 
+          h-[calc(100vh-19rem)] 
           overflow-hidden 
           overflow-x-auto 
           transition-all 
           duration-300
-          ${useToggle ? "w-full max-w-[1300px] 3xl:max-w-full" : "max-w-[1115px] 3xl:max-w-full"}
+          ${useToggle ? "w-full max-w-full" : "max-w-full"}
         `}
       >
-        <ScrollShadow
+        {/* <ScrollShadow
           className="has-scrollbar ui-table-container h-full w-full"
           orientation="horizontal"
           offset={0}
           size={150}
-        >
+        > */}
           <Table
             isCompact
             removeWrapper
@@ -620,7 +669,7 @@ const DataTable = ({
               )}
             </TableBody>
           </Table>
-        </ScrollShadow>
+        {/* </ScrollShadow> */}
       </div>
       <div className="flex items-center justify-between">
         <Pagination

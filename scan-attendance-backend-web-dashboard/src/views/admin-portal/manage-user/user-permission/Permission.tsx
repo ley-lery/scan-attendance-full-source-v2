@@ -349,7 +349,7 @@ const Permission = ({ isOpen = false, onClose, userId }: PermissionProps) => {
               </Button>
 
               <Button
-                disabled={selectedPermissions.length === 0 || isLoading}
+                isDisabled={selectedPermissions.length === 0 || isLoading}
                 onPress={handleUnselectAll}
                 variant="solid"
                 color="danger"
@@ -359,7 +359,7 @@ const Permission = ({ isOpen = false, onClose, userId }: PermissionProps) => {
               </Button>
               
               <Button
-                disabled={
+                isDisabled={
                   isLoading ||
                   (selectedPermissions.length !== 0 &&
                   selectedPermissions.length === Object.values(groupedPermissions).flat().length)

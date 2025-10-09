@@ -58,6 +58,7 @@ const Index = () => {
     () => [
       { name: t("id"), uid: "id", sortable: true },
       { name: t("reason"), uid: "reason" },
+      { name: t("requestDate"), uid: "request_date" },
       { name: t("startDate"), uid: "start_date" },
       { name: t("endDate"), uid: "end_date" },
       { name: t("status"), uid: "status", sortable: true },
@@ -66,12 +67,13 @@ const Index = () => {
     [t],
   );
 
-  const visibleCols = [ "reason", "start_date", "end_date", "status", "actions"];
+  const visibleCols = [ "reason", "request_date", "start_date", "end_date", "status", "actions"];
 
   const status = [
     { name: "Approved", uid: "Approved" },
     { name: "Pending", uid: "Pending" },
     { name: "Rejected", uid: "Rejected" },
+    { name: "Cancelled", uid: "Cancelled" },
   ];
 
   // ==== Search Input Handlers ====
@@ -92,7 +94,7 @@ const Index = () => {
       ShowToast({
         color: "success",
         title: "Success",
-        description: "Leave request cancelled successfully",
+        description: response.message || "Leave request cancelled successfully",
       });
       reloadList();
     },
@@ -111,15 +113,44 @@ const Index = () => {
 
 
   const onCancelLeave = async (id: number) => {
-    cancelLeave("student/leave/cancel", { id }, "PUT");
+    cancelLeave(`student/leave/cancel`, { id }, "POST");
   };
-
-  
  
   const reloadList = () => {
     refetchList();
     refetchStates();
   };
+
+  const cardStats = [
+    {
+      title: t("approved"),
+      number: loadingStates ? 0 : states.data.row[0].approved_requests,
+      subtitle: t("times"),
+      icon: <IoIosCheckmarkCircleOutline size={25} />,
+      color: "text-green-500",
+    },
+    {
+      title: t("pending"),
+      number: loadingStates ? 0 : states.data.row[0].pending_requests,
+      subtitle: t("times"),
+      icon: <PiWarningCircle size={25} />,
+      color: "text-yellow-500",
+    },
+    {
+      title: t("rejected"),
+      number: loadingStates ? 0 : states.data.row[0].rejected_requests,
+      subtitle: t("times"),
+      icon: <SlClose size={22} />,
+      color: "text-pink-500",
+    },
+    {
+      title: t("total"),
+      number: loadingStates ? 0 : states.data.row[0].total_requests,
+      subtitle: t("times"),
+      icon: <FaRegCircle size={22} />,
+      color: "text-blue-500",
+    },
+  ];
 
 
   return (
@@ -128,34 +159,16 @@ const Index = () => {
 
      {/* Stats */}
         <div className="grid grid-cols-4 gap-4">
-          <CardUi
-            title={t("approved")}
-            number={loadingStates ? 0 : states.data.row[0].approved_requests}
-            subtitle={t("times")}
-            icon={<IoIosCheckmarkCircleOutline size={25} />}
-            color="text-green-500"
-          />
-          <CardUi
-            title={t("pending")}
-            number={loadingStates ? 0 : states.data.row[0].pending_requests}
-            subtitle={t("times")}
-            icon={<PiWarningCircle size={25} />}
-            color="text-yellow-500"
-          />
-          <CardUi
-            title={t("rejected")}
-            number={loadingStates ? 0 : states.data.row[0].rejected_requests}
-            subtitle={t("times")}
-            icon={<SlClose size={22} />}
-            color="text-pink-500"
-          />
-          <CardUi
-            title={t("total")}
-            number={loadingStates ? 0 : states.data.row[0].total_requests}
-            subtitle={t("times")}
-            icon={<FaRegCircle size={22} />}
-            color="text-blue-500"
-          />
+          {cardStats.map((card, index) => (
+            <CardUi
+              key={index}
+              title={card.title}
+              number={card.number}
+              subtitle={card.subtitle}
+              icon={card.icon}
+              color={card.color}
+            />
+          ))}
         </div>
       <DataTable
         loading={loadingList}
@@ -165,6 +178,7 @@ const Index = () => {
         onReqLeave={onReqLeave}
         onCancelLeave={onCancelLeave}
         loadData={refetchList} 
+        loadingButton={canceling}
         selectRow={false}
         permissionRequest="request:studentleave"
         permissionCancel="cancel:studentleave"

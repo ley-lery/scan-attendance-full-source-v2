@@ -1,4 +1,4 @@
-import { type ReactNode, createContext } from "react";
+import { createContext } from "react";
 
 interface ModalContextProps {
     backgroundBlur: boolean;

@@ -7,16 +7,23 @@ const ApiAxios = axios.create({
   timeout: 10000,
 });
 
-// Intercept request to prepend branch in the path
+// Request interceptor to use active account token
 ApiAxios.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Get the active account from localStorage
+  const stored = localStorage.getItem("activeAccount");
+  if (stored) {
+    try {
+      const { token } = JSON.parse(stored);
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (err) {
+      console.error("Error parsing active account token", err);
+    }
   }
 
-  // Prepend branch to the request path if not already present
-  if ( config.url && !config.url.startsWith(`/`)) {
+  // Ensure URL starts with '/'
+  if (config.url && !config.url.startsWith("/")) {
     config.url = `/${config.url}`;
   }
 
@@ -24,6 +31,3 @@ ApiAxios.interceptors.request.use((config) => {
 });
 
 export default ApiAxios;
-
-
-

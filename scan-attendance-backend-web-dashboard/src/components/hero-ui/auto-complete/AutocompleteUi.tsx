@@ -4,7 +4,7 @@ import {
   AutocompleteItem,
   AutocompleteSection,
 } from "@heroui/react";
-import { Key } from "react";
+import { type Key } from "react";
 
 interface Option {
   [key: string]: any;

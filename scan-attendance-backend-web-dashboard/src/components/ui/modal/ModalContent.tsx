@@ -8,7 +8,7 @@ export const ModalContent = ({
   onClose,
 }: ModalContentProps) => {
   return (
-    <div className="mx-4 mt-12 pt-4 pb-20 max-h-[calc(100vh-6rem)] overflow-auto has-scrollbar">
+    <div className="mx-4 mt-12 pt-4 pb-20 max-h-[calc(100vh-6rem)] h-fit overflow-auto has-scrollbar">
       {children(onClose!)}
     </div>
   );

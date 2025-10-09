@@ -42,22 +42,22 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
     // Mutation
     const { mutate: createLeaveRequest, loading: creating } = useMutation({
         onSuccess: (response) => {
-          onOpenChange(false);
-          ShowToast({
-            color: "success",
-            title: "Success",
-            description: response?.message ||"Leave request submitted successfully",
-          });
-          setFormData(initialFormData);
-          loadList();
+            onOpenChange(false);
+            ShowToast({
+                color: "success",
+                title: "Success",
+                description: response?.data?.message ||"Leave request submitted successfully",
+            });
+            setFormData(initialFormData);
+            loadList();
         },
         onError: (err) => {
-            console.log(err);
-          ShowToast({
-            color: "error",
-            title: "Error",
-            description: err?.message || "Failed to submit leave request",
-          });
+            console.log("Error: ", err);
+            ShowToast({
+                color: "error",
+                title: "Submit Failed",
+                description: err?.response?.data?.message || "Failed to submit leave request",
+            });
         },
       });
     

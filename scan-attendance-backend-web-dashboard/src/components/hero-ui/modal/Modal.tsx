@@ -27,7 +27,7 @@ interface ModalUIProps {
   closeForm?: () => void;
   resetForm?: () => void;
   onSaveDraft?: (e: FormEvent<HTMLFormElement>) => Promise<void>;
-  onSaveClose?: (e: FormEvent<HTMLFormElement>) => Promise<void>;
+  onSaveClose?: (e: FormEvent<HTMLFormElement>) => Promise<void> | void;
   onSaveNew?: (e: FormEvent<HTMLFormElement>) => Promise<void>;
   onOpenDraft?: () => void;
   onSubmit?: (e: FormEvent<HTMLFormElement>) => void;

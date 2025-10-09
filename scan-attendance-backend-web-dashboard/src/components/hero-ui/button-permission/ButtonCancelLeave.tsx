@@ -3,13 +3,14 @@ import { type FC, useEffect, useState,  memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "@/hooks/useFetch";
 import ShowToast from "../toast/ShowToast";
-import { Tooltip } from "@heroui/react";
+import { Spinner, Tooltip } from "@heroui/react";
 import { CgClose } from "react-icons/cg";
 
 interface ButtonType {
   onPress?: () => void;
   permissionType?: string | undefined;
   isDisabled?: boolean;
+  isLoading?: boolean;
 }
 
 
@@ -24,7 +25,7 @@ interface UserPermissionData {
   }>;
 }
 
-const ButtonCancelLeave: FC<ButtonType> = ({ onPress, permissionType, isDisabled, ...props }) => {
+const ButtonCancelLeave: FC<ButtonType> = ({ onPress, permissionType, isDisabled, isLoading, ...props }) => {
   const { t } = useTranslation();
   
   const [permissions, setPermissions] = useState<string[]>([]);
@@ -37,7 +38,6 @@ const ButtonCancelLeave: FC<ButtonType> = ({ onPress, permissionType, isDisabled
   useEffect(() => {
     const permission = userPermissionExists?.data?.rows[0].permissions;
     setPermissions(permission);
-    console.log("permissions", permissions);
   }, [userPermissionExists]);
 
   const handleNotPermission = () => {
@@ -57,10 +57,10 @@ const ButtonCancelLeave: FC<ButtonType> = ({ onPress, permissionType, isDisabled
             size="sm"
             onPress={onPress}
             isIconOnly
-            startContent={ <CgClose size={16} />}
+            startContent={ isLoading ? <Spinner size="sm" color="danger" /> : <CgClose size={16} />}
             variant="light"
             {...props}
-            isDisabled={isDisabled || userPermLoading}
+            isDisabled={isDisabled || userPermLoading || isLoading}
           />
         </Tooltip>
       :
@@ -71,10 +71,10 @@ const ButtonCancelLeave: FC<ButtonType> = ({ onPress, permissionType, isDisabled
             size="sm"
             onPress={handleNotPermission}
             isIconOnly
-            startContent={<CgClose size={16} />}
+            startContent={ isLoading ? <Spinner size="sm" color="danger" /> : <CgClose size={16} />}
             variant="light"
             {...props}
-            isDisabled={isDisabled || userPermLoading}
+            isDisabled={isDisabled || userPermLoading || isLoading}
           />
         </Tooltip>
       }

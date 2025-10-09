@@ -86,9 +86,10 @@ export const StudentLeaveRequestController = {
 
     async cancelReq(req: RequestWithUser, res: FastifyReply): Promise<void> {
         const { assign_to } = req.user as AuthUserPayload;
-        const { id } = req.params as { id: number };
+        const { id } = req.body as { id: number };
         try {
-            const result = await StudentLeaveRequestModel.cancelReq(id, assign_to);
+            const [result] = await StudentLeaveRequestModel.cancelReq(id, assign_to);
+            console.log(result, "result");
 
             const messages = JSON.parse(result?.messages);
             if (messages?.[0]?.code === 0) {

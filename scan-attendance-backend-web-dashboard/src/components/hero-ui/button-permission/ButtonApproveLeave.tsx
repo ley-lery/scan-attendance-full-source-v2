@@ -36,7 +36,6 @@ const ButtonApproveLeave: FC<ButtonType> = ({ onPress, permissionType, ...props 
   useEffect(() => {
     const permission = userPermissionExists?.data?.rows[0].permissions;
     setPermissions(permission);
-    console.log("permissions", permissions);
   }, [userPermissionExists]);
 
   const handleNotPermission = () => {

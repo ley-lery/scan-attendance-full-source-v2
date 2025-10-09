@@ -1,83 +1,106 @@
-import { FastifyReply, FastifyRequest } from "fastify";
-import { StudentLeaveRequestModel } from "./model";
+import { FastifyReply } from "fastify";
+import { StudentLeaveHistoryModel } from "./model";
 import { sendSuccessResponse } from "../../../../utils/response";
 import { handleError } from "../../../../utils/response";
-import { StudentLeaveRequest } from "../../../../types/interface";
+import { AuthUserPayload, RequestWithUser } from "../../../../middlewares/auth.middleware";
+import { FacultyModel } from "../../../admin-portal/faculty/model";
+import { FieldModel } from "../../../admin-portal/field/model";
+import { ClassModel } from "../../../admin-portal/class/model";
+import { LecturerModel } from "../../../admin-portal/lecturer/model";
+import { StudentLeaveRequestModel } from "../leave-req/model";
+import { StudentLeaveFilter } from "../../../../types/interface";
 
-export const StudentLeaveRequestController = {
+export const StudentLeaveHistoryController = {
 
-    async getAll(req: FastifyRequest, res: FastifyReply): Promise<void> {
-        const { studentId, offset = 0, limit = 10 } = req.body as { studentId: number; offset?: number; limit?: number };
+    async getAll(req: RequestWithUser, res: FastifyReply): Promise<void> {
+        const { assign_to } = req.user as AuthUserPayload;
+        const { page = 1, limit = 10 } = req.query as { page?: number; limit?: number };
         try {
 
-            const rows = await StudentLeaveRequestModel.getAll(studentId, offset, limit);
-
-            console.log(rows[1][0], "rows");
+            const rows = await StudentLeaveHistoryModel.getAll(assign_to, page, limit);
 
             if (!rows?.length) {
-                res.status(404).send({ message: "No leave request found" });
+                res.status(404).send({ message: "No leave history found" });
                 return;
             }
 
             // Stored procedure returns total as separate select, handle it
             const total = rows[1][0]?.total || 0;
 
-            sendSuccessResponse(res, true, "Leave request list", { rows: rows[0], total }, 200);
+            sendSuccessResponse(res, true, "Leave history list", { rows: rows[0], total }, 200);
         } catch (e) {
-            handleError(res, e as Error, "Error fetching student leave requests", 500);
+            handleError(res, e as Error, "Error fetching student leave history", 500);
         }
     },
 
-    async getById(req: FastifyRequest, res: FastifyReply): Promise<void> {
-        const { studentId, id } = req.body as { studentId: number, id: number };
+    async getById(req: RequestWithUser, res: FastifyReply): Promise<void> {
+        const { assign_to } = req.user as AuthUserPayload;
+        const { id } = req.params as { id: number };
         try {
-            const rows = await StudentLeaveRequestModel.getById(id, studentId);
-
-            console.log(rows, "rows");
+            const rows = await StudentLeaveHistoryModel.getById(id, assign_to);
 
             if (!rows?.length) {
-                res.status(404).send({ message: "Leave request not found" });
+                res.status(404).send({ message: "Leave history not found" });
                 return;
             }
 
-            sendSuccessResponse(res, true, "Leave request details", { row: rows[0] }, 200);
+            sendSuccessResponse(res, true, "Leave history details", { row: rows[0] }, 200);
         } catch (e) {
-            handleError(res, e as Error, "Error fetching leave request by ID", 500);
+            handleError(res, e as Error, "Error fetching leave history by ID", 500);
         }
     },
 
-    async createReq(req: FastifyRequest, res: FastifyReply): Promise<void> {
-        const data = req.body as StudentLeaveRequest;
+    async formLoad(req: RequestWithUser, res: FastifyReply): Promise<void> {
+        const { assign_to } = req.user as AuthUserPayload;
         try {
-            const result = await StudentLeaveRequestModel.createReq(data);
-    
-            console.log(result, "result");
-    
-            const messages = JSON.parse(result[0]?.messages || '[]');
-    
-            if (messages?.[0]?.code === 0) {
-                sendSuccessResponse(res, true, messages[0].message, null, 200);
-            } else {
-                res.status(400).send({ message: messages?.[0]?.message || "Error creating leave request" });
-            }
-        } catch (e: any) {
-            handleError(res, e as Error, "Error creating leave request", 500);
+            const [[states]] = await StudentLeaveRequestModel.state(assign_to);
+            const [faculty] = await FacultyModel.getAll();
+            const [field] = await FieldModel.getAll();
+            const [lecturer] = await LecturerModel.getAll();
+            const [classes] = await ClassModel.getAll();
+            const status = [
+                { id: 'Pending', label: 'Pending' },
+                { id: 'Approved', label: 'Approved' },
+                { id: 'Rejected', label: 'Rejected' },
+                { id: 'Cancelled', label: 'Cancelled' },
+            ]
+
+            sendSuccessResponse(res, true, "Student Leave History form load.", { states: states, faculties: faculty, fields: field, lecturers: lecturer, classes: classes, status: status }, 200);
+        } catch (e) {
+            handleError(res, e as Error, "Error fetching student leave history form load", 500);
         }
     },
 
-    async cancelReq(req: FastifyRequest, res: FastifyReply): Promise<void> {
-        const { studentId, id } = req.body as { studentId: number, id: number };
-        try {
-            const result = await StudentLeaveRequestModel.cancelReq(id, studentId);
+    async filter(req: RequestWithUser, res: FastifyReply): Promise<void> {
+        const { assign_to } = req.user as AuthUserPayload;
+        const { classId, status, date, startDate, endDate, page, limit } = req.body as StudentLeaveFilter;
 
-            const messages = JSON.parse(result?.messages);
-            if (messages?.[0]?.code === 0) {
-                sendSuccessResponse(res, true, messages[0].message, null, 200);
-            } else {
-                res.status(400).send({ message: messages?.[0]?.message || "Error canceling leave request" });
+        const updateData = {
+            classId,
+            student: assign_to,
+            status,
+            date,
+            startDate,
+            endDate,
+            page,
+            limit,
+        };
+        console.log(updateData, "student filtered");
+
+        try {
+            const rows = await StudentLeaveHistoryModel.filter(updateData);
+
+            if (!rows?.length) {
+                res.status(404).send({ message: "No leave history found" });
+                return;
             }
-        } catch (e: any) {
-            handleError(res, e as Error, "Error canceling leave request", 500);
+
+            // Stored procedure returns total as separate select, handle it
+            const total = rows[1][0]?.total || 0;
+
+            sendSuccessResponse(res, true, "Leave history list", { rows: rows[0], total }, 200);
+        } catch (e) {
+            handleError(res, e as Error, "Error fetching student leave history", 500);
         }
     },
 };

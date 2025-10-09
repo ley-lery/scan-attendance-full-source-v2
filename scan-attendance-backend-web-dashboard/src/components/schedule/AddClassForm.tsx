@@ -2,10 +2,8 @@ import React, { useState, useEffect, type Key, type FormEvent } from "react";
 import { DAYS, type Course, type Day, type SessionType } from "@/types/schedule";
 import { getTimeSlotsForSession } from "@/utils/timeUtils";
 import { useTranslation } from "react-i18next";
-import ModalUI from "../hero-ui/modal/Modal";
 import ShowToast from "../hero-ui/toast/ShowToast";
-import InputTextUi from "../hero-ui/inputs/InputTextUi";
-import InputNumberUi from "../hero-ui/inputs/InputNumberUi";
+import { Input, InputNumber, Modal } from "@/components/hero-ui";
 
 const lecturers = [
   { name_en: "Mr. Khoeurt Sopha", id: "1" },
@@ -17,9 +15,8 @@ const lecturers = [
 
 interface AddClassFormProps {
   isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
+  onClose: () => void;
   onSave: (course: Omit<Course, "id">) => void;
-  onClose?: () => void;
   editingCourse?: Course;
   session: SessionType;
   initialDay?: Day;
@@ -41,7 +38,6 @@ const initialFormData: Omit<Course, "id"> = {
 
 const AddClassForm: React.FC<AddClassFormProps> = ({
   isOpen,
-  onOpenChange,
   onSave,
   onClose,
   editingCourse,
@@ -112,7 +108,7 @@ const AddClassForm: React.FC<AddClassFormProps> = ({
     try {
       setIsSubmitting(true);
       onSave(formData);
-      onOpenChange(false);
+      onClose();
       ShowToast({
         color: "success",
         description: editingCourse ? t("updatedSuccess") : t("createdSuccess"),
@@ -156,9 +152,9 @@ const AddClassForm: React.FC<AddClassFormProps> = ({
   if (!isOpen) return null;
 
   return (
-      <ModalUI
+      <Modal
         isOpen={isOpen}
-        onOpenChange={onOpenChange}
+        onClose={onClose}
         size="3xl"
         onSaveClose={onSaveClose}
         onSaveNew={onSaveNew}
@@ -185,7 +181,7 @@ const AddClassForm: React.FC<AddClassFormProps> = ({
               ))}
             </select>
           </div>
-          <InputTextUi
+          <Input
             label={t("subject")}
             name="subject"
             value={formData.subject}
@@ -193,8 +189,9 @@ const AddClassForm: React.FC<AddClassFormProps> = ({
             placeholder={t("enterSubject")}
             isRequired
             isClearable
+            labelPlacement="outside"
           />
-          <InputNumberUi
+          <InputNumber
             label={t("credits")}
             name="credits"
             value={formData.credits}
@@ -207,7 +204,7 @@ const AddClassForm: React.FC<AddClassFormProps> = ({
             labelPlacement="outside"
           />
 
-          <InputTextUi
+          <Input
             label={t("room")}
             name="room"
             value={formData.room}
@@ -218,13 +215,14 @@ const AddClassForm: React.FC<AddClassFormProps> = ({
             isClearable
           />
 
-          <InputTextUi
+          <Input
             label={t("tel")}
             name="tel"
             value={formData.tel}
             onChange={handleInputChange}
             placeholder={t("phoneNumber")}
             isClearable
+            labelPlacement="outside"
           />
 
           <div className="space-y-1">
@@ -266,7 +264,7 @@ const AddClassForm: React.FC<AddClassFormProps> = ({
             </select>
           </div>
         </div>
-      </ModalUI>
+      </Modal>
   );
 };
 

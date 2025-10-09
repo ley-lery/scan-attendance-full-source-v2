@@ -1,36 +1,19 @@
 import { useEffect, useMemo, useState, useCallback, type Key } from "react";
 import { useTranslation } from "react-i18next";
-import { 
-  Autocomplete, 
-  AutocompleteItem, 
-  DataTable, 
-  DatePicker, 
-  ShowToast 
-} from "@/components/hero-ui";
-import { 
-  getLocalTimeZone, 
-  today, 
-  type DateValue 
-} from "@internationalized/date";
+import { DataTable, ShowToast } from "@/components/hero-ui";
+import { getLocalTimeZone, today, type DateValue } from "@internationalized/date";
 import { useFetch } from "@/hooks/useFetch";
-import { 
-  useDisclosure, 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerBody, 
-  DrawerFooter 
-} from "@/god-ui";
-import { Button, Divider, Spinner, type Selection } from "@heroui/react";
+import { useDisclosure } from "@/god-ui";
+import { Button, Spinner, type Selection } from "@heroui/react";
 import View from "./View";
 import { useMutation } from "@/hooks/useMutation";
 import { IoMdAdd } from "react-icons/io";
 import { IoTrashOutline } from "react-icons/io5";
 import { RxUpdate } from "react-icons/rx";
-import { GrClear } from "react-icons/gr";
 import { MdFilterTiltShift } from "react-icons/md";
 import Form from "./Form";
 import { cn } from "@/lib/utils";
+import Filter from "./Filter";
 
 // === Types ===
 type StudentLeaveFilter = {
@@ -47,8 +30,7 @@ type StudentLeaveFilter = {
 };
 
 // === Helpers ===
-const formatDateValue = (date: DateValue | null) =>
-  date ? date.toString() : null;
+const formatDateValue = (date: DateValue | null) => (date ? date.toString() : null);
 
 // Custom hooks for modals
 const useViewClosure = () => {
@@ -76,22 +58,26 @@ const Index = () => {
   const [isFiltered, setIsFiltered] = useState(false);
   const [isApprove, setIsApprove] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  
+  const [totalPage, setTotalPage] = useState(1);
+
   // Row selection state for multiple approve/reject
   const [selectedIds, setSelectedIds] = useState<Selection>(new Set([]));
 
-  const defaultFilter: StudentLeaveFilter = useMemo(() => ({
-    faculty: null,
-    field: null,
-    classId: null,
-    student: null,
-    status: "",
-    startDate: today(getLocalTimeZone()),
-    endDate: today(getLocalTimeZone()),
-    search: null,
-    page: 1,
-    limit: 10
-  }), []);
+  const defaultFilter: StudentLeaveFilter = useMemo(
+    () => ({
+      faculty: null,
+      field: null,
+      classId: null,
+      student: null,
+      status: "",
+      startDate: today(getLocalTimeZone()),
+      endDate: today(getLocalTimeZone()),
+      search: null,
+      page: 1,
+      limit: 10,
+    }),
+    []
+  );
 
   const [filter, setFilter] = useState<StudentLeaveFilter>(defaultFilter);
 
@@ -100,7 +86,6 @@ const Index = () => {
     page: 1,
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
-  const [totalPage, setTotalPage] = useState(1);
 
   // ==== Form Load ====
   const { data: formLoad, loading: formLoadLoading } = useFetch<{ users: any[] }>(
@@ -108,29 +93,25 @@ const Index = () => {
   );
 
   // ==== Fetch Data ====
-  const endpoint = searchKeyword.trim() === "" 
-    ? "/student/leavereq/list" 
-    : "/student/leavereq/search";
+  const endpoint =
+    searchKeyword.trim() === "" ? "/student/leavereq/list" : "/student/leavereq/search";
 
-  const { data, loading, refetch } = useFetch<{
-    rows: any[];
-    total_count: number;
-  }>(endpoint, {
+  const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(endpoint, {
     params: {
       page: pagination.page,
       limit: pagination.limit,
       ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }),
     },
     deps: [pagination.page, pagination.limit, searchKeyword],
+    enabled: !isFiltered, 
   });
 
   useEffect(() => {
-    if (!isFiltered) {
-      setRows(data?.data?.rows || []);
-      setTotalPage(Math.ceil((data?.data?.total || 0) / pagination.limit) || 1);
+    if (!isFiltered && data?.data) {
+      setRows(data.data.rows || []);
+      setTotalPage(Math.ceil((data.data.total || 0) / pagination.limit) || 1);
     }
   }, [data, isFiltered, pagination.limit]);
-
 
   // ==== Table Columns ====
   const cols = useMemo(
@@ -158,11 +139,12 @@ const Index = () => {
       { name: t("approvalDate"), uid: "approval_date" },
       { name: t("leavePeriodStatus"), uid: "leave_period_status" },
       { name: t("daysUntilStart"), uid: "days_until_start" },
-      { name: t("actions"), uid: "actions" }
+      { name: t("actions"), uid: "actions" },
     ],
     [t]
   );
 
+  // ==== Default Visible Columns ====
   const visibleCols = [
     "id",
     "student_code",
@@ -174,13 +156,14 @@ const Index = () => {
     "end_date",
     "total_days",
     "status",
-    "actions"
+    "actions",
   ];
 
   const status = [
     { name: "Pending", uid: "Pending" },
     { name: "Approved", uid: "Approved" },
     { name: "Rejected", uid: "Rejected" },
+    { name: "Cancelled", uid: "Cancelled" },
   ];
 
   // ==== Event Handlers ====
@@ -196,26 +179,31 @@ const Index = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   }, []);
 
-  const handleDateChange = useCallback((field: keyof StudentLeaveFilter, value: DateValue | null) => {
-    setFilter((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  const handleView = useCallback(
+    (row: any) => {
+      setViewRow(row);
+      onOpenView();
+    },
+    [onOpenView]
+  );
 
-  const handleView = useCallback((row: any) => {
-    setViewRow(row);
-    onOpenView();
-  }, [onOpenView]);
+  const handleApprove = useCallback(
+    (id: number) => {
+      setSelectedId(id);
+      setIsApprove(true);
+      onOpenModal();
+    },
+    [onOpenModal]
+  );
 
-  const handleApprove = useCallback((id: number) => {
-    setSelectedId(id);
-    setIsApprove(true);
-    onOpenModal();
-  }, [onOpenModal]);
-
-  const handleReject = useCallback((id: number) => {
-    setSelectedId(id);
-    setIsApprove(false);
-    onOpenModal();
-  }, [onOpenModal]);
+  const handleReject = useCallback(
+    (id: number) => {
+      setSelectedId(id);
+      setIsApprove(false);
+      onOpenModal();
+    },
+    [onOpenModal]
+  );
 
   const handleSelectionChange = useCallback((keys: Selection) => {
     setSelectedIds(keys);
@@ -223,7 +211,7 @@ const Index = () => {
   }, []);
 
   // ==== Filter Mutations ====
-  const { mutate: filterAuditLog, loading: filterLoading } = useMutation({
+  const { mutate: filterStudentLeave, loading: filterLoading } = useMutation({
     onSuccess: (response) => {
       setRows(response?.data?.rows || []);
       setTotalPage(Math.ceil((response?.data?.total || 0) / pagination.limit) || 1);
@@ -239,9 +227,8 @@ const Index = () => {
     },
   });
 
-  // Handle pagination changes when filtered
-  useEffect(() => {
-    const applyFilterWithPagination = async () => {
+  const applyFilterWithPagination = useCallback(
+    async (page: number) => {
       const payload = {
         faculty: filter.faculty ? Number(filter.faculty) : null,
         field: filter.field ? Number(filter.field) : null,
@@ -251,16 +238,13 @@ const Index = () => {
         startDate: formatDateValue(filter.startDate),
         endDate: formatDateValue(filter.endDate),
         search: filter.search,
-        page: pagination.page,
+        page: page,
         limit: pagination.limit,
       };
-      await filterAuditLog(`/student/leavereq/filter`, payload, "POST");
-    };
-
-    if (isFiltered && pagination.page > 1) {
-      applyFilterWithPagination();
-    }
-  }, [isFiltered, pagination.page, filter, pagination.limit, filterAuditLog]);
+      await filterStudentLeave(`/student/leavereq/filter`, payload, "POST");
+    },
+    [filter, pagination.limit, filterStudentLeave]
+  );
 
   const resetFilter = useCallback(() => {
     setFilter(defaultFilter);
@@ -271,35 +255,42 @@ const Index = () => {
 
   const applyFilter = useCallback(async () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
+    await applyFilterWithPagination(1);
+  }, [applyFilterWithPagination]);
 
-    const payload = {
-      faculty: filter.faculty ? Number(filter.faculty) : null,
-      field: filter.field ? Number(filter.field) : null,
-      classId: filter.classId ? Number(filter.classId) : null,
-      student: filter.student ? Number(filter.student) : null,
-      status: filter.status,
-      startDate: formatDateValue(filter.startDate),
-      endDate: formatDateValue(filter.endDate),
-      page: 1,
-      limit: pagination.limit,
-    };
+  // Handle page changes
+  const handlePageChange = useCallback(
+    async (newPage: number) => {
+      setPagination((prev) => ({ ...prev, page: newPage }));
 
-    await filterAuditLog(`/student/leavereq/filter`, payload, "POST");
-  }, [filter, pagination.limit, filterAuditLog]);
-
+      if (isFiltered) {
+        await applyFilterWithPagination(newPage);
+      }
+    },
+    [isFiltered, applyFilterWithPagination]
+  );
 
   // ====== Batch Approve & Reject ======
-
   const { mutate: batchAction, loading: batchActionLoading } = useMutation({
     onSuccess: async (res) => {
       await refetch();
       onClose();
       setSelectedIds(new Set([]));
-      ShowToast({ color: "success", title: "Success", description: res.response?.data?.message  ||  "Leave request approved successfully" });
+      ShowToast({
+        color: "success",
+        title: "Success",
+        description:
+          res.response?.data?.message || "Leave request approved successfully",
+      });
     },
     onError: (err) => {
       console.log("Approve error : ", err);
-      ShowToast({ color: "error", title: "Error", description: err.response?.data?.message || "Failed to approve leave request" });
+      ShowToast({
+        color: "error",
+        title: "Error",
+        description:
+          err.response?.data?.message || "Failed to approve leave request",
+      });
     },
   });
 
@@ -313,7 +304,6 @@ const Index = () => {
     console.log(payload, "payload");
     await batchAction(`/student/leavereq/batch`, payload, "POST");
   };
-
 
   // ==== Column Customize ====
   const actionIcon = (action: string) => {
@@ -344,267 +334,116 @@ const Index = () => {
     );
   }, []);
 
-  const colsKeys = useMemo(() => [
-    { key: "action", value: customizeCols },
-  ], [customizeCols]);
+  const colsKeys = useMemo(
+    () => [{ key: "action", value: customizeCols }],
+    [customizeCols]
+  );
 
   const selectedLength = Array.from(selectedIds).length;
 
   const headerAction = (
     <div className="flex items-center gap-2">
-      {
-        selectedLength > 0 ? (
-          <>
-            <Button
-              onPress={() => batchActionHandler("Approved")}
-              size="sm"
-              variant="solid"
-              color="primary"
-              radius="lg"
-              startContent={batchActionLoading ? <Spinner variant="spinner" color="white" size="sm" /> : <MdFilterTiltShift size={16} />}
-              isDisabled={Array.from(selectedIds).length === 0 || batchActionLoading}
-            >
-              {t("approve")}
-            </Button>
-            <Button
-              onPress={() => batchActionHandler("Rejected")}
-              size="sm"
-              variant="solid"
-              color="danger"
-              radius="lg"
-              startContent={batchActionLoading ? <Spinner variant="spinner" color="white" size="sm" /> : <MdFilterTiltShift size={16} />}
-              isDisabled={Array.from(selectedIds).length === 0 || batchActionLoading}
-            >
-              {t("reject")}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              onPress={() => ShowToast({ color: "warning", title: "Warning", description: "Please select at least one leave request" })}
-              size="sm"
-              variant="solid"
-              color="primary"
-              radius="lg"
-              startContent={ <MdFilterTiltShift size={16} />}
-              className="opacity-50 hover:opacity-50"
-            >
-              {t("approve")}
-            </Button>
-            <Button
-              onPress={() => ShowToast({ color: "warning", title: "Warning", description: "Please select at least one leave request" })}
-              size="sm"
-              variant="solid"
-              color="danger"
-              radius="lg"
-              startContent={<MdFilterTiltShift size={16} />}
-              className="opacity-50 hover:opacity-50"
-            >
-              {t("reject")}
-            </Button>
-          </>
-        )
-      }
+      {selectedLength > 0 ? (
+        <>
+          <Button
+            onPress={() => batchActionHandler("Approved")}
+            size="sm"
+            variant="solid"
+            color="primary"
+            radius="lg"
+            startContent={
+              batchActionLoading ? (
+                <Spinner variant="spinner" color="white" size="sm" />
+              ) : (
+                <MdFilterTiltShift size={16} />
+              )
+            }
+            isDisabled={Array.from(selectedIds).length === 0 || batchActionLoading}
+          >
+            {t("approve")}
+          </Button>
+          <Button
+            onPress={() => batchActionHandler("Rejected")}
+            size="sm"
+            variant="solid"
+            color="danger"
+            radius="lg"
+            startContent={
+              batchActionLoading ? (
+                <Spinner variant="spinner" color="white" size="sm" />
+              ) : (
+                <MdFilterTiltShift size={16} />
+              )
+            }
+            isDisabled={Array.from(selectedIds).length === 0 || batchActionLoading}
+          >
+            {t("reject")}
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button
+            onPress={() =>
+              ShowToast({
+                color: "warning",
+                title: "Warning",
+                description: "Please select at least one leave request",
+              })
+            }
+            size="sm"
+            variant="solid"
+            color="primary"
+            radius="lg"
+            startContent={<MdFilterTiltShift size={16} />}
+            className="opacity-50 hover:opacity-50"
+          >
+            {t("approve")}
+          </Button>
+          <Button
+            onPress={() =>
+              ShowToast({
+                color: "warning",
+                title: "Warning",
+                description: "Please select at least one leave request",
+              })
+            }
+            size="sm"
+            variant="solid"
+            color="danger"
+            radius="lg"
+            startContent={<MdFilterTiltShift size={16} />}
+            className="opacity-50 hover:opacity-50"
+          >
+            {t("reject")}
+          </Button>
+        </>
+      )}
     </div>
   );
 
   return (
     <div className="p-4">
       <View isOpen={isOpenView} onClose={onCloseView} row={viewRow} />
-      <Form 
-        isOpen={isOpenModal} 
-        onClose={onCloseModal} 
-        loadList={refetch} 
-        isApprove={isApprove} 
-        leaveId={selectedId} 
+      <Form
+        isOpen={isOpenModal}
+        onClose={onCloseModal}
+        loadList={refetch}
+        isApprove={isApprove}
+        leaveId={selectedId}
       />
 
-      {/* === Filter Drawer === */}
-      <Drawer 
-        isOpen={isOpen} 
-        onClose={onClose} 
-        size="xs" 
-        radius="none" 
-        backdrop="transparent" 
-        shadow="none"
-      >
-        <DrawerHeader>
-          <h2 className="text-lg font-semibold">{t("filter")}</h2>
-        </DrawerHeader>
-        <DrawerContent>
-          <DrawerBody>
-            <form className="space-y-4">
-              {/* Date & Time */}
-              <div>
-                <h3 className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
-                  {t("dateTimeRange")}
-                </h3>
-                <Divider className="mb-2" />
-                <div className="grid grid-cols-2 gap-4">
-                  <DatePicker
-                    label={t("startDate")}
-                    value={filter.startDate}
-                    onChange={(val) => handleDateChange("startDate", val)}
-                    maxValue={filter.endDate}
-                    labelPlacement="outside"
-                    size="sm"
-                    classNames={{
-                      selectorIcon: "text-sm",
-                      selectorButton: "p-0"
-                    }}
-                  />
-                  <DatePicker
-                    label={t("endDate")}
-                    value={filter.endDate}
-                    onChange={(val) => handleDateChange("endDate", val)}
-                    minValue={filter.startDate}
-                    labelPlacement="outside"
-                    size="sm"
-                    classNames={{
-                      selectorIcon: "text-sm",
-                      selectorButton: "p-0"
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* General Filters */}
-              <div>
-                <h3 className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
-                  {t("general")}
-                </h3>
-                <Divider className="mb-4" />
-                <div className="grid grid-cols-1 gap-2">
-                  <Autocomplete
-                    label={t("faculty")}
-                    placeholder={t("chooseFaculty")}
-                    selectedKey={filter.faculty ?? ""}
-                    isClearable
-                    onSelectionChange={(key) =>
-                      setFilter((prev) => ({
-                        ...prev,
-                        faculty: key?.toString() || null,
-                      }))
-                    }
-                    labelPlacement="outside"
-                    size="sm"
-                    isLoading={formLoadLoading}
-                  >
-                    {formLoad?.data?.faculties?.map((u: { id: string; name_en: string; name_kh: string }) => (
-                      <AutocompleteItem key={u.id}>
-                        {u.name_en + " - " + u.name_kh}
-                      </AutocompleteItem>
-                    )) || []}
-                  </Autocomplete>
-
-                  <Autocomplete
-                    label={t("field")}
-                    placeholder={t("chooseField")}
-                    selectedKey={filter.field ?? ""}
-                    isClearable
-                    onSelectionChange={(key) =>
-                      setFilter((prev) => ({
-                        ...prev,
-                        field: key?.toString() || null,
-                      }))
-                    }
-                    labelPlacement="outside"
-                    size="sm"
-                  >
-                    {formLoad?.data?.fields?.map((a: { id: string; field_name_en: string; field_name_kh: string }) => (
-                      <AutocompleteItem key={a.id}>
-                        {a.field_name_en + " - " + a.field_name_kh}
-                      </AutocompleteItem>
-                    )) || []}
-                  </Autocomplete>
-
-                  <Autocomplete
-                    label={t("class")}
-                    placeholder={t("chooseClass")}
-                    selectedKey={filter.classId ?? ""}
-                    isClearable
-                    onSelectionChange={(key) =>
-                      setFilter((prev) => ({
-                        ...prev,
-                        classId: key?.toString() || null,
-                      }))
-                    }
-                    labelPlacement="outside"
-                    size="sm"
-                  >
-                    {formLoad?.data?.classes?.map((a: { id: string; class_name: string }) => (
-                      <AutocompleteItem key={a.id}>{a.class_name}</AutocompleteItem>
-                    )) || []}
-                  </Autocomplete>
-
-                  <Autocomplete
-                    label={t("student")}
-                    placeholder={t("chooseStudent")}
-                    selectedKey={filter.student ?? ""}
-                    isClearable
-                    onSelectionChange={(key) =>
-                      setFilter((prev) => ({
-                        ...prev,
-                        student: key?.toString() || null,
-                      }))
-                    }
-                    labelPlacement="outside"
-                    size="sm"
-                    isLoading={formLoadLoading}
-                  >
-                    {formLoad?.data?.students?.map((u: { id: string; name_en: string; name_kh: string }) => (
-                      <AutocompleteItem key={u.id}>
-                        {u.name_en + " - " + u.name_kh}
-                      </AutocompleteItem>
-                    )) || []}
-                  </Autocomplete>
-
-                  <Autocomplete
-                    label={t("status")}
-                    placeholder={t("chooseStatus")}
-                    selectedKey={filter.status ?? ""}
-                    isClearable
-                    onSelectionChange={(key) =>
-                      setFilter((prev) => ({
-                        ...prev,
-                        status: key?.toString() || null,
-                      }))
-                    }
-                    labelPlacement="outside"
-                    size="sm"
-                    isLoading={formLoadLoading}
-                  >
-                    {formLoad?.data?.status?.map((u: { label: string; value: string }) => (
-                      <AutocompleteItem key={u.value}>{u.label}</AutocompleteItem>
-                    )) || []}
-                  </Autocomplete>
-                </div>
-              </div>
-            </form>
-          </DrawerBody>
-        </DrawerContent>
-        <DrawerFooter>
-          <Button 
-            onPress={resetFilter} 
-            size="sm" 
-            variant="flat" 
-            color="danger" 
-            startContent={<GrClear size={16} />}
-          >
-            {t("reset")}
-          </Button>
-          <Button
-            onPress={applyFilter}
-            size="sm"
-            variant="solid"
-            color="primary"
-            isLoading={filterLoading}
-            startContent={<MdFilterTiltShift size={16} />}
-          >
-            {t("apply")}
-          </Button>
-        </DrawerFooter>
-      </Drawer>
+      {/* === Filter Component === */}
+      <Filter
+        isOpen={isOpen}
+        onClose={onClose}
+        filter={filter}
+        setFilter={setFilter}
+        onApplyFilter={applyFilter}
+        onResetFilter={resetFilter}
+        formLoad={formLoad}
+        formLoadLoading={formLoadLoading}
+        filterLoading={filterLoading}
+      />
 
       {/* === Table === */}
       <DataTable
@@ -634,11 +473,9 @@ const Index = () => {
         initialPage={pagination.page}
         totalPages={totalPage}
         page={pagination.page}
-        onChangePage={(newPage: number) =>
-          setPagination((prev) => ({ ...prev, page: newPage }))
-        }
+        onChangePage={handlePageChange}
         customizes={{
-          header: headerAction ,
+          header: headerAction,
         }}
       />
     </div>

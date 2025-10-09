@@ -177,6 +177,23 @@ export interface BatchLeave {
 }
 
 
+export interface Schedule{
+    classId?: number;
+    startDate?: Date;
+    endDate?: Date;
+    sessions?: [
+        {
+            day: string;
+            timeSlot: string;
+            order: string; // session 1/2
+            course?: number; // course id
+            credits?: number;
+            lecturer?: number; // lecturer id
+        }
+    ];
+}
+
+
 // === Role Management ===
 export interface Role{
     name?: string;
@@ -213,4 +230,14 @@ export interface StudentLeaveRequest{
     endDate?: Date;
     reason?: string;
     status?: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+}
+export interface StudentLeaveFilter{
+    classId?: number,
+    student?: number,
+    status?: string,
+    date?: Date,
+    startDate?: Date,
+    endDate?: Date,
+    page?: number,
+    limit?: number
 }

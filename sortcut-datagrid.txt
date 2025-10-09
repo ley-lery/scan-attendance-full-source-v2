@@ -1,0 +1,40 @@
+DataGrip Keyboard Shortcuts
+Here are the most useful keyboard shortcuts for DataGrip:
+SQL Execution
+Execute statement: Ctrl+Enter (execute at cursor)
+Execute script: Ctrl+Shift+Enter (execute whole file)
+Explain Plan: Ctrl+Alt+E
+Interrupt execution: Ctrl+F2
+Navigation
+Search everywhere: Double Shift
+Find action: Ctrl+Shift+A
+Recent files: Ctrl+E
+Switch tabs: Alt+Left/Right
+Database view: Alt+1
+SQL Editing
+Format SQL: Ctrl+Alt+L
+Comment/uncomment: Ctrl+/
+Smart completion: Ctrl+Shift+Space
+Parameter info: Ctrl+P
+Duplicate line: Ctrl+D
+Delete line: Ctrl+Y
+Database Operations
+Refresh objects: F5
+Generate DDL: Ctrl+Alt+Shift+D
+Table editor: F4 (when table selected)
+Edit data in table: F4 (when viewing data)
+Compare schemas/data: Ctrl+D (on selected objects)
+Selection
+Expand selection: Ctrl+W
+Shrink selection: Ctrl+Shift+W
+Column selection: Alt+Shift+Insert
+Multiple carets: Alt+Click or Alt+J (select occurrences)
+View
+Maximize editor: Ctrl+Shift+F12
+Hide all panels: Ctrl+Shift+F12
+Structure view: Alt+7
+Terminal: Alt+F12
+Refactoring
+Rename: Shift+F6
+Extract variable: Ctrl+Alt+V
+Refactor menu: Ctrl+Alt+Shift+T

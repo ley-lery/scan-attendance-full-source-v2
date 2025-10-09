@@ -431,6 +431,7 @@
       "approveLeaveRequest":"Approve Leave Request",
       "enterReason":"Enter Reason",
       "request":"Request",
+      "addAccount":"Add Account",
     "validation": {
         "required": "This field is required",
         "mustBePositive": "Value must be positive.",

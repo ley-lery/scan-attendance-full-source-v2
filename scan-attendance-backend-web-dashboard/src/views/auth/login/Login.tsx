@@ -2,14 +2,12 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import AuthService from "@/services/auth.service";
-import { Button, Checkbox, Input, Select, SelectItem, Spinner, Tab, Tabs } from "@heroui/react";
+import { Button, Checkbox, Input, Select, SelectItem, Spinner } from "@heroui/react";
 import { Form } from "@heroui/react";
 import { IoMailOutline } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
-import { useUserDataStore } from "@/stores/useUserDataStore";
 import { motion } from "framer-motion";
 import UniLogo from "@/assets/logo/bbu-logo.png";
-import { PiChalkboardTeacherLight, PiStudentLight } from "react-icons/pi";
 import ShowToast from "@/components/hero-ui/toast/ShowToast";
 import ThemeSwitcher from "@/components/ui/theme/ThemeSwitch";
 import { Eye, EyeOff, Facebook, LogIn, Mail, Phone } from "lucide-react";
@@ -21,12 +19,6 @@ interface LecturerData {
   password: string;
 }
 
-interface StudentData {
-  studentId: string;
-  password: string;
-}
-
-type FormType = "lecturer" | "student";
 
 interface BackgroundOption {
   key: string;
@@ -49,6 +41,7 @@ interface CustomInputProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   endContent?: React.ReactNode;
   isRequired?: boolean;
+  isSubmitting?: boolean;
 }
 
 // Background Constants
@@ -70,10 +63,9 @@ const CONTACT_LINKS: ContactLink[] = [
 ];
 
 const NAVIGATION_DELAY = 1000;
-const RELOAD_DELAY = 1500;
 
 // Components
-const CustomInput: React.FC<CustomInputProps> = ({ label, name, placeholder, type, value, onChange, endContent, isRequired = false }) => (
+const CustomInput: React.FC<CustomInputProps> = ({ label, name, placeholder, type, value, onChange, endContent, isRequired = false, isSubmitting = false }) => (
   <Input
     isRequired={isRequired}
     label={label}
@@ -85,10 +77,12 @@ const CustomInput: React.FC<CustomInputProps> = ({ label, name, placeholder, typ
     onChange={onChange}
     endContent={endContent}
     color="primary"
+    className="w-full"
     classNames={{
       inputWrapper: "border-zinc-300 dark:border-zinc-600",
       label: "dark:text-zinc-300 text-zinc-600",
     }}
+    isDisabled={isSubmitting}
   />
 );
 
@@ -144,10 +138,7 @@ const WelcomeSection: React.FC = () => {
   );
 };
 
-const TopBar: React.FC<{
-  selectedBackground: string;
-  onBackgroundChange: (bg: string) => void;
-}> = ({ selectedBackground, onBackgroundChange }) => (
+const TopBar: React.FC<{ selectedBackground: string; onBackgroundChange: (bg: string) => void;}> = ({ onBackgroundChange }) => (
   <div className="absolute top-0 right-0 z-50 flex items-center justify-between w-full p-2 gap-2">
     <Select 
       className="max-w-52" 
@@ -176,33 +167,21 @@ const Login: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuth();
-  const setUserData = useUserDataStore((state) => state.setUserData);
 
   // State
   const [selectedBackground, setSelectedBackground] = useState<string>("bg-auth");
-  const [formSelected, setFormSelected] = useState<FormType>("lecturer");
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
-  const [lecturerData, setLecturerData] = useState<LecturerData>({
+  const [formData, setFormData] = useState<LecturerData>({
     email: "",
-    password: "",
-  });
-  
-  const [studentData, setStudentData] = useState<StudentData>({
-    studentId: "",
     password: "",
   });
 
   // Handlers
-  const handleLecturerInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setLecturerData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleStudentInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setStudentData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);
@@ -211,72 +190,37 @@ const Login: React.FC = () => {
     setSelectedBackground(bg);
   };
 
-  const handleReload = () => {
-    window.location.reload();
-  };
-
-  const showToast = (color: "success" | "danger", title: string, description: string) => {
-    ShowToast({ color, title, description });
-  };
-
-  const handleAuthSuccess = (data: any) => {
-    setUserData(data);
-    login(data.token);
-    localStorage.setItem("token", data.token);
-    
-    showToast(
-      "success",
-      t("loginSuccess") || "Login Successful",
-      t("loginSuccessDesc") || "You have successfully logged in."
-    );
-    
-    setTimeout(() => navigate("/system/dashboard"), NAVIGATION_DELAY);
-    setTimeout(() => handleReload(), RELOAD_DELAY);
-  };
-
-  const handleAuthError = (error: any) => {
-    const errorMessage = error?.response?.data?.message || 
-                        error?.message || 
-                        "An error occurred during login.";
-    
-    showToast(
-      "danger",
-      t("loginFailed") || "Login Failed",
-      errorMessage
-    );
-  };
-
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+  
     try {
-      let response;
-      
-      if (formSelected === "lecturer") {
-        response = await AuthService.lecturerSigIn(lecturerData);
-      } else if (formSelected === "student") {
-        response = await AuthService.studentSigIn(studentData);
-      } else {
-        showToast(
-          "danger",
-          "Invalid User Type",
-          "Please select a valid user type."
-        );
-        return;
-      }
-
+      const response = await AuthService.lecturerSignIn(formData);
+  
       if (response?.data?.token) {
-        handleAuthSuccess(response.data);
+        const account = { user: response.data.user, token: response.data.token };
+        login(account);
+        ShowToast({
+          color: "success",
+          title: "Login Successful",
+          description: "You have successfully logged in.",
+        });
+        // Navigate immediately after login - no reload needed!
+        setTimeout(() => navigate("/system/dashboard"), NAVIGATION_DELAY);
+        // REMOVED: setTimeout(() => handleReload(), RELOAD_DELAY);
       } else {
-        showToast(
-          "danger",
-          t("loginFailed") || "Login Failed",
-          t("invalidCredentials") || "Invalid credentials. Please try again."
-        );
+        ShowToast({
+          color: "danger",
+          title: "Login Failed",
+          description: "Invalid credentials. Please try again.",
+        });
       }
     } catch (error: any) {
-      handleAuthError(error);
+      ShowToast({
+        color: "danger",
+        title: "Login Failed",
+        description: error?.response?.data?.message || "An error occurred during login.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -332,46 +276,19 @@ const Login: React.FC = () => {
             <Form
               onSubmit={onSubmit}
               validationBehavior="native"
-              className="relative flex w-full justify-center py-3"
+              className="relative flex w-full  py-3"
             >
-              <Tabs
-                aria-label="User type selection"
-                color="default"
-                radius="lg"
-                fullWidth
-                size="lg"
-                variant="solid"
-                selectedKey={formSelected}
-                onSelectionChange={(key) => {
-                  if (key === "student" || key === "lecturer") {
-                    setFormSelected(key);
-                  }
-                }}
-                classNames={{
-                  tabList: "bg-black/5 dark:bg-white/5",
-                  tab: "border-none shadow-none",
-                }}
-              >
-                <Tab
-                  key="lecturer"
-                  title={
-                    <div className="flex items-center gap-2">
-                      <PiChalkboardTeacherLight size={22} />
-                      <h2>{t('lecturer')}</h2>
-                    </div>
-                  }
-                  className="w-full"
-                >
-                  <div className="space-y-2">
+                  <div className="space-y-2 w-full">
                     <CustomInput
                       isRequired
                       label={t("email")}
                       name="email"
                       placeholder={t("enterEmail")}
                       type="email"
-                      value={lecturerData.email}
-                      onChange={handleLecturerInputChange}
+                      value={formData.email}
+                      onChange={handleInputChange}
                       endContent={<IoMailOutline className="text-zinc-500" />}
+                      isSubmitting={isSubmitting}
                     />
                     <CustomInput
                       isRequired
@@ -379,47 +296,12 @@ const Login: React.FC = () => {
                       name="password"
                       placeholder={t("enterPassword")}
                       type={isPasswordVisible ? "text" : "password"}
-                      value={lecturerData.password}
-                      onChange={handleLecturerInputChange}
+                      value={formData.password}
+                      onChange={handleInputChange}
                       endContent={renderPasswordToggle()}
+                      isSubmitting={isSubmitting}
                     />
                   </div>
-                </Tab>
-                
-                <Tab
-                  key="student"
-                  title={
-                    <div className="flex items-center gap-2">
-                      <PiStudentLight size={22} />
-                      <h2>{t('student')}</h2>
-                    </div>
-                  }
-                  className="w-full"
-                >
-                  <div className="space-y-2">
-                    <CustomInput
-                      isRequired
-                      label={t("studentId")}
-                      name="studentId"
-                      placeholder={t("enterStudentId")}
-                      type="text"
-                      value={studentData.studentId}
-                      onChange={handleStudentInputChange}
-                      endContent={<IoMailOutline className="text-zinc-500" />}
-                    />
-                    <CustomInput
-                      isRequired
-                      label={t("password")}
-                      name="password"
-                      placeholder={t("enterPassword")}
-                      type={isPasswordVisible ? "text" : "password"}
-                      value={studentData.password}
-                      onChange={handleStudentInputChange}
-                      endContent={renderPasswordToggle()}
-                    />
-                  </div>
-                </Tab>
-              </Tabs>
               
               <div className="flex w-full items-center justify-between px-1 py-2">
                 <Checkbox name="remember" size="md">

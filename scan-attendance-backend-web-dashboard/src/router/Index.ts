@@ -13,6 +13,7 @@ const AcademicCourse = lazy(() => import("@/views/admin-portal/academic/course/I
 const AcademicProgram = lazy(() => import("@/views/admin-portal/academic/program/Index"));
 const AcademicClassManageClasses = lazy(() => import("@/views/admin-portal/academic/class/mange-classes/Index"));
 const AcademicClassManageStudents = lazy(() => import("@/views/admin-portal/academic/class/class-student/Index"));
+const AcademicClassSchedule = lazy(() => import("@/views/admin-portal/academic/class/class-schedule/Index"));
 const LecturerManageLecturers = lazy(() => import("@/views/admin-portal/lecturer/manage-lecturer/Index"));
 const LecturerLecturerCourses = lazy(() => import("@/views/admin-portal/lecturer/lecturer-course/Index"));
 const LecturerLeaveReq = lazy(() => import("@/views/admin-portal/lecturer/leave-req/Index"));
@@ -32,12 +33,16 @@ const SystemAuditLogs = lazy(() => import("@/views/admin-portal/system/audit-log
 
 // ======== Lecturer Portal Views ==========
 const LecturerDashboard = lazy(() => import("@/views/lecturer-portal/dashboard/Index"));
+const LecturerAttendanceStudent = lazy(() => import("@/views/lecturer-portal/student/mark-attendance-student/Index"));
 
 // ======== Lecturer Portal Views End ==========
+
 
 // ======== Student Portal Views Start ==========
 const StudentDashboard = lazy(() => import("@/views/student-portal/dashboard/Index"));
 const StudentLeave = lazy(() => import("@/views/student-portal/leave-management/leave-req/Index"));
+const StudentLeaveHistory = lazy(() => import("@/views/student-portal/leave-management/leave-history/Index"));
+const StudentClassSchedule = lazy(() => import("@/views/student-portal/classes/class-schedule/Index"));
 // ======== Student Portal Views End ==========
 
 // ======== Route Configuration Interface ==========
@@ -120,6 +125,11 @@ export const protectedRouteAdmin: RouteConfig[] = [
     path: "admin/lecturer/leave-req",
     component: LecturerLeaveReq,
   },
+  {
+    name: "Academic Class Schedule",
+    path: "admin/academic/class/class-schedule",
+    component: AcademicClassSchedule,
+  },
 
   // Student Group
   {
@@ -181,6 +191,11 @@ export const protectedRouteLecturer: RouteConfig[] = [
     path: "system/dashboard",
     component: LecturerDashboard,
   },
+  {
+    name: "Mark Student Attendance",
+    path: "lecturer/student/mark-attendance-student",
+    component: LecturerAttendanceStudent,
+  }
  
 ];
 
@@ -195,6 +210,16 @@ export const protectedRouteStudent: RouteConfig[] = [
     name: "Leave Requests",
     path: "student/leave-management/leave-req",
     component: StudentLeave,
+  },
+  {
+    name: "Leave History",
+    path: "student/leave-management/leave-history",
+    component: StudentLeaveHistory,
+  },
+  {
+    name: "Student Class Schedule",
+    path: "student/classes/class-schedule",
+    component: StudentClassSchedule,
   },
 ];
 

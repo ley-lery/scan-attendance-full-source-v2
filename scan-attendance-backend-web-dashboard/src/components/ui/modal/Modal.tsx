@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { IoIosClose } from "react-icons/io";
 import { DragContext } from "@/context/DragContext";
 import { ModalContext } from "@/context/ModalContext"; 
+import { Tooltip } from "@heroui/react";
 
 
 interface ModalProps {
@@ -195,6 +196,19 @@ export const Modal = ({
     if (onClose) onClose();
   };
 
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      handleClose();
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const modalWidth = sizeMap[size] || "max-w-md";
   const modalRadius = radiusMap[radius] || "rounded-2xl";
   const isFullScreen = size === "full";
@@ -248,14 +262,16 @@ export const Modal = ({
             
           >
             {!hideCloseButton && (
-              <button
-                onClick={handleClose}
-                type="button"
-                className={cn("absolute top-2 right-2 z-10 rounded-full p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 cursor-pointer duration-300 transition-colors", classNames.closeButton)}
-                aria-label="Close"
-              >
-                <IoIosClose size={24} className="text-zinc-500 hover:text-zinc-800 dark:text-zinc-300 dark:hover:text-white" />
-              </button>
+              <Tooltip content="Esc to close" placement="left" closeDelay={0} delay={200}>
+                <button
+                  onClick={handleClose}
+                  type="button"
+                  className={cn("absolute top-2 right-2 z-10 rounded-full p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 cursor-pointer duration-300 transition-colors", classNames.closeButton)}
+                  aria-label="Close"
+                >
+                  <IoIosClose size={24} className="text-zinc-500 hover:text-zinc-800 dark:text-zinc-300 dark:hover:text-white" />
+                </button>
+              </Tooltip>
             )}
             <main>{children}</main>
           </motion.div>

@@ -168,10 +168,10 @@ const Index = () => {
         onDelete={(id: number) => onDelete(id)}
         loadData={refetch}
         selectRow={false}
-        permissionCreate="studentCreate"
-        permissionDelete="studentDelete"
-        permissionEdit="studentModify"
-        permissionView="studentView"
+        permissionCreate="create:lecturercourse"
+        permissionDelete="delete:lecturercourse"
+        permissionEdit="update:lecturercourse"
+        permissionView="view:lecturercourse"
         searchKeyword={searchKeyword}
         onSearchInputChange={onSearchInputChange}
         handleClearSearch={handleClearSearch}

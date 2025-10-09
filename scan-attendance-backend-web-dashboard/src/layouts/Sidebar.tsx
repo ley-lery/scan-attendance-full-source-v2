@@ -1,24 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import  { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useNavigation } from "react-router-dom";
 import Profile from "@/assets/profile/profile.png";
 import {
   Avatar,
   Button,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  useDisclosure,
   Tooltip,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
   ScrollShadow,
+  Divider,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from "@heroui/react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import AuthService from "@/services/auth.service.ts";
 import { useTranslation } from "react-i18next";
 import { AiOutlineMinusCircle, AiOutlineUser } from "react-icons/ai";
 import { IoIosAddCircleOutline } from "react-icons/io";
@@ -34,47 +29,28 @@ import { LuLogOut } from "react-icons/lu";
 import { getRoleMenus } from "./index";
 import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AccountSwitcher from "@/components/ui/switch/AccountSwitcher";
+import { PiUserCirclePlusLight } from "react-icons/pi";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@/components/hero-ui";
+import { useDisclosure } from "@/god-ui";
 
-interface User {
-  username: string;
-  email: string;
-  assign_type: string;
-}
 
 const Sidebar = ({ toggle }: { toggle: boolean }) => {
   const { t } = useTranslation();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [user, setUser] = useState<User>();
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [focusedSubmenu, setFocusedSubmenu] = useState<string | null>(null);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, activeAccount } = useAuth();
   const tokenData = decodeToken();
   focusedSubmenu; // use like this to can build or deploy
 
   // ============ Dynamically determine role based on token ===========
-  const role = decodeToken()?.assign_type ?? "Student";
-  const menus = getRoleMenus(role);
+  const menus = getRoleMenus(activeAccount?.user.assign_type ?? "Student");
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      getProfile(token);
-    }
-  }, []);
-
-  const getProfile = async (token: string) => {
-    try {
-      const res = await AuthService.userProfile(token);
-      const data = res.data.user.userData;
-      console.log(res, "user information");
-      setUser(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  
 
   // Fixed useEffect to properly match menu structure
   useEffect(() => {
@@ -147,7 +123,7 @@ const Sidebar = ({ toggle }: { toggle: boolean }) => {
     <>
       <ConfirmDialog
         isOpen={isOpen}
-        onOpenChange={onOpenChange}
+        onClose={onClose}
         confirm={logout}
         confirmLabel={t("logout")}
         confirmIcon={<LogOut size={16} />}
@@ -172,11 +148,11 @@ const Sidebar = ({ toggle }: { toggle: boolean }) => {
                 color="foreground"
                 closeDelay={0}
               >
-                <Popover 
+                <Popover
                   placement="right-start" 
                   showArrow={true} 
                   classNames={{
-                    content: "border border-white dark:border-transparent bg-zinc-100 outline-none dark:bg-zinc-800",
+                    content: " border border-white dark:border-transparent bg-zinc-100 outline-none dark:bg-zinc-800",
                   }}
                 >
                   <PopoverTrigger>
@@ -196,7 +172,7 @@ const Sidebar = ({ toggle }: { toggle: boolean }) => {
                         className="justify-start dark:text-zinc-400 dark:hover:text-zinc-50"
                       >
                         Signed as{" "}
-                        <span className="capitalize">{user?.assign_type}</span>
+                        <span className="capitalize">{activeAccount?.user.assign_type}</span>
                       </Button>
                       <Button
                         onPress={onOpen}
@@ -222,18 +198,18 @@ const Sidebar = ({ toggle }: { toggle: boolean }) => {
             )}
             <div hidden={toggle}>
               <h3 className="whitespace-nowrap text-center text-lg font-medium capitalize">
-                {user?.username ? user?.username : "Guest"}
+                {activeAccount?.user.username ? activeAccount?.user.username : "Guest"}
               </h3>
               <p className="text-sm capitalize text-zinc-500">
-                {user?.assign_type}
+                {activeAccount?.user.assign_type}
               </p>
             </div>
           </div>
           <Popover 
             placement="right-start" 
-            showArrow={true} 
             classNames={{
-              content: "border border-white dark:border-transparent bg-zinc-100 outline-none dark:bg-zinc-800",
+              base: "border-none shadow-none",
+              content: "rounded-2xl border border-white dark:border-zinc-800 bg-zinc-100/80 outline-none dark:bg-zinc-800/80 backdrop-blur-sm shadow-lg shadow-zinc-300/50 dark:shadow-black/20 custom-backdrop",
             }}
           >
             <PopoverTrigger>
@@ -245,23 +221,30 @@ const Sidebar = ({ toggle }: { toggle: boolean }) => {
                 className={`${toggle ? "hidden" : "flex"}`}
               />
             </PopoverTrigger>
-            <PopoverContent>
+            <PopoverContent className="w-full">
               <div className="grid grid-cols-1 py-1">
+                <h2 className="text-sm font-medium capitalize mt-2 text-zinc-500 dark:text-zinc-400">{t("accountSwitcher")}</h2>
+                <Divider/>
+                <AccountSwitcher />
+                <h2 className="text-sm font-medium capitalize mt-2 text-zinc-500 dark:text-zinc-400">{t("account")}</h2>
+                <Divider/>
                 <Button
+                  onPress={() => navigate("/login")}
                   variant="light"
-                  radius="lg"
-                  startContent={<AiOutlineUser />}
-                  className="justify-start dark:text-zinc-400 dark:hover:text-zinc-50"
+                  radius="md"
+                  size='sm'
+                  startContent={<PiUserCirclePlusLight size={16}/>}
+                  className="justify-start dark:text-zinc-400 dark:hover:text-zinc-50 mt-2"
                 >
-                  Signed as{" "}
-                  <span className="capitalize">{user?.assign_type}</span>
+                  {t("addAccount")}
                 </Button>
                 <Button
                   onPress={onOpen}
                   variant="light"
                   color="danger"
-                  radius="lg"
-                  startContent={<LuLogOut />}
+                  radius="md"
+                  size='sm'
+                  startContent={<LuLogOut size={16}/>}
                   className="justify-start"
                 >
                   {t("logout")}

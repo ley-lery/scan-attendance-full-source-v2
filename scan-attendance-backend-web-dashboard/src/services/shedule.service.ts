@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import ApiAxios from "@/axios/BranchAxios";
-
+import ApiAxios from "@/axios/ApiAxios";
 interface Params {
   lecturerId: number | string;
   status?: number | string;

@@ -150,7 +150,8 @@ export const StudentLeaveController = {
             const status = [
                 { value: "Approved", label : "Approved" },
                 { value: "Rejected", label : "Rejected" },
-                { value: "Pending", label : "Pending" }
+                { value: "Pending", label : "Pending" },
+                { value: "Cancelled", label : "Cancelled" }
             ]
 
             sendSuccessResponse(res, true, "Form load", { faculties: faculty, fields: field, students: student, classes: classes, users: users, status: status }, 200);

@@ -303,36 +303,74 @@ declare global {
   type ModalBackdrop = "regular" | "transparent" | "blur";
   type ModalShadow = "none" | "sm" | "md" | "lg";
   
+  interface Course {
+    name: string;
+    credits: number;
+    room: string;
+    instructor: string;
+    phone: string;
+  }
 
-  // type StudentType = {
-  //   attendance: string[];
-  // };
+  interface ScheduleData {
+    [key: string]: {
+      [key: string]: Course | null;
+    };
+  }
   
-  // type SubjectType = {
-  //   subject_id: number | string;
-  //   subject_name: string;
-  //   year: number;
-  //   semester: number;
-  //   students: StudentType[];
-  //   session_count: number;
-  //   session_dates: Record<number, string>;
-  // };
+  interface ClassInfo {
+    program_type: string;
+    promotion_no: number;
+    term_no: number;
+    group: string;
+    room_name: string;
+    year: number;
+    code: string;
+    start_date: string;
+    end_date: string;
+    faculty_name_en: string;
+    field_name_en: string;
+    faculty_name_kh: string;
+    field_name_kh: string;
+    stage: string;
+    mid_term_start_date: string;
+    mid_term_end_date: string;
+    final_exam_date: string;
+    new_term_start_date: string;
+  }
+
+  interface ScheduleItem {
+    id: number;
+    day: string;
+    tel: string;
+    room: string;
+    credit: number;
+    subject: string;
+    timeSlot: string;
+    instructor: string;
+  }
   
-  // type YearDataType = {
-  //   years: number;
-  //   semesters_per_year: number;
-  //   subjects_per_semester: number;
-  //   sessions_per_subject: number;
-  //   months: string[];
-  //   subjects: SubjectType[];
-  // };
+  interface ClassData {
+    class_id: number;
+    program_type: string;
+    promotion_no: number;
+    term_no: number;
+    group: string;
+    room_name: string;
+    year: number;
+    code: string;
+    start_date: string;
+    end_date: string;
+    faculty_name_en: string;
+    field_name_en: string;
+    schedule_items: ScheduleItem[];
+  }
   
-  // type CardType = {
-  //   number: number;
-  //   table_name: string;
-  //   title: string;
-  //   icon: JSX.Element;
-  //   color: string;
-  // };
+  interface ApiResponse {
+    success: boolean;
+    message: string;
+    data: {
+      rows: ClassData[];
+    };
+  }
   
 }

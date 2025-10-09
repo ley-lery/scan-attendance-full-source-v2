@@ -1,9 +1,9 @@
 import { FastifyInstance } from "fastify";
-import { StudentLeaveRequestController } from "./controller";
+import { StudentLeaveHistoryController } from "./controller";
 
-export const studentLeaveHistoryRoutes = async (fastify: FastifyInstance)=>{
-    fastify.post('/list', StudentLeaveRequestController.getAll);
-    fastify.post('/byid', StudentLeaveRequestController.getById);
-    fastify.post('/', StudentLeaveRequestController.createReq);
-    fastify.post('/cancel', StudentLeaveRequestController.cancelReq);
+export const sStudentLeaveHistoryRoutes = async (fastify: FastifyInstance)=>{
+    fastify.get('/list', StudentLeaveHistoryController.getAll);
+    fastify.get('/', StudentLeaveHistoryController.getById);
+    fastify.get('/formload', StudentLeaveHistoryController.formLoad);
+    fastify.post('/filter', StudentLeaveHistoryController.filter);
 }

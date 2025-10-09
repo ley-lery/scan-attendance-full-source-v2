@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Navigate } from "react-router-dom";
-import authService from "@/services/auth.service";
 import { useAuth } from "../context/AuthContext";
 
 interface ProtectedRouteProps {
@@ -9,32 +8,13 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component }) => {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { token } = useAuth();
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await authService.userProfile(token);
-        setUser(res.data.user);
-      } catch (error) {
-        console.error("Failed to fetch profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [token]);
+  const { activeAccount } = useAuth();
+  const token = activeAccount?.token;
+  const user = activeAccount?.user;
+ 
 
   // ===== Loading state =====
-  if (loading) return null;
+  if (!token || !user) return null;
 
   // ===== Not authenticated =====
   if (!token || !user) return <Navigate to="/login" replace />;
