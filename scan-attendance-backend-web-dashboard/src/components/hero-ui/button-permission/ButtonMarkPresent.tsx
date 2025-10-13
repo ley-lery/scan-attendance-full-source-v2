@@ -56,6 +56,10 @@ const ButtonMarkPresent: FC<ButtonType> = ({
             placement="top"
             className="px-5"
             closeDelay={0}
+            showArrow
+            classNames={{
+              base: "pointer-events-none"
+            }}
           >
             <Button
               isIconOnly

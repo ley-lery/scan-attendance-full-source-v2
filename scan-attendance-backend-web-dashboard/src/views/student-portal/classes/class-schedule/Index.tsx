@@ -69,7 +69,7 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-full flex items-center justify-center ">
         <Loading />
       </div>
     );
@@ -77,10 +77,8 @@ const Index = () => {
 
   if (rows.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-center bg-white rounded-lg shadow-lg p-8">
-          <p className="text-gray-600 text-lg">No schedule data available</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-zinc-500 dark:text-zinc-400 text-lg">No schedule data available</p>
       </div>
     );
   }

@@ -14,6 +14,7 @@ import { MdFilterTiltShift } from "react-icons/md";
 import Form from "./Form";
 import { cn } from "@/lib/utils";
 import Filter from "./Filter";
+import { FaRegCircle } from "react-icons/fa";
 
 // === Types ===
 type StudentLeaveFilter = {
@@ -107,6 +108,7 @@ const Index = () => {
   });
 
   useEffect(() => {
+    console.log("data", data);
     if (!isFiltered && data?.data) {
       setRows(data.data.rows || []);
       setTotalPage(Math.ceil((data.data.total || 0) / pagination.limit) || 1);
@@ -319,7 +321,7 @@ const Index = () => {
     }
   };
 
-  const customizeCols = useCallback((data: any) => {
+  const customizeColAction = useCallback((data: any) => {
     return (
       <span
         className={cn(
@@ -334,11 +336,32 @@ const Index = () => {
     );
   }, []);
 
+  const customizeColClosed = useCallback((data: any, key: string) => {
+    const value = data[key];
+    return (
+      <span
+        className={cn(
+          "flex items-center gap-2",
+          "px-3 py-1 rounded-full w-fit text-xs/tight font-medium inline-flex items-center gap-2",
+          value === "Closed" && "text-danger bg-danger/20"
+        )}
+      >
+        {value === "Closed" && <FaRegCircle />}
+        {value}
+      </span>
+    );
+  }, []);
+  
   const colsKeys = useMemo(
-    () => [{ key: "action", value: customizeCols }],
-    [customizeCols]
+    () => [
+      { key: "action", value: customizeColAction },
+      { key: "faculty_name_en", value: (data: any) => customizeColClosed(data, "faculty_name_en") },
+      { key: "field_name_en", value: (data: any) => customizeColClosed(data, "field_name_en") },
+      { key: "class_name", value: (data: any) => customizeColClosed(data, "class_name") },
+    ],
+    [customizeColAction, customizeColClosed]
   );
-
+  
   const selectedLength = Array.from(selectedIds).length;
 
   const headerAction = (

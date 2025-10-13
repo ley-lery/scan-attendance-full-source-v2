@@ -12,6 +12,7 @@ import {
   parseDate,
   today,
 } from "@internationalized/date";
+import { formatDateValue } from "@/helpers";
 
 interface FormProps {
   isOpen?: boolean;
@@ -91,9 +92,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     setFormData((prev) => ({ ...prev, gender: e.target.value }));
   };
 
-  const formatDateValue = (date: DateValue | null) =>
-    date ? date.toString() : null;
-  
+
 
   const onSubmit = async (): Promise<boolean> => {
     const validationErrors = Validation.Student(formData, t);
@@ -109,7 +108,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       dob: formatDateValue(formData.dob as DateValue | null),
       gender: formData.gender,
       email: formData.email,
-      phone: formData.phone,
+      phoneNumber: formData.phone,
       password: formData.password,
       status: formData.status,
     };
@@ -123,10 +122,11 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       if (isEdit) {
         const res = await updateFaculty(`/student/${id}`, payload, "PUT");
         console.log(res, 'res');
-        ShowToast({ color: "success", description: res.message[0].message });
+        console.log(res.message[0].message, 'res.message[0].message');
+        ShowToast({ color: "success", title: t("success"), description: res.message[0].message });
       } else {
         const res = await createFaculty(`/student`, payload, "POST");
-        ShowToast({ color: "success", description: res.message[0].message });
+        ShowToast({ color: "success", title: t("success"), description: res.message[0].message });
       }
 
       if (loadList) await loadList();

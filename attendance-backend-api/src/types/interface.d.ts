@@ -157,6 +157,11 @@ export interface ApproveLeave {
     approveByUser?: number;
     adminNote?: string
 }
+export interface LecturerMangeStudentLeave {
+    leaveId?: number;
+    approveByLecturer?: number;
+    adminNote?: string
+}
 export interface StudentLeveFilter {
     faculty?: number | null,
     field?: number | null,
@@ -169,16 +174,64 @@ export interface StudentLeveFilter {
     page?: number | null,
     limit?: number | null
 }
+export interface LectureStudentLeveFilter {
+    lecturer?: number | null,
+    course?: number | null,
+    status?: string | "",
+    startDate?: Date | null,
+    endDate?: Date | null,
+    page?: number | null,
+    limit?: number | null
+}
+export interface StudentLeveFilter {
+    faculty?: number | null,
+    field?: number | null,
+    classId?: number | null,
+    student?: number | null,
+    status?: string | "",
+    startDate?: Date | null,
+    endDate?: Date | null,
+    search?: string | null,
+    page?: number | null,
+    limit?: number | null
+}
+
 export interface BatchLeave {
     leaveIds?: number[];
     action?: 'Approved' | 'Rejected';
     approveByUser?: number;
     adminNote?: string
 }
-
+export interface LectureBatchLeave {
+    leaveIds?: number[];
+    action?: 'Approved' | 'Rejected';
+    approveByLecturer?: number;
+    adminNote?: string
+}
+export interface LectureBatchStudentLeave {
+    leaveIds?: number[];
+    action?: 'Approved' | 'Rejected';
+    approveByLecturer?: number;
+    adminNote?: string
+}
 
 export interface Schedule{
     classId?: number;
+    startDate?: Date;
+    endDate?: Date;
+    sessions?: [
+        {
+            day: string;
+            timeSlot: string;
+            order: string; // session 1/2
+            course?: number; // course id
+            credits?: number;
+            lecturer?: number; // lecturer id
+        }
+    ];
+}
+export interface ScheduleUpdate{
+    id?: number;
     startDate?: Date;
     endDate?: Date;
     sessions?: [
@@ -240,4 +293,14 @@ export interface StudentLeaveFilter{
     endDate?: Date,
     page?: number,
     limit?: number
+}
+
+// === Lecturer Portal ===
+export interface LectureLeaveRequest{
+    lecturerId?: number;
+    requestDate?: Date;
+    startDate?: Date;
+    endDate?: Date;
+    reason?: string;
+    status?: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
 }

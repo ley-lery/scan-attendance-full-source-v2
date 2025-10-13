@@ -567,7 +567,7 @@ const DataTable = ({
                 selectedKeys={visibleColumns}
                 onSelectionChange={setVisibleColumns}
                 classNames={{
-                  base: "max-h-96 overflow-y-auto has-scrollbar"
+                  base: "max-h-96 overflow-y-auto has-scrollbar-sm"
                 }}
               >
                 {columns.map((column) => (

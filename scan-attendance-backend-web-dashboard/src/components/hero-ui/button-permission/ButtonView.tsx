@@ -46,6 +46,10 @@ const ButtonView = ({ onPress, permissionType }: ButtonProps) => {
           radius="full"
           className="px-5"
           closeDelay={0}
+          classNames={{
+            base: "pointer-events-none"
+          }}
+          showArrow
         >
           <Button
             onPress={(event: any) => onPress?.(event)}

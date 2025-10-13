@@ -1,17 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "@/hooks/useFetch";
-import CardUi from "@/components/hero-ui/card/CardUi";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 import { PiWarningCircle } from "react-icons/pi";
 import { SlClose } from "react-icons/sl";
-import { FaRegCircle } from "react-icons/fa";
+import { FaRegCircle, FaUser } from "react-icons/fa";
 import { DataTable, ShowToast } from "@/components/hero-ui";
 import { useDisclosure } from "@/god-ui";
 import { getLocalTimeZone, today, type DateValue } from "@internationalized/date";
 import { formatDateValue } from "@/helpers";
 import { useMutation } from "@/hooks/useMutation";
 import Filter from "./Filter";
+import { cn } from "@/lib/utils";
+import { MetricCard } from "@/components/ui";
+import View from "./View";
 
 interface FilterData {
   class: number | null;
@@ -33,15 +35,29 @@ const defaultFilter: FilterData = {
   limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
 };
 
+// Custom hook for separate view dialog
+const useViewClosure = () => {
+  const { isOpen, onOpen, onClose, ...rest } = useDisclosure();
+  return {
+    isOpenView: isOpen,
+    onOpenView: onOpen,
+    onCloseView: onClose,
+    ...rest,
+  };
+};
+
+
 const Index = () => {
   const { t } = useTranslation();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpenView, onOpenView, onCloseView } = useViewClosure();
 
   // ==== State Management ====
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [isFiltered, setIsFiltered] = useState<boolean>(false);
   const [filter, setFilter] = useState<FilterData>(defaultFilter);
   const [filteredData, setFilteredData] = useState<{ rows: any[]; total: number } | null>(null);
+  const [viewRow, setViewRow] = useState<any>(null);
 
   // ==== Pagination State ====
   const [pagination, setPagination] = useState({
@@ -118,13 +134,33 @@ const Index = () => {
       { name: t("requestDate"), uid: "request_date" },
       { name: t("startDate"), uid: "start_date" },
       { name: t("endDate"), uid: "end_date" },
-      { name: t("status"), uid: "status", sortable: true },
+      { name: t("totalDays"), uid: "total_days" },
+      { name: t("reqStatus"), uid: "status", sortable: true },
+      { name: t("approvedByUserEN"), uid: "approved_by_username" },
+      { name: t("approvedByUserEmail"), uid: "approved_by_user_email" },
+      { name: t("approvedByLecturerKH"), uid: "approved_by_lecturer_kh" },
+      { name: t("approvedByLecturerEN"), uid: "approved_by_lecturer_en" },
+      { name: t("approvalDate"), uid: "approval_date" },
+      { name: t("approvalTime"), uid: "approval_time" },
+      { name: t("adminNotes"), uid: "admin_notes" },
+      { name: t("deletedDate"), uid: "deleted_date" },
       { name: t("action"), uid: "actions" },
     ],
     [t]
   );
 
-  const visibleCols = ["reason", "request_date", "start_date", "end_date", "status", "actions"];
+  // ==== Default Visible Columns ====
+  const visibleCols = [
+    "reason",
+    "request_date",
+    "start_date",
+    "end_date",
+    "total_days",
+    "approved_by_lecturer_en",
+    "approved_by_username",
+    "status",
+    "actions"
+  ];
 
   const status = [
     { name: "Approved", uid: "Approved" },
@@ -147,6 +183,11 @@ const Index = () => {
   const handleClearSearch = () => {
     setSearchKeyword("");
     setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const onView = (row: object) => {
+    setViewRow(row);
+    onOpenView();
   };
 
   // ==== Filter Handlers ====
@@ -202,30 +243,79 @@ const Index = () => {
       number: formLoadLoading ? 0 : formLoad.data.states?.approved_requests,
       subtitle: t("times"),
       icon: <IoIosCheckmarkCircleOutline size={25} />,
-      color: "text-green-500",
+      color: "success",
     },
     {
       title: t("pending"),
       number: formLoadLoading ? 0 : formLoad.data.states?.pending_requests,
       subtitle: t("times"),
       icon: <PiWarningCircle size={25} />,
-      color: "text-yellow-500",
+      color: "warning",
     },
     {
       title: t("rejected"),
       number: formLoadLoading ? 0 : formLoad.data.states?.rejected_requests,
       subtitle: t("times"),
       icon: <SlClose size={22} />,
-      color: "text-pink-500",
+      color: "danger",
+    },
+    {
+      title: t("cancelled"),
+      number: formLoadLoading ? 0 : formLoad.data.states?.cancelled_requests,
+      subtitle: t("times"),
+      icon: <SlClose size={22} />,
+      color: "secondary",
     },
     {
       title: t("total"),
       number: formLoadLoading ? 0 : formLoad.data.states?.total_requests,
       subtitle: t("times"),
       icon: <FaRegCircle size={22} />,
-      color: "text-blue-500",
+      color: "primary",
     },
   ];
+
+  const customizeColClosed = useCallback((data: any, key: string) => {
+    const value = data[key];
+    return (
+      <span
+        className={cn(
+          "flex items-center gap-2",
+          "px-3 py-1 rounded-full w-fit text-xs/tight font-medium inline-flex items-center gap-2",
+          value === "Unassigned" && "text-danger bg-danger/20",
+          value !== "Unassigned" && "text-primary bg-primary/20"
+        )}
+      >
+        <FaUser /> {value}
+      </span>
+    );
+  }, []);
+  const customizeColTotalDays = useCallback((data: any, key: string) => {
+    const value = data[key];
+    return (
+      <span
+        className={cn(
+          "flex items-center gap-2",
+          "px-3 py-1 rounded-full w-fit text-xs/tight font-medium inline-flex items-center gap-2 bg-zinc-200 dark:bg-zinc-800",
+        )}
+      >
+        {value}
+      </span>
+    );
+  }, []);
+
+  const colsKeys = useMemo(
+    () => [
+      { key: "approved_by_lecturer_en", value: (data: any) => customizeColClosed(data, "approved_by_lecturer_en") },
+      { key: "approved_by_username", value: (data: any) => customizeColClosed(data, "approved_by_username") },
+      { key: "approved_by_user_email", value: (data: any) => customizeColClosed(data, "approved_by_user_email") },
+      { key: "approved_by_lecturer_kh", value: (data: any) => customizeColClosed(data, "approved_by_lecturer_kh") },
+      { key: "approved_by_lecturer_en", value: (data: any) => customizeColClosed(data, "approved_by_lecturer_en") },
+      { key: "deleted_date", value: (data: any) => customizeColClosed(data, "deleted_date") },
+      { key: "total_days", value: (data: any) => customizeColTotalDays(data, "total_days") },
+    ],
+    [customizeColClosed]
+  );
 
   return (
     <div className="p-4 space-y-4">
@@ -241,17 +331,29 @@ const Index = () => {
         formLoadLoading={formLoadLoading}
         filterLoading={filterLoading}
       />
+      <View
+        isOpen={isOpenView}
+        onClose={onCloseView}
+        row={viewRow}
+      />
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {cardStats.map((card, index) => (
-          <CardUi
-            key={index}
-            title={card.title}
-            number={card.number}
-            subtitle={card.subtitle}
-            icon={card.icon}
-            color={card.color}
+          <MetricCard 
+            key={index} 
+            title={card.title} 
+            description={card.subtitle} 
+            type="Presents" 
+            value={card.number} 
+            variant={card.color as "success" | "warning" | "danger" | "secondary" } 
+            icon={card.icon} 
+            showProgress={false} 
+            showChart={!loadingList} 
+            colorChart={card.color}
+            classNames={{
+              base: "bg-white dark:bg-zinc-800 min-h-32 max-h-32"
+            }}
           />
         ))}
       </div>
@@ -260,12 +362,13 @@ const Index = () => {
         dataApi={rows}
         cols={cols}
         visibleCols={visibleCols}
+        colKeys={colsKeys}
         loadData={refetchList}
         selectRow={false}
         onOpenFilter={onOpen}
         isFiltered={isFiltered}
-        permissionRequest="request:studentleave"
-        permissionCancel="cancel:studentleave"
+        onView={(data: any) => onView(data)}
+        permissionView="view:studentleavehistory"
         searchKeyword={searchKeyword}
         onSearchInputChange={onSearchInputChange}
         handleClearSearch={handleClearSearch}

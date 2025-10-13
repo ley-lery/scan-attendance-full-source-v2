@@ -4,14 +4,15 @@ import { Bolt, CircleGauge } from "lucide-react";
 import React from "react";
 import { LiaUniversitySolid } from "react-icons/lia";
 import { RiUserSettingsLine } from "react-icons/ri";
-import { IoBookOutline } from "react-icons/io5";
-import { PiChalkboardTeacherLight, PiNotepadLight, PiStudentLight } from "react-icons/pi";
+import { IoBookOutline, IoCalendarOutline } from "react-icons/io5";
+import { PiChalkboardTeacherLight, PiFileTextLight, PiNotepadLight, PiStudentLight } from "react-icons/pi";
 import { BsFileEarmarkText, BsSend } from "react-icons/bs";
-import { CiEdit } from "react-icons/ci";
+import { CiClock2, CiEdit } from "react-icons/ci";
 import { MdOutlineMeetingRoom, MdOutlineSsidChart } from "react-icons/md";
 import { FiUser } from "react-icons/fi";
 import { RxMixerHorizontal } from "react-icons/rx";
 import { VscSettings } from "react-icons/vsc";
+import { IoIosLogOut } from "react-icons/io";
 
 // ========== Types ==========
 interface MenuItem {
@@ -112,9 +113,27 @@ export const roleMenus = {
       ],
     },
     {
+      group: "Classes",
+      items: [
+        { icon: Bolt, title: "myClasses", to: "/lecturer/classes/my-classes", items: [] },
+        { icon: Bolt, title: "classSchedule", to: "/lecturer/classes/class-schedule", items: [] },
+        { icon: Bolt, title: "classAttendance", to: "/lecturer/classes/class-attendance", items: [] },
+        { icon: Bolt, title: "studentAttendanceReport", to: "/lecturer/classes/student-attendance-report", items: [] },
+      ],
+    },
+    {
       group: "Student",
       items: [
         { icon: Bolt, title: "markStudentAttendance", to: "/lecturer/student/mark-attendance-student", items: [] },
+      ],
+    },
+    {
+      group: "Leave Management",
+      items: [
+        { icon: Bolt, title: "leaveReq", to: "/lecturer/leave-management/leave-req", items: [] },
+        { icon: Bolt, title: "leaveHistory", to: "/lecturer/leave-management/leave-history", items: [] },
+        { icon: Bolt, title: "studentLeaveReq", to: "/lecturer/leave-management/student/leave-req", items: [] },
+        { icon: Bolt, title: "myLeaveReq", to: "/lecturer/leave-management/my-leave-req", items: [] },
       ],
     },
  
@@ -131,16 +150,30 @@ export const roleMenus = {
     {
       group: "Classes",
       items: [
-        { icon: Bolt, title: "myClasses", to: "/student/classes/my-classes", items: [] },
-        { icon: Bolt, title: "classSchedule", to: "/student/classes/class-schedule", items: [] },
-        { icon: Bolt, title: "classAttendance", to: "/student/classes/class-attendance", items: [] },
+        { icon: MdOutlineMeetingRoom, title: "myClasses", to: "/student/classes/my-classes", items: [] },
+        { icon: IoCalendarOutline, title: "classSchedule", to: "/student/classes/class-schedule", items: [] },
+        { icon: PiFileTextLight, title: "classAttendance", to: "/student/classes/class-attendance", items: [] },
       ],
     },
     {
       group: "Leave Management",
       items: [
-        { icon: Bolt, title: "leaveReq", to: "/student/leave-management/leave-req", items: [] },
-        { icon: Bolt, title: "leaveHistory", to: "/student/leave-management/leave-history", items: [] },
+        { icon: IoIosLogOut, title: "leaveReq", to: "/student/leave-management/leave-req", items: [] },
+        { icon: CiClock2, title: "leaveHistory", to: "/student/leave-management/leave-history", items: [] },
+      ],
+    },
+    {
+      group: "Profile",
+      items: [
+        { icon: Bolt, title: "personalInfo", to: "/student/profile/personal-info", items: [] },
+        { icon: Bolt, title: "changePassword", to: "/student/profile/change-password", items: [] },
+      ],
+    },
+    {
+      group: "Support",
+      items: [
+        { icon: Bolt, title: "helpCenterFqa", to: "/student/support/help-center-fqa", items: [] },
+        { icon: Bolt, title: "adminCantact", to: "/student/support/contact-admin", items: [] },
       ],
     },
   ] as MenuSection[],

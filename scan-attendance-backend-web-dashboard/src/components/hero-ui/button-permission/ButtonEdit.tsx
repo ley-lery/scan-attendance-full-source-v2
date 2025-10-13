@@ -97,6 +97,10 @@ const ButtonEdit: FC<ButtonType> = ({
             placement={tooltipPlacement}
             className="px-5"
             closeDelay={0}
+            showArrow
+            classNames={{
+              base: "pointer-events-none"
+            }}
           >
             <Button
               isIconOnly

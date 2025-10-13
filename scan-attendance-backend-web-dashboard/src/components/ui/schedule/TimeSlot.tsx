@@ -7,10 +7,10 @@ interface Props {
 
 export const TimeSlot: React.FC<Props> = ({time, day, course}) => {
   return (
-    <td key={`${time}-${day}`} className="border border-blue-950 h-32 min-h-32 min-w-40 w-40">
+    <td key={`${time}-${day}`} className="border border-blue-950 h-32 min-h-32 min-w-40 w-40 dark:border-zinc-700 dark:text-zinc-100">
         {course ? (
         <div className="flex flex-col justify-center items-center  p-4">
-            <div className="flex items-start *:text-base *:text-black">
+            <div className="flex items-start *:text-base *:text-black *:dark:text-zinc-100">
                 <p className="font-bold">
                     {course.name}
                 </p>
@@ -29,7 +29,7 @@ export const TimeSlot: React.FC<Props> = ({time, day, course}) => {
                 </p>
             </div>
         ) : (
-            <div className="min-h-full min-w-full bg-zinc-200"></div>
+            <div className="min-h-full min-w-full bg-zinc-200 dark:bg-zinc-800"></div>
         )}
     </td>
   )

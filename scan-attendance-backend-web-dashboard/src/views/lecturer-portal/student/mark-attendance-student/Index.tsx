@@ -335,7 +335,7 @@ const Index = () => {
       { name: t("studentCode"), uid: "student_code", sortable: true },
       { name: t("studentName"), uid: "student_name_en", sortable: true },
       { name: t("gender"), uid: "gender", sortable: true },
-      { name: t("dateOfBirth"), uid: "dob", sortable: true },
+      { name: t("dob"), uid: "dob", sortable: true },
       { name: t("email"), uid: "email", sortable: false },
       { name: t("phoneNumber"), uid: "phone_number", sortable: false },
       { name: t("class"), uid: "class_name", sortable: true },

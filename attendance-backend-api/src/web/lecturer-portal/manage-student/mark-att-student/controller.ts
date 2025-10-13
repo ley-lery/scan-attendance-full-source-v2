@@ -28,6 +28,23 @@ export const MarkAttStudentController = {
             handleError(res, e as Error, "Error fetching students", 500);
         }
     },
+    async getStudentSessionDetail(req: RequestWithUser, res: FastifyReply): Promise<void> {
+        const userPayload = req.user as AuthUserPayload;
+        const data = req.body as any;
+        try {
+            const [rows] = await MarkAttStudentModel.getStudentSessionDetail(userPayload.assign_to, data);
+            console.log(rows, "rows")
+            if (!rows?.length) {
+                res.send({ message: "No student sessions found" });
+                return;
+            }
+
+            sendSuccessResponse(res, true, "student sessions", { rows: rows[0] }, 200);
+        } catch (e) {
+            handleError(res, e as Error, "Error fetching student sessions", 500);
+        }
+    },
+
     async markSingleRecord(req: FastifyRequest, res: FastifyReply): Promise<void> {
         const data = req.body as any;
         try {

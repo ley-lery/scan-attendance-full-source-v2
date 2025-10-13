@@ -34,7 +34,8 @@ type SessionWithDetails = {
   credits?: number;
 }
 
-type ScheduleData = {
+type ScheduleFormData = {
+  id?: number | null; // Added for edit mode
   classId: number | null;
   startDate: DateValue | null;
   endDate: DateValue | null;
@@ -79,7 +80,8 @@ const TIME_SLOTS = [
   { value: "7:45-9:15", label: "7:45-9:15 PM", order: 2 },
 ] as const;
 
-const INITIAL_FORM_DATA: ScheduleData = {
+const INITIAL_FORM_DATA: ScheduleFormData = {
+  id: null,
   classId: null,
   startDate: null,
   endDate: null,
@@ -111,13 +113,22 @@ const INITIAL_TEMP_SESSION: TempSessionData = {
 // Utility Functions
 // ============================================================================
 
-const validateForm = (formData: ScheduleData, t: (key: string) => string): Record<string, string> => {
+const validateForm = (formData: ScheduleFormData, t: (key: string) => string): Record<string, string> => {
   const errors: Record<string, string> = {};
 
   if (!formData.classId) errors.classId = t("validation.required");
   if (!formData.startDate) errors.startDate = t("validation.required");
   if (!formData.endDate) errors.endDate = t("validation.required");
   if (formData.sessions.length === 0) errors.sessions = "At least one session is required";
+
+  // // Validate date range
+  // if (formData.startDate && formData.endDate) {
+  //   const start = new Date(formatDateValue(formData.startDate));
+  //   const end = new Date(formatDateValue(formData.endDate));
+  //   if (start > end) {
+  //     errors.endDate = "End date must be after start date";
+  //   }
+  // }
 
   return errors;
 };
@@ -131,6 +142,15 @@ const validateTempSession = (data: TempSessionData, t: (key: string) => string):
 
   return errors;
 };
+
+const normalizeSessionData = (session: any): SessionWithDetails => ({
+  day: session.day,
+  time_slot: session.time_slot,
+  order: session.order,
+  course: session.course_id ? Number(session.course_id) : session.course ? Number(session.course) : undefined,
+  lecturer: session.lecturer_id ? Number(session.lecturer_id) : session.lecturer ? Number(session.lecturer) : undefined,
+  credits: session.credits ? Number(session.credits) : undefined,
+});
 
 // ============================================================================
 // Sub-components
@@ -154,60 +174,52 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   const { t } = useTranslation();
   const { isOpen: isOpenModal, onOpen, onClose: onCloseModal } = useDisclosure();
   
-  // State
-  const [formData, setFormData] = useState<ScheduleData>(INITIAL_FORM_DATA);
+  // State - Unified form data
+  const [formData, setFormData] = useState<ScheduleFormData>(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [tempSessionData, setTempSessionData] = useState<TempSessionData>(INITIAL_TEMP_SESSION);
   const [dataClassInfo, setDataClassInfo] = useState<ClassInfo>(INITIAL_CLASS_INFO);
 
-  const id = row?.id ?? null;
-
   // Hooks
   const { mutate: createSchedule, loading: creating } = useMutation();
   const { mutate: updateSchedule, loading: updating } = useMutation();
   const { data: formLoad } = useFetch<{ classes: any[], courses: any[], lecturers: any[] }>("/schedule/formload");
 
-  useEffect(() => {
-    console.log("formLoad", formLoad);
-  }, [formLoad]);
-
   // ============================================================================
   // Effects
   // ============================================================================
 
+  // Initialize form data when modal opens
   useEffect(() => {
     if (isOpen) {
       if (isEdit && row) {
+        // Edit mode: populate form with existing data
         setFormData({
-          classId: row.class_id, 
+          id: row.id,
+          classId: row.class_id,
           startDate: parseDate(row.start_date),
           endDate: parseDate(row.end_date),
-          sessions: row.sessions?.map((session: any) => ({
-            day: session.day,
-            time_slot: session.time_slot,
-            order: session.order,
-            course: Number(session.course_id),
-            lecturer: Number(session.lecturer_id),
-            credits: Number(session.credits),
-          })) || [],
+          sessions: (row.sessions || []).map(normalizeSessionData),
         });
+
         setDataClassInfo({
-          field_name_en: row.field_name_en,
-          promotion_no: row.promotion_no,
-          group: row.group,
-          stage: row.stage,
-          year: row.year,
-          term_no: row.term_no,
-          start_date: row.start_date,
-          mid_term_start_date: row.mid_term_start_date,
-          mid_term_end_date: row.mid_term_end_date,
-          final_exam_date: row.final_exam_date,
-          new_term_start_date: row.new_term_start_date,
-          room_name: row.room_name,
+          field_name_en: row.field_name_en || "",
+          promotion_no: row.promotion_no || 0,
+          group: row.group || "",
+          stage: row.stage || "",
+          year: row.year || "",
+          term_no: row.term_no || 0,
+          start_date: row.start_date || "",
+          mid_term_start_date: row.mid_term_start_date || "",
+          mid_term_end_date: row.mid_term_end_date || "",
+          final_exam_date: row.final_exam_date || "",
+          new_term_start_date: row.new_term_start_date || "",
+          room_name: row.room_name || "",
         });
       } else {
+        // Create mode: reset form
         resetForm();
       }
       setErrors({});
@@ -222,10 +234,13 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       if (classDetail) {
         setDataClassInfo((prev) => ({ 
           ...prev,
-          promotion_no: classDetail.promotion_no,
-          term_no: classDetail.term_no,
-          room_name: classDetail.room_name,
-          field_name_en: classDetail.faculty_name_en,
+          promotion_no: classDetail.promotion_no || 0,
+          term_no: classDetail.term_no || 0,
+          room_name: classDetail.room_name || "",
+          field_name_en: classDetail.faculty_name_en || "",
+          group: classDetail.group || "",
+          stage: classDetail.stage || "",
+          year: classDetail.year || "",
         }));
       }
     }
@@ -261,6 +276,8 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   const handleTempInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement> | { target: { name: string; value: Key } }) => {
     const { name, value } = e.target;
     setTempSessionData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -270,14 +287,18 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     }
   }, [errors]);
 
-  const handleDateChange = useCallback((field: string, value: DateValue | null) => {
+  const handleDateChange = useCallback((field: "startDate" | "endDate", value: DateValue | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Update class info start date if applicable
     if (field === "startDate" && value) {
       setDataClassInfo((prev: any) => ({ 
         ...prev, 
         start_date: formatDateValue(value)
       }));
     }
+    
+    // Clear error for this field
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -291,6 +312,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     
+    // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -311,10 +333,12 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     if (!selectedSlot) return false;
 
     setFormData(prev => {
+      // Remove existing session at this slot (if any)
       const filteredSessions = prev.sessions.filter(
         s => !(s.day === selectedSlot.day && s.time_slot === selectedSlot.time)
       );
 
+      // Add new session
       return {
         ...prev,
         sessions: [
@@ -332,13 +356,22 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     });
 
     ShowToast({ color: "success", description: "Session added to schedule!" });
+    resetTempForm();
     onCloseModal();
     return true;
   }, [tempSessionData, selectedSlot, t, onCloseModal]);
 
   const resetTempForm = useCallback(() => {
     setTempSessionData(INITIAL_TEMP_SESSION);
-    setErrors({});
+    setSelectedSlot(null);
+    // Only clear temp session errors
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors.course;
+      delete newErrors.lecturer;
+      delete newErrors.credits;
+      return newErrors;
+    });
   }, []);
 
   const resetForm = useCallback(() => {
@@ -349,16 +382,8 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     setSelectedSlot(null);
   }, []);
 
-  const onSubmit = useCallback(async (): Promise<boolean> => {
-    const validationErrors = validateForm(formData, t);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      ShowToast({ color: "danger", description: "Please add at least one session to the schedule" });
-      return false;
-    }
-
-    const payload = {
-      classId: Number(formData.classId),
+  const buildPayload = useCallback(() => {
+    const basePayload = {
       startDate: formatDateValue(formData.startDate),
       endDate: formatDateValue(formData.endDate),
       sessions: formData.sessions.map(session => ({
@@ -371,29 +396,61 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       }))
     };
 
+    if (isEdit) {
+      // For update, include id but not classId (can't change class)
+      return {
+        id: Number(formData.id),
+        ...basePayload
+      };
+    } else {
+      // For create, include classId
+      return {
+        classId: Number(formData.classId),
+        ...basePayload
+      };
+    }
+  }, [formData, isEdit]);
+
+  const onSubmit = useCallback(async (): Promise<boolean> => {
+    // Validate form
+    const validationErrors = validateForm(formData, t);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      ShowToast({ 
+        color: "danger", 
+        description: validationErrors.sessions || "Please fix the form errors" 
+      });
+      return false;
+    }
+
+    const payload = buildPayload();
+    console.log(isEdit ? "Update payload:" : "Create payload:", payload);
+
     try {
       setLoading(true);
 
       if (isEdit) {
-        await updateSchedule(`/schedule/${id}`, payload, "PUT");
+        await updateSchedule(`/schedule/${formData.id}`, payload, "PUT");
         ShowToast({ color: "success", description: t("updatedSuccess") });
       } else {
         await createSchedule(`/schedule`, payload, "POST");
         ShowToast({ color: "success", description: t("createdSuccess") });
       }
 
+      // Reload list
       if (loadList) await loadList();
-      resetForm();
+      
       return true;
     } catch (error: any) {
       console.error("Error saving schedule:", error);
-      ShowToast({ color: "danger", description: error.response?.data?.message || t("error.generic") });
-      setErrors({ general: t("error.generic") });
+      const errorMessage = error.response?.data?.message || error.message || t("error.generic");
+      ShowToast({ color: "danger", description: errorMessage });
+      setErrors({ general: errorMessage });
       return false;
     } finally {
       setLoading(false);
     }
-  }, [formData, t, isEdit, updateSchedule, id, createSchedule, loadList, resetForm]);
+  }, [formData, t, isEdit, updateSchedule, createSchedule, loadList, buildPayload]);
 
   const onSaveClose = useCallback(async (e: FormEvent<HTMLFormElement>) => {
     if (e?.preventDefault) e.preventDefault();
@@ -407,20 +464,40 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   const onSaveNew = useCallback(async (e: FormEvent<HTMLFormElement>) => {
     if (e?.preventDefault) e.preventDefault();
     const success = await onSubmit();
-    if (success) resetForm();
+    if (success) {
+      resetForm();
+    }
   }, [onSubmit, resetForm]);
 
   const isFormDirty = useCallback((): boolean => {
-    return Object.entries(formData).some(([key, value]) => value !== (INITIAL_FORM_DATA as any)[key]);
+    return (
+      formData.classId !== INITIAL_FORM_DATA.classId ||
+      formData.startDate !== INITIAL_FORM_DATA.startDate ||
+      formData.endDate !== INITIAL_FORM_DATA.endDate ||
+      formData.sessions.length > 0
+    );
   }, [formData]);
 
   const closeForm = useCallback(() => {
     if (isEdit || !isFormDirty()) {
       onClose(false);
+      resetForm();
     } else {
+      // Could add confirmation dialog here
       onClose(false);
+      resetForm();
     }
-  }, [isEdit, isFormDirty, onClose]);
+  }, [isEdit, isFormDirty, onClose, resetForm]);
+
+  const handleRemoveSession = useCallback((day: string, timeSlot: string) => {
+    setFormData(prev => ({
+      ...prev,
+      sessions: prev.sessions.filter(
+        s => !(s.day === day && s.time_slot === timeSlot)
+      )
+    }));
+    ShowToast({ color: "warning", description: "Session removed from schedule" });
+  }, []);
 
   // ============================================================================
   // Memoized Values
@@ -438,16 +515,20 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       const lecturer = formLoad?.data?.lecturers?.find((l: any) => l.id === Number(session.lecturer));
       
       display[session.time_slot][session.day] = {
-        courseName: course?.name_en,
+        courseName: course?.name_en || "Unknown Course",
         credits: session.credits,
         room: dataClassInfo.room_name,
-        lecturerName: lecturer?.name_en,
-        phone: lecturer?.phone_number
+        lecturerName: lecturer?.name_en || "Unknown Lecturer",
+        phone: lecturer?.phone_number || ""
       };
     });
     
     return display;
   }, [formData.sessions, formLoad?.data?.courses, formLoad?.data?.lecturers, dataClassInfo.room_name]);
+
+  const isSubmitDisabled = useMemo(() => {
+    return loading || creating || updating;
+  }, [loading, creating, updating]);
 
   // ============================================================================
   // Render
@@ -461,21 +542,28 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="Class Schedule"
+        title={isEdit ? "Edit Class Schedule" : "Create Class Schedule"}
         size="full"
         onSubmit={onSubmit}
         onSaveClose={onSaveClose}
-        onSaveNew={onSaveNew}
+        onSaveNew={isEdit ? undefined : onSaveNew}
         resetForm={resetForm}
         closeForm={closeForm}
-        disabledBtn={loading || creating || updating}
+        disabledBtn={isSubmitDisabled}
         isEdit={isEdit}
       >
         <div className="mx-auto px-20">
           {/* Header info */}
           <ScheduleHeader data={dataClassInfo} />
           
-          <div className="grid grid-cols-3 gap-4">
+          {/* General error message */}
+          {errors.general && (
+            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded">
+              {errors.general}
+            </div>
+          )}
+          
+          <div className="grid grid-cols-3 gap-4 py-10">
             <Autocomplete
               radius="md"
               size="md"
@@ -493,12 +581,14 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
                 })
               }
               isRequired
+              isReadOnly={isEdit}
+              description={isEdit && "Cannot change class when editing"}
             >
               {formLoad?.data?.classes?.map((item: any) => (
                 <AutocompleteItem key={item.id} textValue={item.class_name}>
                   <p className="truncate w-[95%]">{item.class_name}</p>
                 </AutocompleteItem>
-              ))}
+              )) || []}
             </Autocomplete>
   
             <DatePicker
@@ -523,6 +613,13 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
               errorMessage={errors.endDate}
             />
           </div>
+
+          {/* Sessions error */}
+          {errors.sessions && (
+            <div className="mt-2 text-sm text-red-600 dark:text-red-400">
+              {errors.sessions}
+            </div>
+          )}
 
           {/* Schedule Table */}
           <div className="bg-white dark:bg-zinc-800 shadow-lg overflow-hidden mt-6 w-full">
@@ -554,6 +651,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
                         </td>
                         {DAYS.map((day) => {
                           const course = scheduleData[timeSlot.value]?.[day];
+                          const isEmpty = !course;
                           return (
                             <TimeSlot
                               key={`${timeSlot.value}-${day}`}
@@ -561,6 +659,8 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
                               day={day}
                               course={course}
                               onSlotClick={handleSlotClick}
+                              onRemove={handleRemoveSession}
+                              isEmpty={true}
                             />
                           );
                         })}

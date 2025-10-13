@@ -53,9 +53,13 @@ const ButtonMarkPermission: FC<ButtonType> = ({
             color="primary"
             content="Mark Permission"
             radius="full"
-            placement="top"
+            placement="left"
             className="px-5"
             closeDelay={0}
+            showArrow
+            classNames={{
+              base: "pointer-events-none"
+            }}
           >
             <Button
               isIconOnly

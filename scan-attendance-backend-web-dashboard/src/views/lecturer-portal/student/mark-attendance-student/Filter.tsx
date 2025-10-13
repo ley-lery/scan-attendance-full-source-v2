@@ -170,7 +170,7 @@ const Filter = ({
       <DrawerFooter>
         <div className="flex items-center justify-between w-full">
           <Checkbox isSelected={autoFilterValue} onValueChange={setAutoFilterValue}>
-            {t("autoFilter")}
+            {t("auto")}
           </Checkbox>
           <div className="flex items-center gap-2">
             <Button onPress={onResetFilter} size="sm" variant="flat" color="danger" startContent={<GrClear size={16} />}>

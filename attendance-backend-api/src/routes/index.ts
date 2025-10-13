@@ -2,8 +2,8 @@ import { FastifyInstance } from "fastify";
 import { authRoutes } from "../web/auth/user/route";
 import { authenticateToken } from "../middlewares/auth.middleware";
 import { facultyRoutes, fieldRoutes, courseRoutes, programRoutes, lecturerRoutes, lecturerCourseRoutes, studentRoutes, studentClassRoutes, classRoutes, roleRoutes, rolePermissionRoutes, userRoleRoutes, permissionRoutes, userPermissionRoutes, auditLogRoutes, userRoutes, studentLeaveReqRoutes, scheduleRoutes} from "../web/admin-portal";
-import { sStudentLeaveReqRoutes, sStudentLeaveHistoryRoutes, studentScheduleRoutes } from "../web/student-portal";
-import { markAttStudentRoutes, lLecturerCourseRoutes } from "../web/lecturer-portal/indext";
+import { sStudentLeaveReqRoutes, sStudentLeaveHistoryRoutes, studentScheduleRoutes, classAttendanceRecordRoutes, sClassStudentRoutes } from "../web/student-portal";
+import { markAttStudentRoutes, lLecturerCourseRoutes, lecturerManageStudentLeaveRoutes, lLecturerLeaveReqRoutes } from "../web/lecturer-portal/indext";
 
 export default async function (fastify: FastifyInstance) {
 
@@ -43,9 +43,13 @@ export default async function (fastify: FastifyInstance) {
     // ====== Lecturer Portal Routes =====
     fastify.register(markAttStudentRoutes, { prefix: "v1/api/attendance/lecturer/markattstudent" });
     fastify.register(lLecturerCourseRoutes, { prefix: "v1/api/attendance/lecturer/course" });
+    fastify.register(lecturerManageStudentLeaveRoutes, { prefix: "v1/api/attendance/lecturer/student/leavereq" });
+    fastify.register(lLecturerLeaveReqRoutes, { prefix: "v1/api/attendance/lecturer/leavereq" });
 
     // ====== Student Portal Routes =====   
     fastify.register(sStudentLeaveReqRoutes, { prefix: "v1/api/attendance/student/leave" });
     fastify.register(sStudentLeaveHistoryRoutes, { prefix: "v1/api/attendance/student/leavehistory" });
     fastify.register(studentScheduleRoutes, { prefix: "v1/api/attendance/student/schedule" });
+    fastify.register(classAttendanceRecordRoutes, { prefix: "v1/api/attendance/student/classattendance" });
+    fastify.register(sClassStudentRoutes, { prefix: "v1/api/attendance/student/classstudent" });
 }

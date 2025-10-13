@@ -34,15 +34,21 @@ const SystemAuditLogs = lazy(() => import("@/views/admin-portal/system/audit-log
 // ======== Lecturer Portal Views ==========
 const LecturerDashboard = lazy(() => import("@/views/lecturer-portal/dashboard/Index"));
 const LecturerAttendanceStudent = lazy(() => import("@/views/lecturer-portal/student/mark-attendance-student/Index"));
-
+const LecturerStudentLeaveReq = lazy(() => import("@/views/lecturer-portal/leave-management/student/leave-req/Index"));
 // ======== Lecturer Portal Views End ==========
 
 
 // ======== Student Portal Views Start ==========
 const StudentDashboard = lazy(() => import("@/views/student-portal/dashboard/Index"));
+const StudentMyClasses = lazy(() => import("@/views/student-portal/classes/my-classes/Index"));
 const StudentLeave = lazy(() => import("@/views/student-portal/leave-management/leave-req/Index"));
 const StudentLeaveHistory = lazy(() => import("@/views/student-portal/leave-management/leave-history/Index"));
 const StudentClassSchedule = lazy(() => import("@/views/student-portal/classes/class-schedule/Index"));
+const StudentClassAttendanceRecord = lazy(() => import("@/views/student-portal/classes/class-attendace-record/Index"));
+const StudentProfilePersonalInfo = lazy(() => import("@/views/student-portal/profile/personal-info/Index"));
+const StudentProfileChangePassword = lazy(() => import("@/views/student-portal/profile/change-password/Index"));
+const StudentSupportHelpCenterFqa = lazy(() => import("@/views/student-portal/support/help-center-fqa/Index"));
+const StudentSupportContactAdmin = lazy(() => import("@/views/student-portal/support/contact-admin/Index"));
 // ======== Student Portal Views End ==========
 
 // ======== Route Configuration Interface ==========
@@ -195,7 +201,12 @@ export const protectedRouteLecturer: RouteConfig[] = [
     name: "Mark Student Attendance",
     path: "lecturer/student/mark-attendance-student",
     component: LecturerAttendanceStudent,
-  }
+  },
+  {
+    name: "Student Leave Requests",
+    path: "lecturer/leave-management/student/leave-req",
+    component: LecturerStudentLeaveReq,
+  },
  
 ];
 
@@ -220,6 +231,36 @@ export const protectedRouteStudent: RouteConfig[] = [
     name: "Student Class Schedule",
     path: "student/classes/class-schedule",
     component: StudentClassSchedule,
+  },
+  {
+    name: "Student Class Attendance Record",
+    path: "student/classes/class-attendance",
+    component: StudentClassAttendanceRecord,
+  },
+  {
+    name: "My Classes",
+    path: "student/classes/my-classes",
+    component: StudentMyClasses,
+  },
+  {
+    name: "Student Profile",
+    path: "student/profile/personal-info",
+    component: StudentProfilePersonalInfo,
+  },
+  {
+    name: "Student Profile",
+    path: "student/profile/change-password",
+    component: StudentProfileChangePassword,
+  },
+  {
+    name: "Student Profile",
+    path: "student/support/help-center-fqa",
+    component: StudentSupportHelpCenterFqa,
+  },
+  {
+    name: "Student Profile",
+    path: "student/support/contact-admin",
+    component: StudentSupportContactAdmin,
   },
 ];
 

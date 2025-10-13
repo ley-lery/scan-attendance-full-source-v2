@@ -1,5 +1,5 @@
 import { db } from "../../../../config/db";
-import { Schedule } from "../../../../types/interface";
+import { Schedule, ScheduleUpdate } from "../../../../types/interface";
 import { Message } from "../../../../utils/message";
 
 
@@ -11,9 +11,9 @@ export const ScheduleModel = {
         return Message.callProcedureWithMessages();
     },
 
-    async update(id: number, data: Schedule): Promise<any> {
-        const {startDate, endDate, sessions } = data;
-        await db.query(`Call sp_class_schedule_update(?, ?, ?, ?, ?, @p_messages_json)`, [id, startDate, endDate, JSON.stringify(sessions)]);
+    async update(id: number, data: ScheduleUpdate): Promise<any> {
+        const { startDate, endDate, sessions } = data;
+        await db.query(`Call sp_class_schedule_update(?, ?, ?, ?, @p_messages_json)`, [id, startDate, endDate, JSON.stringify(sessions)]);
         return Message.callProcedureWithMessages();
     },
 

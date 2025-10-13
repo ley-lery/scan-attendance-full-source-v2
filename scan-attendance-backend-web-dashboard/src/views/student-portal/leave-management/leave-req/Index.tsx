@@ -5,11 +5,6 @@ import Form from "./Form";
 import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
-import CardUi from "@/components/hero-ui/card/CardUi";
-import { IoIosCheckmarkCircleOutline } from "react-icons/io";
-import { PiWarningCircle } from "react-icons/pi";
-import { SlClose } from "react-icons/sl";
-import { FaRegCircle } from "react-icons/fa";
 
 
 
@@ -28,10 +23,6 @@ const Index = () => {
   });
 
   // ==== Fetch Data with useFetch ====
-  const { data: states, loading: loadingStates, refetch: refetchStates } = useFetch<any>(
-    "/student/leave/state"
-  );
-
   const { data: dataList, loading: loadingList, refetch: refetchList } = useFetch<{ rows: any[]; total_count: number }>(
     searchKeyword.trim() === "" ? "/student/leave/list" : "/student/leave/search", 
     {
@@ -118,58 +109,14 @@ const Index = () => {
  
   const reloadList = () => {
     refetchList();
-    refetchStates();
   };
 
-  const cardStats = [
-    {
-      title: t("approved"),
-      number: loadingStates ? 0 : states.data.row[0].approved_requests,
-      subtitle: t("times"),
-      icon: <IoIosCheckmarkCircleOutline size={25} />,
-      color: "text-green-500",
-    },
-    {
-      title: t("pending"),
-      number: loadingStates ? 0 : states.data.row[0].pending_requests,
-      subtitle: t("times"),
-      icon: <PiWarningCircle size={25} />,
-      color: "text-yellow-500",
-    },
-    {
-      title: t("rejected"),
-      number: loadingStates ? 0 : states.data.row[0].rejected_requests,
-      subtitle: t("times"),
-      icon: <SlClose size={22} />,
-      color: "text-pink-500",
-    },
-    {
-      title: t("total"),
-      number: loadingStates ? 0 : states.data.row[0].total_requests,
-      subtitle: t("times"),
-      icon: <FaRegCircle size={22} />,
-      color: "text-blue-500",
-    },
-  ];
 
 
   return (
     <div className="p-4 space-y-4">
       <Form isOpen={isOpen} onOpenChange={onClose} loadList={reloadList} />
 
-     {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          {cardStats.map((card, index) => (
-            <CardUi
-              key={index}
-              title={card.title}
-              number={card.number}
-              subtitle={card.subtitle}
-              icon={card.icon}
-              color={card.color}
-            />
-          ))}
-        </div>
       <DataTable
         loading={loadingList}
         dataApi={rows}

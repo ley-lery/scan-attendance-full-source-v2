@@ -35,6 +35,11 @@ export const MarkAttStudentModel = {
         const [result] = await db.query(`Call sp_lecturer_student_list_by_course(?, ?, ?, ?, ?)`, [lecturerId, course, session, page, limit]);
         return result;
     },
+    async getStudentSessionDetail(lecturerId: number, data: {course: number, student: number}): Promise<any> {
+        const { course, student } = data;
+        const [result] = await db.query(`Call sp_lecturer_student_sessions_get(?, ?, ?)`, [lecturerId, course, student]);
+        return result;
+    },
     async markSingleRecord(data: MarkSingleRecord): Promise<any> {
         const { classId, course, student, session, status } = data;
         await db.query(`Call sp_attendance_record_mark_single(?, ?, ?, ?, ?, @p_messages_json)`, [classId, course, student, session, status]);

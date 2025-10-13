@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { handleError, sendSuccessResponse } from "../../../../utils/response";
-import { Schedule } from "../../../../types/interface";
+import { Schedule, ScheduleUpdate } from "../../../../types/interface";
 import { ScheduleModel } from "./model";
 import { AuthUserPayload, RequestWithUser } from "../../../../middlewares/auth.middleware";
 import { ClassModel } from "../../class/model";
@@ -82,7 +82,7 @@ export const ScheduleController = {
         
     
     async updateSchedule(req: RequestWithUser, res: FastifyReply): Promise<void> {
-        const data = req.body as Schedule;
+        const data = req.body as ScheduleUpdate;
         const { id } = req.params as { id: number };
      
         try {
@@ -93,7 +93,7 @@ export const ScheduleController = {
             if (messages && messages.length > 0 && messages[0].code === 0) {
                 sendSuccessResponse(res, true, messages, null, 200);
             }else{
-                res.status(400).send({ message: messages[0].message || "Error updating schedule" });
+                res.send({ message: messages[0].message || "Error updating schedule" });
             }
         } catch (e: any) {
             handleError(res, e as Error, "Error updating schedule", 500);

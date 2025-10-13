@@ -6,6 +6,6 @@ export { ModalFooter } from "./modal/ModalFooter";
 export { default as Popup } from "./dialog/Popup";
 export { default as ModalSystem } from "./modal/ModalSystem";
 export { default as ConfirmDialog } from "./dialog/ConfirmDialog";
-
+export { MetricCard } from "./card/MetricCard";
 
 

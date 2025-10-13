@@ -51,11 +51,15 @@ const ButtonMarkLate: FC<ButtonType> = ({
         permissionType && permissions?.includes(permissionType || "") ? (
           <Tooltip
             color="warning"
-            content="Mark Present"
+            content="Mark Late"
             radius="full"
             placement="top"
             className="px-5"
             closeDelay={0}
+            showArrow
+            classNames={{
+              base: "pointer-events-none"
+            }}
           >
             <Button
               isIconOnly

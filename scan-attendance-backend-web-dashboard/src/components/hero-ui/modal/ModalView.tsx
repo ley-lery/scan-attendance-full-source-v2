@@ -1,5 +1,7 @@
 import {
   Button,
+  cn,
+  Spinner,
 } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import React from "react";
@@ -17,6 +19,8 @@ interface ModalViewUIProps {
   radius?: "sm" | "md" | "lg";
   backdrop?: "blur" | "regular" | "transparent";
   animation?: "fade" | "fade-up" | "fade-down" | "scale" | "spring-scale" | "spring-up" | "spring-down" | "spring-left" | "spring-right" | "slide-up" | "slide-down" | "slide-left" | "slide-right";
+  isLoading?: boolean
+  loadingBackdrop?: boolean
 }
 
 const ModalViewUI = ({
@@ -29,7 +33,9 @@ const ModalViewUI = ({
   size = "xl",
   radius = "lg",
   backdrop = "regular",
-  animation = "slide-up"
+  animation = "slide-down",
+  isLoading = false,
+  loadingBackdrop = true
 }: ModalViewUIProps) => {
   const { t } = useTranslation("common");
   if (!isOpen) return null;
@@ -48,6 +54,13 @@ const ModalViewUI = ({
         <ModalContent>
           {() => (
             <>
+             {
+                isLoading && (
+                  <div className={cn("flex items-center justify-center min-h-36 inset-0 absolute z-50 bg-white/20 dark:bg-black/20 ", loadingBackdrop && "backdrop-blur-sm")}>
+                  <Spinner variant="spinner" size="sm" label={t('loading')} />
+                </div>
+                )
+              }
               <ModalHeader>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">{isEdit ? titleTwo : title}</p>
               </ModalHeader>

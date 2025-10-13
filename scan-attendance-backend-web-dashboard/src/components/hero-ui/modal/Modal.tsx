@@ -115,6 +115,7 @@ const ModalUI = ({
         radius={radius}
         backdrop={backdrop}
         position="top"
+        animation="fade-down"
         isDismissable={false}
         isDraggable
       >
