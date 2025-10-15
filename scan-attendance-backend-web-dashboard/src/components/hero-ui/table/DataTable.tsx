@@ -1,6 +1,5 @@
-// DataTable.tsx - Updated component
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { type SVGProps } from "react";
+import React, { type SVGProps, memo, useMemo, useCallback, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -8,7 +7,6 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Button,
   Chip,
   type Selection,
   type ChipProps,
@@ -17,16 +15,26 @@ import {
   Pagination,
   Spinner,
   Tooltip,
-  ScrollShadow,
 } from "@heroui/react";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ShowToast } from "@/components/hero-ui";
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ShowToast, Button } from "@/components/hero-ui";
 import { FiChevronDown } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import { CiCalendar, CiFilter, CiSearch } from "react-icons/ci";
 import { RiCheckLine, RiCloseLine, RiFilter2Fill, RiSettings6Line } from "react-icons/ri";
 import { useToggleStore } from "@/stores/userToggleStore";
 import { IoChevronBackOutline, IoChevronForward } from "react-icons/io5";
-import { ButtonAdd, ButtonEdit, ButtonView, ButtonDelete, ButtonCancelLeave, ButtonReqLeave, ButtonMarkPresent, ButtonMarkAbsent, ButtonMarkLate, ButtonMarkPermission } from "../button-permission";
+import { 
+  ButtonAdd, 
+  ButtonEdit, 
+  ButtonView, 
+  ButtonDelete, 
+  ButtonCancelLeave, 
+  ButtonReqLeave, 
+  ButtonMarkPresent, 
+  ButtonMarkAbsent, 
+  ButtonMarkLate, 
+  ButtonMarkPermission 
+} from "../button-permission";
 import { cn } from "@/lib/utils";
 import { PiSealWarning } from "react-icons/pi";
 
@@ -77,7 +85,7 @@ interface DataTableProps {
   onMarkPermission?: (data: object) => void;
   onMarkLate?: (data: object) => void;
   onMarkAbsent?: (data: object) => void;
-  // Permissions actions
+  // Permissions
   permissionCreate?: string;
   permissionEdit?: string;
   permissionView?: string;
@@ -90,7 +98,6 @@ interface DataTableProps {
   permissionMarkPermission?: string;
   permissionMarkLate?: string;
   permissionMarkAbsent?: string;
-
   // Search
   searchKeyword?: string;
   onSearchInputChange?: React.ChangeEventHandler<HTMLInputElement>;
@@ -103,23 +110,427 @@ interface DataTableProps {
   onChangePage?: (page: number) => void;
   loading?: boolean;
   scrollable?: boolean;
-  customizes?:{
+  customizes?: {
     header?: React.ReactNode;
     action?: React.ReactNode;
-  }
+  };
   isFiltered?: boolean;
   loadingButton?: boolean;
 }
 
-const DataTable = ({
-  dataApi,
-  cols,
-  visibleCols,
+// Memoize status color map
+const STATUS_COLOR_MAP: Record<string, ChipProps["color"]> = {
+  Pending: "warning",
+  Approved: "success",
+  Rejected: "danger",
+  Active: "success",
+  Inactive: "danger",
+  Cancelled: "secondary",
+};
+
+//  Memoize class names
+const TABLE_CLASS_NAMES = {
+  wrapper: ["max-h-[382px]", "max-w-3xl"],
+  th: ["bg-transparent", "text-default-500", "border-b", "border-divider"],
+  td: [
+    "group-data-[first=true]/tr:first:before:rounded-none",
+    "group-data-[first=true]/tr:last:before:rounded-none",
+    "group-data-[middle=true]/tr:before:rounded-none",
+    "group-data-[last=true]/tr:first:before:rounded-none",
+    "group-data-[last=true]/tr:last:before:rounded-none",
+  ],
+  tr: ["p-0"],
+};
+
+// Separate ActionButtons component
+interface ActionButtonsProps {
+  data: Data;
+  onView?: (data: object) => void;
+  onEdit?: (data: object) => void;
+  onDelete?: (id: number, loadData: () => void) => void;
+  onApprove?: (id: number) => void;
+  onReject?: (id: number) => void;
+  onCreateSchedule?: (data: object) => void;
+  onPermission?: (id: number) => void;
+  onCancelLeave?: (id: number) => void;
+  onMarkPresent?: (data: object) => void;
+  onMarkAbsent?: (data: object) => void;
+  onMarkLate?: (data: object) => void;
+  onMarkPermission?: (data: object) => void;
+  loadData?: () => void;
+  permissionView?: string;
+  permissionEdit?: string;
+  permissionDelete?: string;
+  permissionCancel?: string;
+  permissionMarkPresent?: string;
+  permissionMarkAbsent?: string;
+  permissionMarkLate?: string;
+  permissionMarkPermission?: string;
+  loadingButton?: boolean;
+  customAction?: React.ReactNode;
+  t: any;
+}
+
+const ActionButtons = memo(({
+  data,
+  onView,
+  onEdit,
+  onDelete,
+  onApprove,
+  onReject,
+  onCreateSchedule,
+  onPermission,
+  onCancelLeave,
+  onMarkPresent,
+  onMarkAbsent,
+  onMarkLate,
+  onMarkPermission,
+  loadData,
+  permissionView,
+  permissionEdit,
+  permissionDelete,
+  permissionCancel,
+  permissionMarkPresent,
+  permissionMarkAbsent,
+  permissionMarkLate,
+  permissionMarkPermission,
+  loadingButton,
+  customAction,
+  t,
+}: ActionButtonsProps) => {
+  const handleApproveClick = useCallback(() => {
+    if (data.status === "Pending" && onApprove) {
+      onApprove(data.id);
+    } else {
+      ShowToast({
+        title: "Approved",
+        description: "This leave request is already approved.",
+        color: "warning",
+        icon: <PiSealWarning size={20} />,
+      });
+    }
+  }, [data.status, data.id, onApprove]);
+
+  const handleRejectClick = useCallback(() => {
+    if (data.status === "Pending" && onReject) {
+      onReject(data.id);
+    } else {
+      ShowToast({
+        title: "Rejected",
+        description: "This leave request is already rejected.",
+        color: "warning",
+        icon: <PiSealWarning size={20} />,
+      });
+    }
+  }, [data.status, data.id, onReject]);
+
+  return (
+    <div className="relative flex items-center justify-center gap-1">
+      {onView && (
+        <ButtonView
+          permissionType={permissionView}
+          onPress={() => onView(data)}
+        />
+      )}
+      {onEdit && (
+        <ButtonEdit
+          permissionType={permissionEdit}
+          onPress={() => onEdit(data)}
+          content="Edit"
+          radius="full"
+          variant="light"
+          color="secondary"
+          tooltipColor="secondary"
+        />
+      )}
+      {onDelete && loadData && (
+        <ButtonDelete
+          confirmDelete={() => onDelete(data.id, loadData)}
+          id={data.id}
+          permissionType={permissionDelete}
+        />
+      )}
+      {onCreateSchedule && (
+        <Tooltip
+          showArrow
+          content={t("shedule")}
+          color="primary"
+          placement="top"
+          closeDelay={0}
+        >
+          <Button
+            onPress={() => onCreateSchedule(data)}
+            startContent={<CiCalendar size={20} />}
+            isIconOnly
+            variant="light"
+            color="primary"
+            radius="full"
+          />
+        </Tooltip>
+      )}
+      {onPermission && (
+        <Tooltip
+          showArrow
+          content={t("permission")}
+          color="primary"
+          placement="top"
+          closeDelay={0}
+        >
+          <Button
+            variant="light"
+            color="primary"
+            radius="full"
+            size="sm"
+            onPress={() => onPermission(data.id)}
+            isIconOnly
+          >
+            <RiSettings6Line size={20} />
+          </Button>
+        </Tooltip>
+      )}
+      {onApprove && loadData && (
+        <Tooltip
+          showArrow
+          content={t(data.status === "Pending" ? "approve" : "approved")}
+          color="primary"
+          placement="top"
+          closeDelay={0}
+        >
+          <Button
+            variant="light"
+            color="primary"
+            radius="full"
+            size="sm"
+            onPress={handleApproveClick}
+            isIconOnly
+            className={data.status !== "Pending" ? "opacity-50" : ""}
+            startContent={<RiCheckLine size={20} />}
+          />
+        </Tooltip>
+      )}
+      {onReject && loadData && (
+        <Tooltip
+          showArrow
+          content={t(data.status === "Pending" ? "reject" : "rejected")}
+          color="danger"
+          placement="top"
+          closeDelay={0}
+        >
+          <Button
+            variant="light"
+            color="danger"
+            radius="full"
+            size="sm"
+            onPress={handleRejectClick}
+            isIconOnly
+            className={data.status !== "Pending" ? "opacity-50" : ""}
+            startContent={<RiCloseLine size={20} />}
+          />
+        </Tooltip>
+      )}
+      {permissionCancel && (
+        <ButtonCancelLeave
+          permissionType={permissionCancel}
+          onPress={() => onCancelLeave?.(data.id)}
+          isDisabled={data.status !== "Pending" || loadingButton}
+          isLoading={loadingButton}
+        />
+      )}
+      {permissionMarkPresent && (
+        <ButtonMarkPresent
+          permissionType={permissionMarkPresent}
+          onPress={() => onMarkPresent?.(data)}
+          isLoading={loadingButton}
+        />
+      )}
+      {permissionMarkAbsent && (
+        <ButtonMarkAbsent
+          permissionType={permissionMarkAbsent}
+          onPress={() => onMarkAbsent?.(data)}
+          isLoading={loadingButton}
+        />
+      )}
+      {permissionMarkLate && (
+        <ButtonMarkLate
+          permissionType={permissionMarkLate}
+          onPress={() => onMarkLate?.(data)}
+          isLoading={loadingButton}
+        />
+      )}
+      {permissionMarkPermission && (
+        <ButtonMarkPermission
+          permissionType={permissionMarkPermission}
+          onPress={() => onMarkPermission?.(data)}
+          isLoading={loadingButton}
+        />
+      )}
+      {customAction}
+    </div>
+  );
+});
+
+ActionButtons.displayName = 'ActionButtons';
+
+// ✅ OPTIMIZATION 4: Memoize TableControls component
+interface TableControlsProps {
+  searchKeyword: string;
+  onSearchInputChange?: React.ChangeEventHandler<HTMLInputElement>;
+  handleSearch: () => void;
+  handleClearSearch: () => void;
+  status?: { uid: string; name: string }[];
+  statusFilter: Selection;
+  setStatusFilter: (keys: Selection) => void;
+  columns: Columns[];
+  visibleColumns: Selection;
+  setVisibleColumns: (keys: Selection) => void;
+  onOpenFilter?: () => void;
+  isFiltered?: boolean;
+  onCreate?: () => void;
+  onReqLeave?: () => void;
+  permissionCreate?: string;
+  permissionRequest?: string;
+  customHeader?: React.ReactNode;
+  t: any;
+}
+
+const TableControls = memo(({
+  searchKeyword,
+  onSearchInputChange,
+  handleSearch,
+  handleClearSearch,
+  status,
+  statusFilter,
+  setStatusFilter,
+  columns,
+  visibleColumns,
+  setVisibleColumns,
+  onOpenFilter,
+  isFiltered,
+  onCreate,
+  onReqLeave,
+  permissionCreate,
+  permissionRequest,
+  customHeader,
+  t,
+}: TableControlsProps) => {
+  const capitalize = useCallback(
+    (s: string): string =>
+      typeof s !== "string"
+        ? String(s ?? "")
+        : s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(),
+    []
+  );
+
+  return (
+    <div className="flex items-end justify-between gap-3">
+      <div className="relative w-1/3">
+        <Input
+          size="sm"
+          placeholder={t("search")}
+          value={searchKeyword}
+          onChange={onSearchInputChange}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          onClear={handleClearSearch}
+          isClearable
+          classNames={{
+            clearButton: "text-default-500 hover:text-default-600",
+            inputWrapper: "bg-zinc-200 dark:bg-zinc-800 shadow-none focus:bg-zinc-200",
+            input: "px-2 font-normal",
+          }}
+          radius="md"
+          startContent={<CiSearch className="text-lg text-default-500" />}
+        />
+      </div>
+      <div className="flex gap-2">
+        {customHeader}
+        {status && (
+          <Dropdown>
+            <DropdownTrigger className="hidden sm:flex">
+              <Button
+                radius="md"
+                endContent={<FiChevronDown />}
+                size="sm"
+                variant="flat"
+                color="default"
+              >
+                Status
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              disallowEmptySelection
+              closeOnSelect={false}
+              selectionMode="multiple"
+              selectedKeys={statusFilter}
+              onSelectionChange={setStatusFilter}
+            >
+              {status.map((statusItem) => (
+                <DropdownItem key={statusItem.uid} className="capitalize" closeOnSelect={false}>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        "w-2 h-2 rounded-full flex",
+                        `bg-${STATUS_COLOR_MAP[statusItem.name as keyof typeof STATUS_COLOR_MAP]}`
+                      )}
+                    />
+                    {statusItem.name}
+                  </div>
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
+        )}
+        <Dropdown>
+          <DropdownTrigger className="hidden sm:flex">
+            <Button radius="md" endContent={<FiChevronDown />} size="sm" variant="flat">
+              Columns
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu
+            disallowEmptySelection
+            selectionMode="multiple"
+            selectedKeys={visibleColumns}
+            onSelectionChange={setVisibleColumns}
+            classNames={{
+              base: "max-h-96 overflow-y-auto has-scrollbar-sm",
+            }}
+          >
+            {columns.map((column) => (
+              <DropdownItem key={column.uid} className="capitalize" closeOnSelect={false}>
+                {capitalize(column.name)}
+              </DropdownItem>
+            ))}
+          </DropdownMenu>
+        </Dropdown>
+        {onOpenFilter && (
+          <Button
+            onPress={onOpenFilter}
+            size="sm"
+            radius="md"
+            color={isFiltered ? "danger" : "primary"}
+            startContent={isFiltered ? <RiFilter2Fill size={18} /> : <CiFilter size={18} />}
+          >
+            {isFiltered ? "Filtered" : "Filters"}
+          </Button>
+        )}
+        {onCreate && <ButtonAdd permissionType={permissionCreate} onPress={onCreate} />}
+        {onReqLeave && <ButtonReqLeave permissionType={permissionRequest} onPress={onReqLeave} />}
+      </div>
+    </div>
+  );
+});
+
+TableControls.displayName = 'TableControls';
+
+// ✅ MAIN COMPONENT
+const DataTable = memo(({
+  dataApi = [],
+  cols = [],
+  visibleCols = [],
   status,
   selectRow = false,
   selectedKeys: controlledSelectedKeys,
   onSelectionChange: controlledOnSelectionChange,
-  lenghtOf,
+  lenghtOf = "items",
   colKeys = [],
   short,
   onCreate,
@@ -137,7 +548,7 @@ const DataTable = ({
   onMarkPermission,
   onMarkLate,
   onMarkAbsent,
-  isFiltered,
+  isFiltered = false,
   loadData,
   permissionCreate,
   permissionEdit,
@@ -164,35 +575,32 @@ const DataTable = ({
 }: DataTableProps) => {
   const { t } = useTranslation();
   const useToggle = useToggleStore((state) => state.isOpen);
-  
-  // Internal state for uncontrolled mode
-  const [internalSelectedKeys, setInternalSelectedKeys] = React.useState<Selection>(new Set([]));
-  const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
-  const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>(
-    short || { column: "", direction: "ascending" },
+
+  // ✅ OPTIMIZATION 5: Memoize initial states
+  const [internalSelectedKeys, setInternalSelectedKeys] = useState<Selection>(new Set([]));
+  const [statusFilter, setStatusFilter] = useState<Selection>("all");
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>(
+    short || { column: "", direction: "ascending" }
   );
+  const [visibleColumns, setVisibleColumns] = useState<Selection>(new Set(visibleCols));
 
-  const columns = React.useMemo(() => cols || [], [cols]);
-  const statusOptions = React.useMemo(() => status || [], [status]);
-  const data = React.useMemo(() => dataApi || [], [dataApi]);
-  const INITIAL_VISIBLE_COLUMNS = visibleCols || [];
+  // ✅ OPTIMIZATION 6: Memoize data and columns
+  const columns = useMemo(() => cols, [cols]);
+  const statusOptions = useMemo(() => status || [], [status]);
+  const data = useMemo(() => dataApi, [dataApi]);
 
-  const [visibleColumns, setVisibleColumns] = React.useState<Selection>(
-    new Set(INITIAL_VISIBLE_COLUMNS),
-  );
-
-  // Determine if component is controlled or uncontrolled
+  // Determine if component is controlled
   const isControlled = controlledSelectedKeys !== undefined;
   const selectedKeys = isControlled ? controlledSelectedKeys : internalSelectedKeys;
 
-  const headerColumns = React.useMemo(() => {
+  // ✅ OPTIMIZATION 7: Memoize header columns
+  const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid),
-    );
+    return columns.filter((column) => Array.from(visibleColumns).includes(column.uid));
   }, [columns, visibleColumns]);
 
-  const filteredItems = React.useMemo(() => {
+  // ✅ OPTIMIZATION 8: Memoize filtered items
+  const filteredItems = useMemo(() => {
     let filtered = [...data];
     if (
       statusFilter !== "all" &&
@@ -201,13 +609,14 @@ const DataTable = ({
       filtered = filtered.filter(
         (item) =>
           item.status !== undefined &&
-          Array.from(statusFilter).includes(String(item.status)),
+          Array.from(statusFilter).includes(String(item.status))
       );
     }
     return filtered;
   }, [data, statusFilter, statusOptions.length]);
 
-  const sortedItems = React.useMemo(() => {
+  // ✅ OPTIMIZATION 9: Memoize sorted items
+  const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a: Data, b: Data) => {
       const first = a[sortDescriptor.column as keyof Data];
       const second = b[sortDescriptor.column as keyof Data];
@@ -216,19 +625,12 @@ const DataTable = ({
     });
   }, [filteredItems, sortDescriptor]);
 
-  const statusColorMap = {
-    Pending: "warning",
-    Approved: "success",
-    Rejected: "danger",
-    Active: "success",
-    Inactive: "danger",
-    Cancelled: "secondary",
-  };
-
-  const renderCell = React.useCallback(
+  // ✅ OPTIMIZATION 10: Memoize renderCell with useCallback
+  const renderCell = useCallback(
     (data: Data, columnKey: React.Key) => {
       const cellValue = data[columnKey as keyof Data];
       const customCol = colKeys.find((col) => col.key === columnKey);
+
       if (customCol) {
         return typeof customCol.value === "function"
           ? customCol.value(data)
@@ -240,7 +642,11 @@ const DataTable = ({
           return (
             <Chip
               className="gap-1 border-none capitalize text-default-600"
-              color={data.status ? statusColorMap[data.status as keyof typeof statusColorMap] as any : undefined}
+              color={
+                data.status
+                  ? (STATUS_COLOR_MAP[data.status as keyof typeof STATUS_COLOR_MAP] as any)
+                  : undefined
+              }
               size="sm"
               variant="dot"
             >
@@ -249,193 +655,33 @@ const DataTable = ({
           );
         case "actions":
           return (
-            <div className="relative flex items-center justify-center gap-1">
-              {onView && (
-                <ButtonView
-                  permissionType={permissionView}
-                  onPress={() => onView(data)}
-                />
-              )}
-              {onEdit && (
-                <ButtonEdit
-                  permissionType={permissionEdit}
-                  onPress={() => onEdit(data)}
-                  content="Edit"
-                  radius="full"
-                  variant="light"
-                  color="secondary"
-                  tooltipColor="secondary"
-                />
-              )}
-              {onDelete && loadData && (
-                <ButtonDelete
-                  confirmDelete={() => onDelete(data.id, loadData)}
-                  id={data.id}
-                  permissionType={permissionDelete}
-                />
-              )}
-              {onCreateSchedule && (
-                <Tooltip
-                  showArrow
-                  content={t("shedule")}
-                  color="primary"
-                  placement="top"
-                  closeDelay={0}
-                >
-                  <Button
-                    onPress={() => onCreateSchedule(data)}
-                    startContent={<CiCalendar size={20}/>}
-                    isIconOnly
-                    variant="light"
-                    color="primary"
-                    radius="full"
-                  />
-                </Tooltip>
-              )}
-              {onPermission && (
-                <Tooltip
-                  showArrow
-                  content={t("permission")}
-                  color="primary"
-                  placement="top"
-                  closeDelay={0}
-                >
-                  <Button
-                    variant="light"
-                    color="primary"
-                    radius="full"
-                    size="sm"
-                    onPress={() => onPermission(data.id)}
-                    isIconOnly
-                  >
-                    <RiSettings6Line size={20} />
-                  </Button>
-                </Tooltip>
-              )}
-              {onApprove && loadData && (
-                <Tooltip
-                  showArrow
-                  content={t(data.status === "Pending" ? "approve" : "approved")}
-                  color="primary"
-                  placement="top"
-                  closeDelay={0}
-                >
-                  {data.status === "Pending" ? (
-                    <Button
-                      variant="light"
-                      color="primary"
-                      radius="full"
-                      size="sm"
-                      onPress={() => onApprove(data.id)}
-                      isIconOnly
-                      startContent={<RiCheckLine size={20} />}
-                    />
-                  ) : (
-                    <Button
-                      variant="light"
-                      color="primary"
-                      radius="full"
-                      size="sm"
-                      onPress={() => ShowToast({
-                        title: "Approved",
-                        description: "This leave request is already approved.",
-                        color: "warning",
-                        icon: <PiSealWarning size={20} />,
-                      })}
-                      className="opacity-50"
-                      isIconOnly
-                      startContent={<RiCheckLine size={20} />}
-                    />
-                  )}
-                </Tooltip>
-              )}
-              {onReject && loadData && (
-                <Tooltip
-                  showArrow
-                  content={t(data.status === "Pending" ? "reject" : "rejected")}
-                  color="danger"
-                  placement="top"
-                  closeDelay={0}
-                >
-                  {data.status === "Pending" ? (
-                    <Button
-                      variant="light"
-                      color="danger"
-                      radius="full"
-                      size="sm"
-                      onPress={() => onReject(data.id)}
-                      isIconOnly
-                      startContent={<RiCloseLine size={20} />}
-                    />
-                  ) : (
-                    <Button
-                      variant="light"
-                      color="danger"
-                      radius="full"
-                      size="sm"
-                      onPress={() => ShowToast({
-                        title: "Rejected",
-                        description: "This leave request is already rejected.",
-                        color: "warning",
-                        icon: <PiSealWarning size={20} />,
-                      })}
-                      className="opacity-50"
-                      isIconOnly
-                      startContent={<RiCloseLine size={20} />}
-                    />
-                  )}
-                </Tooltip>
-              )}
-              {
-                permissionCancel && (
-                 <ButtonCancelLeave
-                    permissionType={permissionCancel}
-                    onPress={() => onCancelLeave?.(data.id)}
-                    isDisabled={data.status !== "Pending" || loadingButton}
-                    isLoading={loadingButton}
-                 />
-                )
-              }
-              {
-                permissionMarkPresent && (
-                 <ButtonMarkPresent
-                    permissionType={permissionMarkPresent}
-                    onPress={() => onMarkPresent?.(data)}
-                    isLoading={loadingButton}
-                 />
-                )
-              }
-              {
-                permissionMarkAbsent && (
-                 <ButtonMarkAbsent
-                    permissionType={permissionMarkAbsent}
-                    onPress={() => onMarkAbsent?.(data)}
-                    isLoading={loadingButton}
-                 />
-                )
-              }
-              {
-                permissionMarkLate && (
-                 <ButtonMarkLate
-                    permissionType={permissionMarkLate}
-                    onPress={() => onMarkLate?.(data)}
-                    isLoading={loadingButton}
-                 />
-                )
-              }
-              {
-                permissionMarkPermission && (
-                 <ButtonMarkPermission
-                    permissionType={permissionMarkPermission}
-                    onPress={() => onMarkPermission?.(data)}
-                    isLoading={loadingButton}
-                 />
-                )
-              }
-
-
-              {customizes?.action}
-            </div>
+            <ActionButtons
+              data={data}
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onApprove={onApprove}
+              onReject={onReject}
+              onCreateSchedule={onCreateSchedule}
+              onPermission={onPermission}
+              onCancelLeave={onCancelLeave}
+              onMarkPresent={onMarkPresent}
+              onMarkAbsent={onMarkAbsent}
+              onMarkLate={onMarkLate}
+              onMarkPermission={onMarkPermission}
+              loadData={loadData}
+              permissionView={permissionView}
+              permissionEdit={permissionEdit}
+              permissionDelete={permissionDelete}
+              permissionCancel={permissionCancel}
+              permissionMarkPresent={permissionMarkPresent}
+              permissionMarkAbsent={permissionMarkAbsent}
+              permissionMarkLate={permissionMarkLate}
+              permissionMarkPermission={permissionMarkPermission}
+              loadingButton={loadingButton}
+              customAction={customizes?.action}
+              t={t}
+            />
           );
         default:
           return cellValue;
@@ -448,150 +694,72 @@ const DataTable = ({
       onDelete,
       onApprove,
       onReject,
+      onCreateSchedule,
+      onPermission,
+      onCancelLeave,
+      onMarkPresent,
+      onMarkAbsent,
+      onMarkLate,
+      onMarkPermission,
       loadData,
       permissionView,
       permissionEdit,
       permissionDelete,
-      onPermission,
-      onCreateSchedule,
+      permissionCancel,
+      permissionMarkPresent,
+      permissionMarkAbsent,
+      permissionMarkLate,
+      permissionMarkPermission,
+      loadingButton,
+      customizes?.action,
       t,
-    ],
+    ]
   );
 
-  const handleSelectionChange = React.useCallback((keys: Selection) => {
-    if (isControlled) {
-      controlledOnSelectionChange?.(keys);
-    } else {
-      setInternalSelectedKeys(keys);
-    }
-  }, [isControlled, controlledOnSelectionChange]);
-
-  const capitalize = (s: string): string =>
-    typeof s !== "string"
-      ? String(s ?? "")
-      : s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-
-  const classNames = React.useMemo(
-    () => ({
-      wrapper: ["max-h-[382px]", "max-w-3xl"],
-      th: ["bg-transparent", "text-default-500", "border-b", "border-divider"],
-      td: [
-        "group-data-[first=true]/tr:first:before:rounded-none",
-        "group-data-[first=true]/tr:last:before:rounded-none",
-        "group-data-[middle=true]/tr:before:rounded-none",
-        "group-data-[last=true]/tr:first:before:rounded-none",
-        "group-data-[last=true]/tr:last:before:rounded-none",
-      ],
-      tr: ["p-0"],
-    }),
-    [],
+  // ✅ OPTIMIZATION 11: Memoize selection change handler
+  const handleSelectionChange = useCallback(
+    (keys: Selection) => {
+      if (isControlled) {
+        controlledOnSelectionChange?.(keys);
+      } else {
+        setInternalSelectedKeys(keys);
+      }
+    },
+    [isControlled, controlledOnSelectionChange]
   );
 
-  const handleScroll = (direction: "left" | "right") => {
+  // ✅ OPTIMIZATION 12: Memoize scroll handler
+  const handleScroll = useCallback((direction: "left" | "right") => {
     const tableContainer = document.querySelector(".ui-table-container");
     if (tableContainer) {
       const scrollAmount = direction === "left" ? -200 : 200;
       tableContainer.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
-  };
+  }, []);
 
   return (
-    <div className="relative h-[35rem] ">
+    <div className="relative">
       <div className="flex flex-col gap-4">
-        <div className="flex items-end justify-between gap-3">
-          <div className="relative w-1/3">
-            <Input
-              size="sm"
-              placeholder={t("search")}
-              value={searchKeyword}
-              onChange={onSearchInputChange}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              onClear={handleClearSearch}
-              isClearable
-              classNames={{
-                clearButton: "text-default-500 hover:text-default-600",
-                inputWrapper: 'bg-zinc-200 dark:bg-zinc-800 shadow-none focus:bg-zinc-200',
-                input: "px-2 font-normal",
-              }}
-              radius="md"
-              startContent={<CiSearch className="text-lg text-default-500" />}
-            />
-          </div>
-          <div className="flex gap-2">
-            {customizes?.header}
-            {status && (
-              <Dropdown>
-                <DropdownTrigger className="hidden sm:flex">
-                  <Button
-                    radius="md"
-                    endContent={<FiChevronDown />}
-                    size="sm"
-                    variant="flat"
-                    color={statusFilter === "all" ? "default" : "default"}
-                  >
-                    Status
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu
-                  disallowEmptySelection
-                  closeOnSelect={false}
-                  selectionMode="multiple"
-                  selectedKeys={statusFilter}
-                  onSelectionChange={setStatusFilter}
-                >
-                  {statusOptions.map((status) => (
-                    <DropdownItem key={status.uid} className="capitalize" closeOnSelect={false}>
-                      <div className="flex items-center gap-2">
-                        <div className={cn("w-2 h-2 rounded-full flex", `bg-${statusColorMap[status.name as keyof typeof statusColorMap]}`)} />
-                        {status.name}
-                      </div>
-                    </DropdownItem>
-                  ))}
-                </DropdownMenu>
-              </Dropdown>
-            )}
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  radius="md"
-                  endContent={<FiChevronDown />}
-                  size="sm"
-                  variant="flat"
-                >
-                  Columns
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                selectionMode="multiple"
-                selectedKeys={visibleColumns}
-                onSelectionChange={setVisibleColumns}
-                classNames={{
-                  base: "max-h-96 overflow-y-auto has-scrollbar-sm"
-                }}
-              >
-                {columns.map((column) => (
-                  <DropdownItem key={column.uid} className="capitalize" closeOnSelect={false}>
-                    {capitalize(column.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            {onOpenFilter && (
-              <Button 
-                onPress={onOpenFilter} 
-                size="sm" 
-                radius="md" 
-                color={isFiltered ? "danger" : "primary"} 
-                startContent={isFiltered ? <RiFilter2Fill size={18} /> : <CiFilter size={18} />}
-              >
-                {isFiltered ? "Filtered" : "Filters"}
-              </Button>
-            )}
-            {onCreate && <ButtonAdd permissionType={permissionCreate} onPress={onCreate} />}
-            {onReqLeave && <ButtonReqLeave permissionType={permissionRequest} onPress={onReqLeave} />}
-          </div>
-        </div>
+        <TableControls
+          searchKeyword={searchKeyword}
+          onSearchInputChange={onSearchInputChange}
+          handleSearch={handleSearch}
+          handleClearSearch={handleClearSearch}
+          status={status}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          columns={columns}
+          visibleColumns={visibleColumns}
+          setVisibleColumns={setVisibleColumns}
+          onOpenFilter={onOpenFilter}
+          isFiltered={isFiltered}
+          onCreate={onCreate}
+          onReqLeave={onReqLeave}
+          permissionCreate={permissionCreate}
+          permissionRequest={permissionRequest}
+          customHeader={customizes?.header}
+          t={t}
+        />
         <div className="flex items-center justify-between">
           <span className="text-small text-default-400">
             Total {sortedItems.length} {lenghtOf}
@@ -604,72 +772,55 @@ const DataTable = ({
         </div>
       </div>
 
-      <div
-        className={`
-          has-scrollbar 
-          h-[calc(100vh-19rem)] 
-          overflow-hidden 
-          overflow-x-auto 
-          transition-all 
-          duration-300
-          ${useToggle ? "w-full max-w-full" : "max-w-full"}
-        `}
-      >
-        {/* <ScrollShadow
-          className="has-scrollbar ui-table-container h-full w-full"
-          orientation="horizontal"
-          offset={0}
-          size={150}
-        > */}
-          <Table
-            isCompact
-            removeWrapper
-            aria-label="Data Table"
-            checkboxesProps={{ color: "primary" }}
-            classNames={classNames}
-            selectionMode={selectRow ? "multiple" : "none"}
-            selectedKeys={selectedKeys}
-            sortDescriptor={sortDescriptor}
-            topContentPlacement="outside"
-            onSelectionChange={handleSelectionChange}
-            onSortChange={setSortDescriptor}
+      <div className="has-scrollbar h-[calc(100vh-19rem)] overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4">
+        <Table
+          isCompact
+          removeWrapper
+          aria-label="Data Table"
+          checkboxesProps={{ color: "primary" }}
+          classNames={TABLE_CLASS_NAMES}
+          selectionMode={selectRow ? "multiple" : "none"}
+          selectedKeys={selectedKeys}
+          sortDescriptor={sortDescriptor}
+          topContentPlacement="outside"
+          onSelectionChange={handleSelectionChange}
+          onSortChange={setSortDescriptor}
+        >
+          <TableHeader columns={headerColumns}>
+            {(column) => (
+              <TableColumn
+                className="text-xs capitalize whitespace-nowrap"
+                key={column.uid}
+                align={column.uid === "actions" ? "center" : "start"}
+                allowsSorting={column.sortable}
+              >
+                {column.name}
+              </TableColumn>
+            )}
+          </TableHeader>
+          <TableBody
+            emptyContent={
+              loading ? (
+                <div className="flex h-72 items-end justify-center">
+                  <Spinner variant="spinner" size="sm" label={t("loading")} />
+                </div>
+              ) : (
+                t("noData")
+              )
+            }
+            items={sortedItems}
           >
-            <TableHeader columns={headerColumns}>
-              {(column) => (
-                <TableColumn
-                  className="text-xs capitalize whitespace-nowrap"
-                  key={column.uid}
-                  align={column.uid === "actions" ? "center" : "start"}
-                  allowsSorting={column.sortable}
-                >
-                  {column.name}
-                </TableColumn>
-              )}
-            </TableHeader>
-            <TableBody
-              emptyContent={
-                loading ? (
-                  <div className="flex h-72 items-end justify-center">
-                    <Spinner variant="spinner" size="sm" label={t("loading")} />
-                  </div>
-                ) : (
-                  t("noData")
-                )
-              }
-              items={sortedItems}
-            >
-              {(item) => (
-                <TableRow key={item.id} >
-                  {(columnKey) => (
-                    <TableCell className="whitespace-nowrap">
-                      {renderCell(item, columnKey)}
-                    </TableCell>
-                  )}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        {/* </ScrollShadow> */}
+            {(item) => (
+              <TableRow key={item.id}>
+                {(columnKey) => (
+                  <TableCell className="whitespace-nowrap">
+                    {renderCell(item, columnKey)}
+                  </TableCell>
+                )}
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
       <div className="flex items-center justify-between">
         <Pagination
@@ -701,6 +852,8 @@ const DataTable = ({
       </div>
     </div>
   );
-};
+});
+
+DataTable.displayName = 'DataTable';
 
 export default DataTable;

@@ -174,6 +174,7 @@ export interface StudentLeveFilter {
     page?: number | null,
     limit?: number | null
 }
+
 export interface LectureStudentLeveFilter {
     lecturer?: number | null,
     course?: number | null,
@@ -183,11 +184,9 @@ export interface LectureStudentLeveFilter {
     page?: number | null,
     limit?: number | null
 }
-export interface StudentLeveFilter {
-    faculty?: number | null,
-    field?: number | null,
-    classId?: number | null,
-    student?: number | null,
+export interface LectureLeveFilter {
+    lecturer?: number | null,
+    course?: number | null,
     status?: string | "",
     startDate?: Date | null,
     endDate?: Date | null,
@@ -303,4 +302,22 @@ export interface LectureLeaveRequest{
     endDate?: Date;
     reason?: string;
     status?: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+}
+
+export interface LectureLeaveRequest{
+    lecturerId?: number;
+    requestDate?: Date;
+    startDate?: Date;
+    endDate?: Date;
+    reason?: string;
+    status?: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+}
+export interface LectureLeaveFilter{
+    lecturer?: number,
+    status?: string,
+    reqDate?: Date,
+    startDate?: Date,
+    endDate?: Date,
+    page?: number,
+    limit?: number
 }

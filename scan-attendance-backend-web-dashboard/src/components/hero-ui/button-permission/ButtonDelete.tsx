@@ -1,4 +1,4 @@
-import { Button } from "@heroui/button";
+import { Button } from "@/components/hero-ui";
 import {
   Popover,
   PopoverContent,

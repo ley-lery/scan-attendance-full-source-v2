@@ -1,5 +1,6 @@
 import { Icons } from "@/assets/icons/Index";
-import { Button, Spinner, Tooltip } from "@heroui/react";
+import { Spinner, Tooltip } from "@heroui/react";
+import { Button } from "@/components/hero-ui";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ShowToast from "../toast/ShowToast";

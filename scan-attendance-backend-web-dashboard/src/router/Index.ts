@@ -27,6 +27,10 @@ const UserMangeUserPermission = lazy(() => import("@/views/admin-portal/manage-u
 const UserMangeUserRole = lazy(() => import("@/views/admin-portal/manage-user/user-role/Index"));
 const SystemAuditLogs = lazy(() => import("@/views/admin-portal/system/audit-logs/Index"));
 
+// -- Reports
+const FacultyFieldSummary = lazy(() => import("@/views/admin-portal/reports/general-academic/faculty-field-summary/Index"));
+const TotalFacultiesFields = lazy(() => import("@/views/admin-portal/reports/general-academic/total-faculties-fields/Index"));
+const ClassPerFaculty = lazy(() => import("@/views/admin-portal/reports/general-academic/classes-per-faculty/Index"));
 
 
 // ======== Admin Portal Views End ==========
@@ -35,6 +39,9 @@ const SystemAuditLogs = lazy(() => import("@/views/admin-portal/system/audit-log
 const LecturerDashboard = lazy(() => import("@/views/lecturer-portal/dashboard/Index"));
 const LecturerAttendanceStudent = lazy(() => import("@/views/lecturer-portal/student/mark-attendance-student/Index"));
 const LecturerStudentLeaveReq = lazy(() => import("@/views/lecturer-portal/leave-management/student/leave-req/Index"));
+const LecturerLeaveHistory = lazy(() => import("@/views/lecturer-portal/leave-management/my-leave-req/leave-history/Index"));
+const LecturerMyLeaveReq = lazy(() => import("@/views/lecturer-portal/leave-management/my-leave-req/leave-req/Index"));
+const AttendanceSummary = lazy(() => import("@/views/admin-portal/reports/attendance-report/summary/Index"));
 // ======== Lecturer Portal Views End ==========
 
 
@@ -181,6 +188,30 @@ export const protectedRouteAdmin: RouteConfig[] = [
     component: UserMangeUserRole,
   },
 
+  // Reports Group
+  {
+    name: "Faculty Field Summary",
+    path: "admin/reports/general-academic/faculty-field-summary",
+    component: FacultyFieldSummary,
+  },
+  {
+    name: "Total Faculties Fields",
+    path: "admin/reports/general-academic/total-faculties-fields",
+    component: TotalFacultiesFields,
+  },
+  {
+    name: "Classes Per Faculty",
+    path: "admin/reports/general-academic/classes-per-faculty",
+    component: ClassPerFaculty,
+  },
+
+  // Report Attendance Group
+  {
+    name: "Attendance Summary",
+    path: "admin/reports/attendance/summary",
+    component: AttendanceSummary,
+  },
+
   // Audit Logs Group
   {
     name: "Audit Logs",
@@ -206,6 +237,16 @@ export const protectedRouteLecturer: RouteConfig[] = [
     name: "Student Leave Requests",
     path: "lecturer/leave-management/student/leave-req",
     component: LecturerStudentLeaveReq,
+  },
+  {
+    name: "My Leave Requests",
+    path: "lecturer/leave-management/my-leave-req",
+    component: LecturerMyLeaveReq,
+  },
+  {
+    name: "My Leave History",
+    path: "lecturer/leave-management/leave-history",
+    component: LecturerLeaveHistory,
   },
  
 ];

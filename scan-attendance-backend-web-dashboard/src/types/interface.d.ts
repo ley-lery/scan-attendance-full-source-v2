@@ -323,7 +323,7 @@ declare global {
     term_no: number;
     group: string;
     room_name: string;
-    year: number;
+    study_year: number;
     code: string;
     start_date: string;
     end_date: string;
@@ -336,6 +336,8 @@ declare global {
     mid_term_end_date: string;
     final_exam_date: string;
     new_term_start_date: string;
+    num_student: number;
+    term_relative: number
   }
 
   interface ScheduleItem {
@@ -356,7 +358,7 @@ declare global {
     term_no: number;
     group: string;
     room_name: string;
-    year: number;
+    study_year: number;
     code: string;
     start_date: string;
     end_date: string;

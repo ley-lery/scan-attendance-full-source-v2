@@ -2,7 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { handleError, sendSuccessResponse } from "../../../utils/response";
 import { AuditLogModel } from "./model";
 import { AuditLogFilter, SearchParams } from "../../../types/interface";
-import { UserModel } from "../user/model";
+import { UserModel } from "../manage-user/user/model";
 
 const tableList = [
     {value: "Table User", label: "Table User"},

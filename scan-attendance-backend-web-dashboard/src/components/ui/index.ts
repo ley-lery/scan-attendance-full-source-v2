@@ -7,5 +7,7 @@ export { default as Popup } from "./dialog/Popup";
 export { default as ModalSystem } from "./modal/ModalSystem";
 export { default as ConfirmDialog } from "./dialog/ConfirmDialog";
 export { MetricCard } from "./card/MetricCard";
-
-
+export { default as DrawerFilter } from "./drawer/DrawerFilter";
+export { default as ReportHeader } from "./reports/attendance-report/ReportHeader";
+export { default as ReportTable } from "./reports/attendance-report/ReportTable";
+export { default as ReportModal } from "./reports/attendance-report/ReportModal";

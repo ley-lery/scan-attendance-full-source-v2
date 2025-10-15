@@ -3,12 +3,13 @@ import { StudentLeaveHistoryModel } from "./model";
 import { sendSuccessResponse } from "../../../../utils/response";
 import { handleError } from "../../../../utils/response";
 import { AuthUserPayload, RequestWithUser } from "../../../../middlewares/auth.middleware";
-import { FacultyModel } from "../../../admin-portal/faculty/model";
-import { FieldModel } from "../../../admin-portal/field/model";
-import { ClassModel } from "../../../admin-portal/class/model";
-import { LecturerModel } from "../../../admin-portal/lecturer/model";
+import { FacultyModel } from "../../../admin-portal/academic/faculty/model";
+import { FieldModel } from "../../../admin-portal/academic/field/model";
+import { ClassModel } from "../../../admin-portal/academic/classes/manage-class/model";
+import { LecturerModel } from "../../../admin-portal/lecturer/manage-lecturer/model";
 import { StudentLeaveRequestModel } from "../leave-req/model";
 import { StudentLeaveFilter } from "../../../../types/interface";
+import { ClassStudentModel } from "../../classes/class-student/model";
 
 export const StudentLeaveHistoryController = {
 
@@ -57,7 +58,7 @@ export const StudentLeaveHistoryController = {
             const [faculty] = await FacultyModel.getAll();
             const [field] = await FieldModel.getAll();
             const [lecturer] = await LecturerModel.getAll();
-            const [classes] = await ClassModel.getAll();
+            const [classes] = await ClassStudentModel.getAll(assign_to);
             const status = [
                 { id: 'Pending', label: 'Pending' },
                 { id: 'Approved', label: 'Approved' },

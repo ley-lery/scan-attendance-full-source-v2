@@ -115,7 +115,7 @@ const Index = () => {
 
   return (
     <div className="p-4 space-y-4">
-      <Form isOpen={isOpen} onOpenChange={onClose} loadList={reloadList} />
+      <Form isOpen={isOpen} onClose={onClose} loadList={reloadList} />
 
       <DataTable
         loading={loadingList}

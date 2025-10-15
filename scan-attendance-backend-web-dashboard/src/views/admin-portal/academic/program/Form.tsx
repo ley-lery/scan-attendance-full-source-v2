@@ -6,6 +6,7 @@ import { Validation } from "@/validations/index";
 import { Radio, RadioGroup, Select, SelectItem } from "@heroui/react";
 import { useMutation } from "@/hooks/useMutation";
 import { useFetch } from "@/hooks/useFetch";
+import AutocompleteUI from "@/components/hero-ui/auto-complete/Autocomplete";
 
 interface FormProps {
   isOpen?: boolean;
@@ -215,6 +216,20 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
               </AutocompleteItem>
             ))}
           </Autocomplete>
+          
+          {/* <AutocompleteUI
+            name="faculty"
+            label="Faculty"
+            placeholder="Select Faculty"
+            options={formLoad?.data?.faculties}
+            optionLabel="name_en"
+            optionValue="id"
+            value={formData.faculty}
+            onChange={(val) => setFormData({ ...formData, faculty: val })}
+            error={errors.faculty}
+            isRequired
+          /> */}
+
           <Autocomplete
             radius="md"
             size="md"

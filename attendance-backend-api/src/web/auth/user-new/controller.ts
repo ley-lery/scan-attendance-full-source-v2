@@ -7,7 +7,7 @@ import { CONFIG } from "../../../config/env";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { UserPermissionModel } from "../../admin-portal/user-permission/model";
-import { UserModel } from "../../admin-portal/user/model";
+import { UserModel } from "../../admin-portal/manage-user/user/model";
 
 export const  AuthController = {
     async signIn(req: FastifyRequest, res: FastifyReply) {

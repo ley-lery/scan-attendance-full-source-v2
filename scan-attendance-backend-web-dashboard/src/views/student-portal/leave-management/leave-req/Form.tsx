@@ -3,7 +3,7 @@ import React, {  useState } from 'react';
 import moment from 'moment';
 import { getLocalTimeZone, today } from '@internationalized/date';
 import { type DateValue } from '@heroui/react';
-import Modal from '@/components/ui/modal/ModalSystem';
+import {Modal} from '@/components/hero-ui';
 import { CalendarDate } from '@internationalized/date';
 import { useTranslation } from 'react-i18next';
 import ShowToast from '@/components/hero-ui/toast/ShowToast';
@@ -27,11 +27,11 @@ const initialFormData: FormData = {
 
 interface Props {
   isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  onClose: () => void;
   loadList: () => void;
 }
 
-const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
+const Form: React.FC<Props> = ({ isOpen, onClose, loadList }) => {
     const { t } = useTranslation();
     const [formData, setFormData] = useState<FormData>(initialFormData);
     const [submitting, setSubmitting] = useState<boolean>(false);
@@ -42,7 +42,7 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
     // Mutation
     const { mutate: createLeaveRequest, loading: creating } = useMutation({
         onSuccess: (response) => {
-            onOpenChange(false);
+            onClose();
             ShowToast({
                 color: "success",
                 title: "Success",
@@ -85,8 +85,7 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<boolean> => {
         const payload = {
             requestDate : formatDateValue(formData.requestDate),
             startDate : formatDateValue(formData.startDate),
@@ -97,6 +96,15 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
 
         console.log('Form submitted:', payload);
         await createLeaveRequest("/student/leave", payload, "POST");
+        return true;
+    };
+    const onSaveNew = async (e: React.FormEvent<HTMLFormElement>) => {
+        const isSubmit = await handleSubmit(e);
+        if (isSubmit) {
+            onClose();
+            setFormData(initialFormData);
+            loadList();
+        }
     };
 
     const handleClear = () => {
@@ -110,11 +118,11 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
         <Modal
             title="Submit Leave Request"
             isOpen={isOpen}
-            onOpenChange={onOpenChange}
+            onClose={onClose}
             onSubmit={handleSubmit}
-            loading={submitting}
+            onSaveNew={onSaveNew}
             size='2xl'
-            saveCloseLabel={submitting ? t('requesting') : t('request')}
+            // saveCloseLabel={submitting ? t('requesting') : t('request')}
         >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <DatePicker

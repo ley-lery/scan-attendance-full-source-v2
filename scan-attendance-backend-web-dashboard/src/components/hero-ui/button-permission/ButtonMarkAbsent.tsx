@@ -1,5 +1,5 @@
 import { useFetch } from "@/hooks/useFetch";
-import { Button } from "@heroui/button";
+import { Button } from "@/components/hero-ui";
 import { Spinner, Tooltip } from "@heroui/react";
 import { type FC, memo,  useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";

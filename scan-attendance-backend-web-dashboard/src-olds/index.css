@@ -1,0 +1,280 @@
+@import "tailwindcss";
+@plugin './hero.ts';
+@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+
+@custom-variant dark (&:is(.dark *));
+
+@font-face {
+    font-family: 'KhmerOSMoul';
+    src: url('./assets/fonts/Moul-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'KhmerOSSiemreap';
+    src: url('./assets/fonts/Siemreap-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+
+@theme {
+    
+    --breakpoint-3xl: 1470px;
+    --shadow-custom-dark: 19px 19px 38px #0e0e0f, -19px -19px 38px #222227;
+    --shadow-custom-light: 26px 26px 40px #dcdcdd, -26px -26px 40px #ffffff;
+
+    /* Radius  */
+    --radius-none: 0;
+    --radius-sm: 4px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-full: 9999px;
+}
+
+
+@layer base {
+    html {
+        font-family: "KhmerOSSiemreap", sans-serif;
+        font-weight: 400;
+        font-style: normal;
+    }
+    .font-lora {
+        font-family: "Lora", serif;
+    }
+}
+
+.khmerOSMoul {
+    font-family: KhmerOSMoul;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.khmerOSSiemreap {
+    font-family: KhmerOSSiemreap;
+    font-weight: 500;
+    font-style: normal;
+}
+
+.has-scrollbar{
+    @apply 
+    overflow-y-auto 
+    [&::-webkit-scrollbar]:w-2 
+    [&::-webkit-scrollbar]:h-2 
+    [&::-webkit-scrollbar-track]:rounded-xl 
+    [&::-webkit-scrollbar-track]:bg-transparent 
+    hover:[&::-webkit-scrollbar-track]:bg-zinc-100 
+    [&::-webkit-scrollbar-thumb]:rounded-xl 
+    [&::-webkit-scrollbar-thumb]:bg-transparent 
+    hover:dark:[&::-webkit-scrollbar-thumb]:bg-zinc-500 
+    dark:[&::-webkit-scrollbar-track]:bg-transparent
+    dark:[&::-webkit-scrollbar-thumb]:bg-transparent;
+}
+.has-scrollbar-sm{
+    @apply 
+    overflow-y-auto 
+    [&::-webkit-scrollbar]:w-1 
+    [&::-webkit-scrollbar]:h-1 
+    [&::-webkit-scrollbar-track]:rounded-xl 
+    [&::-webkit-scrollbar-track]:bg-transparent 
+    hover:[&::-webkit-scrollbar-track]:bg-zinc-100 
+    hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 
+    [&::-webkit-scrollbar-thumb]:rounded-xl 
+    [&::-webkit-scrollbar-thumb]:bg-transparent 
+    hover:dark:[&::-webkit-scrollbar-thumb]:bg-zinc-500 
+    dark:[&::-webkit-scrollbar-track]:bg-transparent
+    dark:[&::-webkit-scrollbar-thumb]:bg-transparent;
+}
+.has-scrollbar-xs{
+    @apply 
+    overflow-y-auto 
+    [&::-webkit-scrollbar]:w-0.5 
+    [&::-webkit-scrollbar]:h-0.5 
+    [&::-webkit-scrollbar-track]:rounded-xl 
+    [&::-webkit-scrollbar-track]:bg-transparent 
+    hover:[&::-webkit-scrollbar-track]:bg-zinc-100 
+    [&::-webkit-scrollbar-thumb]:rounded-xl 
+    [&::-webkit-scrollbar-thumb]:bg-transparent 
+    hover:dark:[&::-webkit-scrollbar-thumb]:bg-zinc-500 
+    dark:[&::-webkit-scrollbar-track]:bg-transparent
+    dark:[&::-webkit-scrollbar-thumb]:bg-transparent;
+}
+.has-scrollbar::-webkit-scrollbar-thumb {
+    @apply rounded-full;
+}
+.accordion-ui button {
+    @apply rounded-xl px-4 py-2;
+}
+.custom-backdrop {
+    will-change: backdrop-filter;
+    transform: translate3d(0, 0, 0);
+}
+.ui-table-wrapper table thead {
+    @apply max-w-[128px] bg-white;
+}
+
+input, textarea {
+    @apply outline-none;
+}
+select {
+    @apply w-full rounded-xl bg-zinc-200 px-2 py-1 outline-none dark:bg-zinc-800;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield; /* Firefox */
+}
+
+.card-ui{
+    @apply p-4 shadow-lg shadow-zinc-200/30 dark:shadow-black/30 border border-white dark:border-transparent bg-white/50 dark:bg-zinc-800/50 rounded-2xl;
+}
+
+/* Background Styles */
+.bg-auth{
+    background-image:  radial-gradient(circle at 30% 70%, rgba(173, 216, 230, 0.284), transparent 60%),
+    radial-gradient(circle at 70% 30%, rgba(219, 170, 178, 0.295), transparent 60%);
+}
+.dark .bg-auth{
+    background-image: radial-gradient(circle at 30% 70%, rgba(94, 120, 129, 0.35), transparent 60%), 
+    radial-gradient(circle at 70% 30%, rgba(173, 54, 72, 0.295), transparent 60%);
+}
+
+.cotton-candy-sky{
+    background-image: linear-gradient(45deg, #ffb3d95d 0%, #fbe2e8 20%, #FFF0F5 40%, #e6f3ff47 60%, #d0d8e158 80%, #f0f0f072 100%);
+}
+.dark .cotton-candy-sky{
+    background-image: linear-gradient(45deg, #FFB3D9 0%, #FFD1DC 20%, #FFF0F5 40%, #E6F3FF 60%, #D1E7FF 80%, #C7E9F1 100%);
+    opacity: 0.3;
+}
+
+.warm-light-apricot-coral{
+    background-image: radial-gradient(circle at 20% 80%, rgba(255, 220, 190, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 245, 238, 0.35) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 210, 180, 0.15) 0%, transparent 50%)
+}
+.dark .warm-light-apricot-coral{
+    background-image: radial-gradient(circle at 20% 80%, rgba(255, 220, 190, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 245, 238, 0.35) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 210, 180, 0.15) 0%, transparent 50%)
+}
+.orange-soft-glow{
+    background-image: radial-gradient(circle at center, #FF7112, transparent);
+    opacity: 0.3;
+}
+.dark .orange-soft-glow{
+    background-image: radial-gradient(circle at center, #ff711291, transparent);
+    opacity: 0.3;
+}
+.soft-pink-glow{
+    background-image:radial-gradient(circle at center, #fbb6ce, transparent);
+    opacity: 0.3;
+}
+.dark .soft-pink-glow{
+    background-image: radial-gradient(circle at center, #fbb6ce91, transparent);
+    opacity: 0.4;
+}
+.volcanic-ember{
+    background-image: radial-gradient(ellipse 120% 70% at 70% 80%, rgba(87, 24, 69, 0.20), transparent 52%),
+    radial-gradient(ellipse 160% 45% at 30% 30%, rgba(153, 27, 27, 0.16), transparent 58%),
+    radial-gradient(ellipse 85% 100% at 10% 60%, rgba(69, 26, 3, 0.22), transparent 46%),
+    #1c1917;
+}
+.dark .volcanic-ember{
+    background-image: radial-gradient(ellipse 120% 70% at 70% 80%, rgba(87, 24, 69, 0.20), transparent 52%),
+    radial-gradient(ellipse 160% 45% at 30% 30%, rgba(153, 27, 27, 0.16), transparent 58%),
+    radial-gradient(ellipse 85% 100% at 10% 60%, rgba(69, 26, 3, 0.22), transparent 46%),
+    #1c1917;
+}
+.cosmic-Noise{
+    background-image: radial-gradient(circle at 20% 20%, rgba(216, 201, 201, 0.741) 0%, transparent 40%), radial-gradient(circle at 80% 30%, rgba(210, 173, 173, 0.812) 0%, transparent 40%), linear-gradient(120deg, #dedede 0%, #d0d1de 100%);
+}
+.dark .cosmic-Noise{
+    background-image: radial-gradient(circle at 20% 20%, rgba(150, 91, 91, 0.516) 0%, transparent 40%), radial-gradient(circle at 80% 30%, rgba(86, 63, 63, 0.703) 0%, transparent 40%), linear-gradient(120deg, #343434 0%, #3f3f3f 100%);
+}
+.violet-abyss{
+    background-image: radial-gradient(125% 125% at 50% 90%, #fafafa 40%, #91169147 100%);
+}
+.dark .violet-abyss{
+    background-image: radial-gradient(125% 125% at 50% 90%, #000000 40%, #4c094c95 100%);
+}
+
+/* =========== Customize on top heroui components  =========== */
+
+/* Button */
+.btn-small-ui{
+    @apply py-[0.5rem] px-[1rem] text-[.8rem] h-0 ;  
+}
+.btn-medium-ui{
+    @apply py-[1.05rem] px-[1rem] text-[.9rem] h-0 ;  
+}
+.btn-large-ui{
+    @apply py-[1.4rem] px-[1.2rem] text-[1rem] h-0 ;  
+}
+.btn-radius-sm{
+    @apply rounded-[4px];
+}
+.btn-radius-md{
+    @apply rounded-[10px];
+}
+.btn-radius-lg{
+    @apply rounded-[14px];
+}
+
+
+/* Input */
+.input-small-ui{
+    @apply h-7 min-h-7 shadow-none;
+}
+.input-medium-ui{
+    @apply h-9 min-h-9 shadow-none;
+}
+.input-large-ui{
+    @apply h-11 min-h-11 shadow-none;
+}
+
+/* Textarea */
+.textarea{
+    @apply bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 shadow-none
+}
+    
+
+/* Customize style  */
+.customize-table th:hover, .customize-table td:hover{
+    @apply bg-black/10 cursor-pointer dark:bg-white/10;
+}
+/* .dark .customize-table th span, .customize-table td span{
+    @apply text-white;
+} */
+.customize-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* .customize-table th,
+.customize-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 8px;
+} */
+
+/* Prevent table from shrinking on smaller screens */
+.customize-table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Optional: Show full content on hover */
+.customize-table td:hover,
+.customize-table th:hover {
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+  position: relative;
+  z-index: 10;
+}

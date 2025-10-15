@@ -65,6 +65,7 @@
     [&::-webkit-scrollbar-track]:rounded-xl 
     [&::-webkit-scrollbar-track]:bg-transparent 
     hover:[&::-webkit-scrollbar-track]:bg-zinc-100 
+    hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 
     [&::-webkit-scrollbar-thumb]:rounded-xl 
     [&::-webkit-scrollbar-thumb]:bg-transparent 
     hover:dark:[&::-webkit-scrollbar-thumb]:bg-zinc-500 
@@ -94,6 +95,7 @@
     [&::-webkit-scrollbar-track]:rounded-xl 
     [&::-webkit-scrollbar-track]:bg-transparent 
     hover:[&::-webkit-scrollbar-track]:bg-zinc-100 
+    hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 
     [&::-webkit-scrollbar-thumb]:rounded-xl 
     [&::-webkit-scrollbar-thumb]:bg-transparent 
     hover:dark:[&::-webkit-scrollbar-thumb]:bg-zinc-500 
@@ -207,14 +209,24 @@ input[type="number"] {
 
 /* Button */
 .btn-small-ui{
-    @apply py-[1rem] px-[1rem] text-[.8rem] h-0 ;  
+    @apply py-[0.5rem] px-[1rem] text-[.8rem] h-0 ;  
 }
 .btn-medium-ui{
-    @apply py-[1.2rem] px-[1.1rem] text-[.9rem] h-0 ;  
+    @apply py-[1.05rem] px-[1rem] text-[.9rem] h-0 ;  
 }
 .btn-large-ui{
     @apply py-[1.4rem] px-[1.2rem] text-[1rem] h-0 ;  
 }
+.btn-radius-sm{
+    @apply rounded-[4px];
+}
+.btn-radius-md{
+    @apply rounded-[10px];
+}
+.btn-radius-lg{
+    @apply rounded-[14px];
+}
+
 
 /* Input */
 .input-small-ui{
@@ -233,4 +245,41 @@ input[type="number"] {
 }
     
 
-    
+/* Customize style  */
+/* .customize-table th:hover, .customize-table td:hover{
+    @apply bg-black/10 cursor-pointer dark:bg-white/10;
+} */
+/* .dark .customize-table th span, .customize-table td span{
+    @apply text-white;
+} */
+.customize-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* .customize-table th,
+.customize-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 8px;
+} */
+
+/* Prevent table from shrinking on smaller screens */
+.customize-table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Optional: Show full content on hover */
+.customize-table td:hover,
+.customize-table th:hover {
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+  position: relative;
+  z-index: 10;
+}
+.hover-text-edit{
+    @apply hover:bg-zinc-300 rounded-xl cursor-pointer px-2 py-0.5;
+}

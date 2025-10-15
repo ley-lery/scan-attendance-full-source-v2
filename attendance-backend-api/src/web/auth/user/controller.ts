@@ -6,7 +6,7 @@ import { AuthUserPayload, RequestWithUser } from "../../../middlewares/auth.midd
 import { CONFIG } from "../../../config/env";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { UserPermissionModel } from "../../admin-portal/user-permission/model";
+import { UserPermissionModel } from "../../admin-portal/manage-user/user-permission/model";
 
 export const AuthController = {
     async signIn(req: FastifyRequest, res: FastifyReply) {

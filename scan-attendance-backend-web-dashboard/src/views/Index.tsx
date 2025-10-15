@@ -1,8 +1,9 @@
 import Navbar from "@/layouts/Navbar";
 import Sidebar from "@/layouts/Sidebar";
 import { useToggleStore } from "@/stores/userToggleStore";
-import {  useState } from "react";
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
+
 const Index = () => {
   const setUseToggle = useToggleStore((state) => state.setIsOpen);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -12,26 +13,32 @@ const Index = () => {
     setUseToggle();
   };
 
-
   return (
-   <>
-      <div className="flex h-screen bg-zinc-100 dark:bg-zinc-900 overflow-hidden">
+    <div className="flex h-screen bg-zinc-100 dark:bg-zinc-900 overflow-hidden">
+      {/* Sidebar */}
       <aside
-        className={`${isSidebarOpen ? "w-20" : "min-w-64"} transition-all duration-300`}
+        className={`${
+          isSidebarOpen ? "w-20" : "w-64"
+        } transition-all duration-300 ease-in-out flex-shrink-0`}
       >
         <Sidebar toggle={isSidebarOpen} />
       </aside>
-      <div className="block w-full">
-        <nav className="h-14 w-full">
+
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Navbar */}
+        <nav className="h-16 w-full flex-shrink-0 z-10">
           <Navbar toggle={handleSidebarToggle} />
         </nav>
-        <main className={`has-scrollbar h-[calc(100%-20px)] overflow-y-auto  rounded-tl-3xl border border-zinc-200 dark:border-zinc-800 `}>
-          <Outlet />
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-hidden rounded-tl-3xl border-l border-t border-zinc-200 dark:border-zinc-700">
+          <div className="overflow-y-auto has-scrollbar max-h-full">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
-   </>
-    
   );
 };
 

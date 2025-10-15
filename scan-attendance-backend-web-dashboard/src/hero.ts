@@ -2,12 +2,11 @@
 import { heroui } from "@heroui/react";
 export default heroui({
     layout:{
-        // radius: {
-        //     small: "20px",
-        //     medium: "20px",
-        //     large: "20px",
-        // },
-        
+        radius: {
+            small: "4px",
+            medium: "10px",
+            large: "14px",
+        },
     },
     
 });

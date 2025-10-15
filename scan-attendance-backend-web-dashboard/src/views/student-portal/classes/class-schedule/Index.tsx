@@ -89,7 +89,7 @@ const Index = () => {
         {scheduleList.map(({ classInfo, scheduleData } : { classInfo: ClassInfo, scheduleData: ScheduleData }, index: number) => (
           <AccordionItem
             key={index}
-            title={`Year ${classInfo.year} - ${classInfo.field_name_en}`}
+            title={`${classInfo.field_name_en} - Year ${classInfo.study_year} - Term ${classInfo.term_no}`}
             aria-label={`Schedule ${index + 1}`}
           >
             <Schedule data={scheduleData} classInfo={classInfo} />
