@@ -3,10 +3,13 @@ import Schedule from './Schedule';
 import { useFetch } from '@/hooks/useFetch';
 import { Accordion, AccordionItem } from '@heroui/react';
 import { Loading } from '@/components/hero-ui';
+import { MetricCard } from '@/components/ui';
+import { IoCalendarOutline } from 'react-icons/io5';
 
 const Index = () => {
   const { data, loading } = useFetch<ApiResponse>("/student/schedule/list");
   const rows = data?.data?.rows ?? [];
+  const statistics = data?.data?.statistics ?? {};
 
   useEffect(() => {
     console.log("Fetched schedule data:", data);
@@ -67,6 +70,45 @@ const Index = () => {
     }));
   }, [rows]);
 
+  const CardStatistics = [
+    {
+      title: "Total Schedule",
+      value: statistics.total_schedule,
+      icon: <IoCalendarOutline size={20} />,
+      variant: 'primary',
+      desc: "Total number of schedules",
+      type: 'Total',
+      maxValue: 4
+    },
+    {
+      title: "Active Schedule",
+      value: statistics.active_schedule,
+      icon: <IoCalendarOutline size={20} />,
+      variant: 'success',
+      desc: "Active number of schedules",
+      type: 'Active',
+      maxValue: 4
+    },
+    {
+      title: "Inactive Schedule",
+      value: statistics.inactive_schedule,
+      icon: <IoCalendarOutline size={20} />,
+      variant: 'danger',
+      desc: "Inactive number of schedules",
+      type: 'Inactive',
+      maxValue: 4
+    },
+    {
+      title: "Completed Schedule",
+      value: statistics.complete_schedule,
+      icon: <IoCalendarOutline size={20} />,
+      variant: 'success',
+      desc: "Completed number of schedules",
+      type: 'Completed',
+      maxValue: 4
+    }
+  ]
+
   if (loading) {
     return (
       <div className="min-h-full flex items-center justify-center ">
@@ -84,8 +126,25 @@ const Index = () => {
   }
 
   return (
-    <div className="p-4">
-      <Accordion variant="bordered">
+    <div className="p-4 space-y-4 *:px-0">
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+        {CardStatistics.map((item, index) => (
+          <MetricCard 
+            key={index}
+            title={item.title}
+            value={item.value}
+            icon={item.icon}
+            variant={item.variant as any}
+            description={item.desc}
+            type={item.type}
+            maxValue={item.maxValue}
+            classNames={{
+              base: "bg-white dark:bg-zinc-800"
+            }}
+          />
+        ))}
+      </div>
+      <Accordion variant="splitted" itemClasses={{ base: "shadow-none rounded-2xl bg-white dark:bg-zinc-800"}} >
         {scheduleList.map(({ classInfo, scheduleData } : { classInfo: ClassInfo, scheduleData: ScheduleData }, index: number) => (
           <AccordionItem
             key={index}

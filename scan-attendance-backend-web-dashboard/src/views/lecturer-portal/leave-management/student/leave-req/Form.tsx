@@ -1,12 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ShowToast } from "@/components/hero-ui";
-import { memo, useState } from "react";
+import { memo, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { ModalRequest, ShowToast } from "@/components/hero-ui";
 import { useMutation } from "@/hooks/useMutation";
-import { Modal, ModalContent, ModalHeader, ModalFooter, ModalBody } from "@/god-ui";
-import { Button, Spinner, Textarea } from "@heroui/react";
-import { TbRosetteDiscountCheck } from "react-icons/tb";
-import { IoIosCloseCircleOutline } from "react-icons/io";
+import { Textarea } from "@heroui/react";
 
 interface FormProps {
   isOpen?: boolean;
@@ -16,118 +12,108 @@ interface FormProps {
   leaveId?: number | null;
 }
 
-const initialFormData = { adminNote: "" };
+interface FormData {
+  adminNote: string;
+}
 
-const Form = ({ isOpen = false, onClose, loadList, isApprove, leaveId }: FormProps) => {
+const initialFormData: FormData = { adminNote: "" };
+
+const Form = memo(({ isOpen = false, onClose, loadList, isApprove, leaveId }: FormProps) => {
+
+
   const { t } = useTranslation();
-  const [formData, setFormData] = useState(initialFormData);
-
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const id = leaveId ?? null;
 
-  const { mutate: approveLeaveRequest, loading: approveLeaveRequestLoading } = useMutation({
+  // ========== Approve Mutation ========== 
+  const { mutate: approveLeaveRequest, loading: approveLoading } = useMutation({
     onSuccess: async (res) => {
       await loadList?.();
       onClose();
-      ShowToast({ color: "success", title: "Success", description: res.response?.data?.message  ||  "Leave request approved successfully" });
+      ShowToast({
+        color: "success",
+        title: t("success"),
+        description:
+          res.response?.data?.message || t("leaveRequestApprovedSuccessfully"),
+      });
     },
     onError: (err) => {
-      console.log("Approve error : ", err);
-      ShowToast({ color: "error", title: "Error", description: err.response?.data?.message || "Failed to approve leave request" });
+      console.error("Approve error:", err);
+      ShowToast({
+        color: "error",
+        title: t("error"),
+        description:
+          err.response?.data?.message || t("failedToApproveLeaveRequest"),
+      });
     },
   });
 
-  const { mutate: rejectLeaveRequest, loading: rejectLeaveRequestLoading } = useMutation({
+  // ========== Reject Mutation ========== 
+  const { mutate: rejectLeaveRequest, loading: rejectLoading } = useMutation({
     onSuccess: async (res) => {
       await loadList?.();
       onClose();
-      ShowToast({ color: "success", title: "Success", description: res.response?.data?.message  ||  "Leave request rejected successfully" });
+      ShowToast({
+        color: "success",
+        title: t("success"),
+        description:
+          res.response?.data?.message || t("leaveRequestRejectedSuccessfully"),
+      });
     },
     onError: (err) => {
-      console.log("Reject error : ", err);
-      ShowToast({ color: "error", title: "Error", description: err.response?.data?.message || "Failed to reject leave request" });
+      console.error("Reject error:", err);
+      ShowToast({
+        color: "error",
+        title: t("error"),
+        description:
+          err.response?.data?.message || t("failedToRejectLeaveRequest"),
+      });
     },
   });
 
-  // Handle input change for Textarea
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ========== Handle Change ========== 
+  const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement> | any) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const onSubmit = async (): Promise<boolean> => {
-    console.log(formData, "formData");
-
+  // ========== Handle Submit ========== 
+  const onSubmit = async (): Promise<void> => {
+    
     if (isApprove) {
       await approveLeaveRequest(`/lecturer/student/leavereq/approve/${id}`, formData, "PUT");
-      ShowToast({ color: "success", description: t("updatedSuccess") });
     } else {
       await rejectLeaveRequest(`/lecturer/student/leavereq/reject/${id}`, formData, "PUT");
-      ShowToast({ color: "success", description: t("createdSuccess") });
     }
 
-    await loadList?.();
     setFormData(initialFormData);
-    return true;
-   
   };
 
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isDraggable isDismissable={false}>
-      <ModalContent>
-        {() => (
-          <>
-            {(approveLeaveRequestLoading || rejectLeaveRequestLoading) && (
-              <div className="flex items-center justify-center min-h-36 inset-0 absolute bg-white/20 dark:bg-black/20 backdrop-blur-sm z-50">
-                <Spinner
-                  variant="spinner"
-                  size="sm"
-                  label={isApprove ? t("approving") : t("rejecting")}
-                />
-              </div>
-            )}
-
-            <ModalHeader>
-              {t(isApprove ? "approveLeaveRequest" : "rejectLeaveRequest")}
-            </ModalHeader>
-
-            <ModalBody>
-              <form>
-                <Textarea
-                  name="adminNote"
-                  label={t("reason")}
-                  placeholder={t("enterReason")}
-                  value={formData.adminNote}
-                  onChange={handleInputChange}
-                />
-              </form>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button
-                onPress={onClose}
-                variant="flat"
-                color="danger"
-                size="sm"
-              >
-                {t("cancel")}
-              </Button>
-              <Button
-                onPress={onSubmit}
-                variant="solid"
-                color={isApprove ? "primary" : "danger"}
-                startContent={isApprove ? <TbRosetteDiscountCheck size={16} /> : <IoIosCloseCircleOutline size={16} />}
-                size="sm"
-              >
-                {isApprove ? t("approve") : t("reject")}
-              </Button>
-            </ModalFooter>
-          </>
-        )}
-      </ModalContent>
-    </Modal>
+    <ModalRequest
+      title={t(isApprove ? "approveLeaveRequest" : "rejectLeaveRequest")}
+      isOpen={isOpen}
+      onClose={onClose}
+      onApprove={isApprove ? onSubmit : undefined}
+      onReject={!isApprove ? onSubmit : undefined}
+      isLoading={approveLoading || rejectLoading}
+      isDisabled={approveLoading || rejectLoading}
+      size="lg"
+    >
+      <Textarea
+        name="adminNote"
+        label={t("reason")}
+        labelPlacement="outside"
+        placeholder={t("enterReason")}
+        value={formData.adminNote}
+        onChange={handleInputChange}
+        minRows={4}
+        isDisabled={approveLoading || rejectLoading}
+      />
+    </ModalRequest>
   );
-};
+});
 
-export default memo(Form);
+export default Form;

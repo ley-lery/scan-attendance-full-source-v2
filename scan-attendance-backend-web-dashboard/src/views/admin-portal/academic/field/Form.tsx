@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Input, Modal, ShowToast, Autocomplete, AutocompleteItem } from "@/components/hero-ui";
+import { Input, Modal, ShowToast, AutocompleteUI } from "@/components/hero-ui";
 import { type FormEvent, type Key, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Validation } from "@/validations/index";
@@ -27,6 +26,9 @@ const initialFormData: Field = {
 
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+   
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Field>(initialFormData);
@@ -42,7 +44,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   const { data: facultiesData } = useFetch<{ rows: any[]; total_count: number }>("/faculty/list");
 
 
-  // Load form data when modal opens or row changes
+  // ====== get data when modal opens or row changes
   useEffect(() => {
     if (isOpen) {
       if (isEdit && row) {
@@ -82,7 +84,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       fieldCode: formData.fieldCode,
       status: formData.status,
     };
-    console.log(payload, "payload");
 
     try {
 
@@ -138,7 +139,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   const closeForm = () => (isEdit || !isFormDirty() ? onClose(false) : onClose(false));
 
-  if (!isOpen) return null;
 
   return (
     <>
@@ -159,30 +159,23 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       >
         
         <div className="grid grid-cols-2 gap-4">
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("faculty")}
-            labelPlacement="outside"
+          <AutocompleteUI
             name="faculty"
+            label={t("faculty")}
             placeholder={t("chooseFaculty")}
+            options={facultiesData?.data?.rows}
+            optionLabel="name_en"
+            secondaryOptionLabel="name_kh"
+            optionValue="id"
             selectedKey={formData.faculty}
-            isInvalid={!!errors.faculty}
-            errorMessage={errors.faculty}
-            className="w-full"
             onSelectionChange={(key) =>
               handleInputChange({
                 target: { name: "faculty", value: key ?? "" },
               })
             }
+            error={errors.faculty}
             isRequired
-          >
-            {facultiesData?.data?.rows.map((item: any) => (
-              <AutocompleteItem  key={item.id} textValue={item.name_en + " - " + item.name_kh}>
-                <p className={`truncate w-[95%] `}>{item.name_en} - {item.name_kh}</p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
+          />
           {["fieldCode", "fieldNameEn", "fieldNameKh"].map((field) => (
             <Input
               key={field}

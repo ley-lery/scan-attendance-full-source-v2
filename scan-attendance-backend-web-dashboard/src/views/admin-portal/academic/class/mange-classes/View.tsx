@@ -26,6 +26,9 @@ interface ViewProps {
 }
 
 const View = ({ isOpen = false, onClose, row }: ViewProps) => {
+
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   const fields: { label: string; value: any; isStatus?: boolean; isDate?: boolean }[] = [

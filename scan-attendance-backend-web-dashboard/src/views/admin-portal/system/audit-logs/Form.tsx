@@ -41,6 +41,7 @@ export const genders = [
 ];
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Student>(initialFormData);

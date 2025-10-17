@@ -228,7 +228,7 @@ input[type="number"] {
 }
 
 
-/* Input */
+/* =========== Input =========== */
 .input-small-ui{
     @apply h-7 min-h-7 shadow-none;
 }
@@ -238,8 +238,34 @@ input[type="number"] {
 .input-large-ui{
     @apply h-11 min-h-11 shadow-none;
 }
+/* =========== Autocomplete =========== */
+.autocomplete-sm-ui{
+    @apply h-7 min-h-7 shadow-none;
+}
+.autocomplete-md-ui{
+    @apply h-9 min-h-9 shadow-none;
+}
+.autocomplete-lg-ui{
+    @apply h-11 min-h-11 shadow-none;
+}
+.autocomplete-md-ui label{
+    transform: translateY(0.5rem) !important;
+}
+.autocomplete-content-ui ul i{
+    @apply rounded-3xl;
+}
+/* =========== Select =========== */
+.select-sm-ui{
+    @apply h-7 min-h-7 shadow-none;
+}
+.select-md-ui{
+    @apply h-9 min-h-9 shadow-none;
+}
+.select-lg-ui{
+    @apply h-11 min-h-11 shadow-none;
+}
 
-/* Textarea */
+/* =========== Textarea =========== */
 .textarea{
     @apply bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 shadow-none
 }

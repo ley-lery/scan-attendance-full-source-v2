@@ -29,6 +29,7 @@ interface ModalProps {
     modalFooter?: string;
     closeButton?: string;
   }
+  scrollBehavior?: boolean;
 }
 
 const animationMap: Record<ModalAnimation, any> = {
@@ -162,6 +163,7 @@ export const Modal = ({
   animation = "fade-down",
   isDraggable = false,
   classNames = {},
+  scrollBehavior = false,
 }: ModalProps) => {
   const [visible, setVisible] = useState(isOpen);
   const [startClose, setStartClose] = useState(false);
@@ -228,11 +230,13 @@ export const Modal = ({
 
   const selectedAnimation = animationMap[animation] || animationMap["fade-up"];
 
+  
+
   return (
     <AnimatePresence>
       <motion.div
         className={cn(
-          "fixed inset-0 z-50 flex justify-center",
+          "fixed inset-0 h-screen z-50 flex justify-center",
           !isFullScreen && positionMap[position],
           backdropMap[backdrop],
         )}
@@ -246,7 +250,7 @@ export const Modal = ({
         ref={modalRef}
       >
         <DragContext.Provider value={{ dragControls, isDraggable }}>
-        <ModalContext.Provider value={{ backgroundBlur }}>
+        <ModalContext.Provider value={{ backgroundBlur, scrollBehavior }}>
           <motion.div
             className={cn(modalClass, shadowMap[shadow])}
             style={isFullScreen ? { width: "100vw", height: "100vh" } : undefined}

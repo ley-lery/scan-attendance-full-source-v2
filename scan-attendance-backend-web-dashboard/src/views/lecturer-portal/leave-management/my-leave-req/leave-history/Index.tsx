@@ -84,11 +84,11 @@ const Index = () => {
     },
   });
 
-  // ==== Fetch Data with useFetch ====
-  const { data: formLoad, loading: formLoadLoading } = useFetch<any>(
+
+ // ==== Fetch Data with useFetch ==== 
+  const { data: formLoad, loading: formLoadLoading } = useFetch<{ statuses: any[] }>(
     "/lecturer/leavehistory/formload"
   );
-
   const {
     data: dataList,
     loading: loadingList,
@@ -317,8 +317,6 @@ const Index = () => {
         setFilter={setFilter}
         onApplyFilter={onFilter}
         onResetFilter={resetFilter}
-        formLoad={formLoad}
-        formLoadLoading={formLoadLoading}
         filterLoading={filterLoading}
       />
       <View

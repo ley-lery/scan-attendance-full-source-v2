@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Autocomplete, AutocompleteItem, DatePicker } from "@/components/hero-ui";
+import { AutocompleteUI, DatePicker } from "@/components/hero-ui";
 import { Divider } from "@heroui/react";
 import { type DateValue } from "@internationalized/date";
-import { cn } from "@/lib/utils";
 import { DrawerFilter } from "@/components/ui";
+import { useEffect, useState } from "react";
+import { useFetch } from "@/hooks/useFetch";
 
 interface FilterData {
   status: "Pending" | "Approved" | "Rejected" | "Cancelled" | "";
@@ -21,8 +22,6 @@ interface FilterProps {
   setFilter: React.Dispatch<React.SetStateAction<FilterData>>;
   onApplyFilter: () => void;
   onResetFilter: () => void;
-  formLoad: any;
-  formLoadLoading: boolean;
   filterLoading: boolean;
 }
 
@@ -33,11 +32,34 @@ const Filter = ({
   setFilter,
   onApplyFilter,
   onResetFilter,
-  formLoad,
-  formLoadLoading,
   filterLoading,
 }: FilterProps) => {
+
+
   const { t } = useTranslation();
+  const [list, setList] = useState<any>({
+    statuses: [],
+  });
+
+  // ==== Fetch Data with useFetch ====
+  const { data: formLoad, loading: formLoadLoading } = useFetch<{ statuses: any[] }>(
+    "/lecturer/leavehistory/formload"
+  );
+
+  // ==== Get list from form load ==== 
+  useEffect(() => {
+    console.log(formLoad);
+    if (formLoad) {
+      setList({
+        statuses: formLoad.data.status,
+      });
+    }
+  }, [formLoad]);
+
+  // ==== Event Handler ==== 
+  const handleSelectChange = (key: string, field: keyof FilterData) => {
+    setFilter((prev) => ({ ...prev, [field]: key }));
+  };
 
   const handleDateChange = (field: keyof FilterData, value: DateValue | null) => {
     setFilter((prev) => ({ ...prev, [field]: value }));
@@ -58,8 +80,10 @@ const Filter = ({
     }
   };
 
+  // if (!isOpen) return null;
+
   return (
-    <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading} loadingType="regular" >
+    <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading || formLoadLoading} loadingType="regular" >
       <form className="space-y-4">
         {/* Date & Time */}
         <div>
@@ -75,11 +99,6 @@ const Filter = ({
               maxValue={filter.endDate}
               showMonthAndYearPickers
               labelPlacement="outside"
-              size="sm"
-              classNames={{
-                selectorIcon: "text-sm",
-                selectorButton: "p-0",
-              }}
             />
             <DatePicker
               label={t("endDate")}
@@ -88,11 +107,6 @@ const Filter = ({
               minValue={filter.startDate}
               showMonthAndYearPickers
               labelPlacement="outside"
-              size="sm"
-              classNames={{
-                selectorIcon: "text-sm",
-                selectorButton: "p-0",
-              }}
             />
           </div>
         </div>
@@ -103,30 +117,16 @@ const Filter = ({
           </h3>
           <Divider className="mb-4" />
           <div className="grid grid-cols-1 gap-2">
-            <Autocomplete
-              label={t("status")}
-              placeholder={t("chooseStatus")}
-              selectedKey={filter.status ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev: any) => ({
-                  ...prev,
-                  status: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-              isLoading={formLoadLoading}
-            >
-              {formLoad?.data?.status?.map((u: { id: string; label: string }) => (
-                <AutocompleteItem key={u.id} textValue={u.label}>
-                  <div className="flex items-center gap-2">
-                    <span className={cn("w-2 h-2 rounded-full flex", `bg-${statusColor(u.label)}`)}/>
-                    <span className="text-xs font-medium">{u.label}</span>
-                  </div>
-                </AutocompleteItem>
-              ))}
-            </Autocomplete>
+              <AutocompleteUI
+                name="status"
+                label={t("status")}
+                placeholder={t("chooseStatus")}
+                options={list.statuses}
+                optionLabel="label"
+                optionValue="value"
+                selectedKey={filter.status}
+                onSelectionChange={(key: any) => handleSelectChange(key, "status")}
+              />
           </div>
         </div>
       </form>

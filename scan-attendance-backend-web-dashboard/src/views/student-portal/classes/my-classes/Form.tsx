@@ -26,6 +26,7 @@ interface Props {
 }
 
 const Form: React.FC<Props> = ({ isOpen, onOpenChange }) => {
+
     const { t } = useTranslation();
     const [formData, setFormData] = useState<FormData>(initialFormData);
     const [submitting, setSubmitting] = useState<boolean>(false);
@@ -89,6 +90,8 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange }) => {
             reason: '',
         });
     }
+
+    if (!isOpen) return null;
 
     return (
         <Modal

@@ -1,8 +1,8 @@
 import {
-  Button,
   cn,
   Spinner,
 } from "@heroui/react";
+import { Button } from "@/components/hero-ui";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@/god-ui";

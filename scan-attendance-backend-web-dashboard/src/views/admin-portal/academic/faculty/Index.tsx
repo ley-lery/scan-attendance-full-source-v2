@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable, ShowToast } from "@/components/hero-ui";
 import Form from "./Form";
@@ -6,59 +6,57 @@ import View from "./View";
 import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
+import { useRenderCount } from "@/hooks/testing-render/useRenderCount";
 
-// Custom hook for separate view dialog
-const useViewClosure = () => {
-  const { isOpen, onOpen, onClose, ...rest } = useDisclosure();
+const useViewDisclosure = () => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
   return {
     isOpenView: isOpen,
     onOpenView: onOpen,
     onCloseView: onClose,
-    ...rest,
   };
 };
 
 const Index = () => {
+  useRenderCount("FacultyPage");
   const { t } = useTranslation();
-  // ==== State Modal Management ====
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isOpenView, onOpenView, onCloseView } = useViewClosure();
 
-  // ==== State Management ====
-  const [isEdit, setIsEdit] = useState<boolean>(false);
-  const [searchKeyword, setSearchKeyword] = useState<string>("");
+  // ==== Disclosure ====
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpenView, onOpenView, onCloseView } = useViewDisclosure();
+
+  // ==== UI State ====
+  const [isEdit, setIsEdit] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
   const [editRow, setEditRow] = useState<any>(null);
   const [viewRow, setViewRow] = useState<any>(null);
 
-  // ==== Pagination State ====
-  const [pagination, setPagination] = useState({
+  // ==== Pagination ====
+  const [pagination, setPagination] = useState(() => ({
     page: 1,
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
-  });
+  }));
 
-  // ==== Fetch Data with useFetch ====
+  // ==== transition for smooth UI ====
+  const [isPending, startTransition] = useTransition();
+
+  // ==== Data fetching ====
   const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(
-    searchKeyword.trim() === "" ? "/faculty/list" : "/faculty/search", 
+    searchKeyword.trim() === "" ? "/faculty/list" : "/faculty/search",
     {
       params: {
         page: pagination.page,
         limit: pagination.limit,
-        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }), // add keyword only for search
+        ...(searchKeyword.trim() && { keyword: searchKeyword }),
       },
-      deps: [pagination.page, pagination.limit, searchKeyword], // trigger when keyword changes
+      deps: [pagination.page, pagination.limit, searchKeyword],
     }
   );
-  
-  useEffect(() => {
-    console.log("Fetched data:", data?.data);
-  }, [data]);
-  
-  // ==== Table Data & Total Pages ====
-  const dataRows = data?.data?.rows;
-  const rows = dataRows || [];
+
+  const rows = data?.data?.rows || [];
   const totalPage = Math.ceil((data?.data?.total || 0) / pagination.limit) || 1;
 
-  // ==== Columns Definitions ====
+  // ==== Columns (memoized) ====
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
@@ -68,90 +66,117 @@ const Index = () => {
       { name: t("status"), uid: "status", sortable: true },
       { name: t("action"), uid: "actions" },
     ],
-    [t],
+    [t]
   );
 
-  const visibleCols = [ "id",  "code", "name_en", "name_kh", "status", "actions"];
+  const visibleCols = useMemo(
+    () => ["id", "code", "name_en", "name_kh", "status", "actions"],[]
+  );
 
-  const status = [
-    { name: "Active", uid: "Active" },
-    { name: "Inactive", uid: "Inactive" },
-  ];
+  const status = useMemo(
+    () => [
+      { name: "Active", uid: "Active" },
+      { name: "Inactive", uid: "Inactive" },
+    ],[]
+  );
 
-  // ==== Search Input Handlers ====
-  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchKeyword(e.target.value);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
+  // ==== Search Handler (stable with useCallback) ====
+  const onSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    startTransition(() => {
+      setSearchKeyword(value);
+      setPagination((prev) => ({ ...prev, page: 1 }));
+    });
+  }, []);
 
-  const handleClearSearch = () => {
-    setSearchKeyword("");
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
+  const handleClearSearch = useCallback(() => {
+    startTransition(() => {
+      setSearchKeyword("");
+      setPagination((prev) => ({ ...prev, page: 1 }));
+    });
+  }, []);
 
-  // ==== Handle Create/Edit/View/Delete ====
-
+  // ==== CRUD Actions (stable) ====
   const { mutate: deleteFaculty } = useMutation({
     onSuccess: () => {
       refetch();
-      ShowToast({ color: "success", title: "Success", description: "Faculty deleted successfully" });
+      ShowToast({ color: "success", title: t("success"), description: t("facultyDeleted") });
     },
     onError: (err) => {
-      ShowToast({ color: "error", title: "Error", description: err.message || "Failed to delete faculty" });
+      ShowToast({
+        color: "error",
+        title: t("error"),
+        description: err.message || t("failedToDelete"),
+      });
     },
   });
-  
 
-  const onCreate = () => {
+  const onCreate = useCallback(() => {
     setIsEdit(false);
     onOpen();
-  };
+  }, [onOpen]);
 
-  const onEdit = (row: object) => {
-    setEditRow(row);
-    onOpen();
-    setIsEdit(true);
-  };
+  const onEdit = useCallback(
+    (row: any) => {
+      setEditRow(row);
+      setIsEdit(true);
+      onOpen();
+    },
+    [onOpen]
+  );
 
-  const onView = (row: object) => {
-    setViewRow(row);
-    setIsEdit(false);
-    onOpenView();
-  };
+  const onView = useCallback(
+    (row: any) => {
+      setViewRow(row);
+      setIsEdit(false);
+      onOpenView();
+    },
+    [onOpenView]
+  );
 
-  const onDelete = async (id: number) => {
-    await deleteFaculty(`/faculty/${id}`, id, "DELETE");
-  };
-  
+  const onDelete = useCallback(
+    async (id: number) => {
+      await deleteFaculty(`/faculty/${id}`, id, "DELETE");
+    },
+    [deleteFaculty]
+  );
 
-  const formProps = {
-    isOpen,
-    onClose,
-    isEdit,
-    row: editRow,
-    loadList: refetch, 
-  };
-  const viewProps = {
-    isOpen: isOpenView,
-    onClose: onCloseView,
-    row: viewRow,
-  };
+  // ==== Pagination Handler ====
+  const onChangePage = useCallback((newPage: number) => {
+    startTransition(() => {
+      setPagination((prev) => ({ ...prev, page: newPage }));
+    });
+  }, []);
 
+  // ==== Props for dialogs ====
+  const formProps = useMemo(
+    () => ({ isOpen, onClose, isEdit, row: editRow, loadList: refetch }),
+    [isOpen, onClose, isEdit, editRow, refetch]
+  );
+
+  const viewProps = useMemo(
+    () => ({ isOpen: isOpenView, onClose: onCloseView, row: viewRow }),
+    [isOpenView, onCloseView, viewRow]
+  );
+
+  // ==== Render ====
   return (
-    <div className="p-4">
+    <div className="relative p-4">
       <Form {...formProps} />
       <View {...viewProps} />
 
       <DataTable
+        key="faculty-table"
         loading={loading}
+        isPending={isPending}
         dataApi={rows}
         cols={cols}
         visibleCols={visibleCols}
         onCreate={onCreate}
         onEdit={onEdit}
         onView={onView}
-        onDelete={(id: number) => onDelete(id)}
-        loadData={refetch} 
+        onDelete={onDelete}
+        loadData={refetch}
         selectRow={false}
         permissionCreate="create:faculty"
         permissionDelete="delete:faculty"
@@ -160,13 +185,11 @@ const Index = () => {
         searchKeyword={searchKeyword}
         onSearchInputChange={onSearchInputChange}
         handleClearSearch={handleClearSearch}
-        handleSearch={refetch} 
+        handleSearch={refetch}
         initialPage={pagination.page}
         totalPages={totalPage}
         page={pagination.page}
-        onChangePage={(newPage: number) =>
-          setPagination((prev) => ({ ...prev, page: newPage }))
-        }
+        onChangePage={onChangePage}
         status={status}
       />
     </div>

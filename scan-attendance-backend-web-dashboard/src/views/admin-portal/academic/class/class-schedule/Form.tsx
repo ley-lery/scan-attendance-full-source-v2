@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Autocomplete, AutocompleteItem, DatePicker, Modal, ShowToast } from "@/components/hero-ui";
+import { AutocompleteUI, DatePicker, Modal, ShowToast } from "@/components/hero-ui";
 import { type FormEvent, type Key, memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@/hooks/useMutation";
@@ -13,9 +13,7 @@ import { ScheduleHeader } from "./ScheduleHeader";
 import AddClass from "./AddClass";
 import ScheduleFooter from "./ScheduleFooter";
 
-// ============================================================================
-// Types & Interfaces
-// ============================================================================
+// ======== types & interfaces ========
 
 interface FormProps {
   isOpen?: boolean;
@@ -35,7 +33,7 @@ type SessionWithDetails = {
 }
 
 type ScheduleFormData = {
-  id?: number | null; // Added for edit mode
+  id?: number | null; 
   classId: number | null;
   startDate: DateValue | null;
   endDate: DateValue | null;
@@ -69,10 +67,7 @@ type SelectedSlot = {
   order: number;
 }
 
-// ============================================================================
-// Constants
-// ============================================================================
-
+// ======== constants ========
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 
 const TIME_SLOTS = [
@@ -109,10 +104,8 @@ const INITIAL_TEMP_SESSION: TempSessionData = {
   credits: null,
 };
 
-// ============================================================================
-// Utility Functions
-// ============================================================================
 
+// ======== utility functions ========
 const validateForm = (formData: ScheduleFormData, t: (key: string) => string): Record<string, string> => {
   const errors: Record<string, string> = {};
 
@@ -152,10 +145,8 @@ const normalizeSessionData = (session: any): SessionWithDetails => ({
   credits: session.credits ? Number(session.credits) : undefined,
 });
 
-// ============================================================================
-// Sub-components
-// ============================================================================
 
+// ======== break time component ========
 const BreakTime = memo(() => (
   <tr>
     <td colSpan={8} className="text-center py-2 bg-zinc-100 dark:bg-zinc-800 font-semibold border border-blue-950 dark:border-zinc-700">
@@ -166,11 +157,10 @@ const BreakTime = memo(() => (
 
 BreakTime.displayName = "BreakTime";
 
-// ============================================================================
-// Main Component
-// ============================================================================
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+
+
   const { t } = useTranslation();
   const { isOpen: isOpenModal, onOpen, onClose: onCloseModal } = useDisclosure();
   
@@ -187,12 +177,11 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   const { mutate: updateSchedule, loading: updating } = useMutation();
   const { data: formLoad } = useFetch<{ classes: any[], courses: any[], lecturers: any[] }>("/schedule/formload");
 
-  // ============================================================================
-  // Effects
-  // ============================================================================
+  // ======== effects ========
 
   // Initialize form data when modal opens
   useEffect(() => {
+    console.log("row", row);
     if (isOpen) {
       if (isEdit && row) {
         // Edit mode: populate form with existing data
@@ -246,9 +235,9 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     }
   }, [formData.classId, formLoad?.data?.classes]);
 
-  // ============================================================================
+  // ====================
   // Callbacks
-  // ============================================================================
+  // ====================
 
   const handleSlotClick = useCallback((time: string, day: string) => {
     const timeSlot = TIME_SLOTS.find(ts => ts.value === time);
@@ -499,9 +488,9 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     ShowToast({ color: "warning", description: "Session removed from schedule" });
   }, []);
 
-  // ============================================================================
+  // ====================
   // Memoized Values
-  // ============================================================================
+  // ====================
 
   const scheduleData = useMemo(() => {
     const display: any = {};
@@ -530,10 +519,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     return loading || creating || updating;
   }, [loading, creating, updating]);
 
-  // ============================================================================
-  // Render
-  // ============================================================================
-
   if (!isOpen) return null;
 
   return (
@@ -551,6 +536,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
         closeForm={closeForm}
         disabledBtn={isSubmitDisabled}
         isEdit={isEdit}
+        scrollBehavior={true}
       >
         <div className="mx-auto px-20">
           {/* Header info */}
@@ -564,32 +550,22 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
           )}
           
           <div className="grid grid-cols-3 gap-4 py-10">
-            <Autocomplete
-              radius="md"
-              size="md"
-              label={t("class")}
-              labelPlacement="outside"
+            <AutocompleteUI
               name="classId"
-              placeholder={t("chooseclass")}
+              label={t("class")}
+              placeholder={t("chooseClass")}
+              options={formLoad?.data?.classes}
+              optionLabel="class_name"
+              optionValue="id"
               selectedKey={formData.classId?.toString()}
-              isInvalid={!!errors.classId}
-              errorMessage={errors.classId}
-              className="w-full"
               onSelectionChange={(key) =>
                 handleInputChange({
                   target: { name: "classId", value: key ?? "" },
                 })
               }
+              error={errors.classId}
               isRequired
-              isReadOnly={isEdit}
-              description={isEdit && "Cannot change class when editing"}
-            >
-              {formLoad?.data?.classes?.map((item: any) => (
-                <AutocompleteItem key={item.id} textValue={item.class_name}>
-                  <p className="truncate w-[95%]">{item.class_name}</p>
-                </AutocompleteItem>
-              )) || []}
-            </Autocomplete>
+            />
   
             <DatePicker
               labelPlacement="outside"
@@ -642,7 +618,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
               <tbody>
                 {TIME_SLOTS.map((timeSlot, idx) => {
                   const isFirstSlot = idx === 0;
-                  
                   return (
                     <React.Fragment key={timeSlot.value}>
                       <tr className="bg-white dark:bg-zinc-800">
@@ -651,7 +626,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
                         </td>
                         {DAYS.map((day) => {
                           const course = scheduleData[timeSlot.value]?.[day];
-                          const isEmpty = !course;
                           return (
                             <TimeSlot
                               key={`${timeSlot.value}-${day}`}

@@ -131,11 +131,11 @@ declare global {
     lecturerCode?: string;
     lecturerNameEn?: string;
     lecturerNameKh?: string;
-    dob?: DateValue | null | string;
+    dob?: DateValue | null ;
     gender?: "Male" | "Female";
     email?: string;
     phone?: string;
-    deletedDate?: DateValue | null | string;
+    deletedDate?: DateValue | null ;
     status?: "Active" | "Inactive";
   }
   interface LecturerCourse {

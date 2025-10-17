@@ -65,10 +65,6 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== Form Load ====
-  const { data: formLoad, loading: formLoadLoading } = useFetch<{ users: any[] }>(
-    "/auditlog/formload"
-  );
 
   // ==== Fetch Data ====
   const { data, loading, refetch } = useFetch<{
@@ -83,11 +79,6 @@ const Index = () => {
     deps: [pagination.page, pagination.limit, searchKeyword],
     enabled: !isFiltered, // Don't fetch when filtered
   });
-
-  useEffect(() => {
-    console.log(formLoad, "formLoad");
-    console.log(data, "data");
-  }, [formLoad, data]);
 
   // Update rows and totalPage when data changes (only when not filtered)
   useEffect(() => {
@@ -239,8 +230,6 @@ const Index = () => {
         setFilter={setFilter}
         onApplyFilter={onFilter}
         onResetFilter={resetFilter}
-        formLoad={formLoad}
-        formLoadLoading={formLoadLoading}
         filterLoading={filterLoading}
       />
 

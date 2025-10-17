@@ -23,6 +23,9 @@ const initialFormData: UserRole = {
 
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+  
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<UserRole>(initialFormData);
@@ -125,7 +128,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   const closeForm = () => (isEdit || !isFormDirty() ? onClose() : null);
 
-  if (!isOpen) return null;
 
   return (
     <>

@@ -23,6 +23,9 @@ const initialFormData: Permission = {
 
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+  
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Permission>(initialFormData);
@@ -131,7 +134,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   const closeForm = () => (isEdit || !isFormDirty() ? onClose() : null);
 
-  if (!isOpen) return null;
 
   return (
     <>

@@ -23,6 +23,9 @@ const initialFormData: Course = {
 };
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Course>(initialFormData);

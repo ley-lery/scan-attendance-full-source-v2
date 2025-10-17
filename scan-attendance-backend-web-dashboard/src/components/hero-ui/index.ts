@@ -20,11 +20,13 @@ export { default as Card } from "./card/CardUi";
 export { default as ActionCard } from "./card/ActionCard";
 export { Textarea } from "./inputs/Textarea";
 export { DropdownItem, Dropdown, DropdownTrigger, DropdownMenu } from "./dropdown/Dropdown";
-export { Autocomplete, AutocompleteItem} from "./inputs/Autocomplete";
+export { Autocomplete, AutocompleteItem } from "./inputs/Autocomplete";
 export { default as TimeInput } from "./time-input/TimeInput";
 export { DateRangePicker } from "./date/date-range/DateRang";
 export { Button } from "./button/Button";
-
+export { default as ModalRequest } from "./modal/ModalRequest";
+export { AutocompleteUI } from "./auto-complete/Autocomplete";
+export { SelectUI } from "./select/Select";
 
 
 

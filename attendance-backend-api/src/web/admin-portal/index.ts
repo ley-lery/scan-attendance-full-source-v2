@@ -17,6 +17,6 @@ export { userRoutes } from "./manage-user/user/route";
 export { studentLeaveReqRoutes } from "./student/student-leave-req/route"
 export { scheduleRoutes } from "./academic/classes/class-schedule/route"
 export { attendanceSummaryRoutes as rptAttSummaryRoutes } from "./reports/attendance-report/summary/route"
-
+export { aLecturerLeaveReqRoutes } from "./lecturer/lecturer-leave-req/route"
 
 

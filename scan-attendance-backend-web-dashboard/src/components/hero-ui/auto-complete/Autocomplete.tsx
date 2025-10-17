@@ -1,64 +1,92 @@
-import { type ComponentProps } from "react";
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
 
-type AutocompleteProps = ComponentProps<typeof Autocomplete>;
 
 interface Option {
-  [key: string]: any;
+  [key: string | number]: any;
 }
 
 interface Props {
   options?: Option[];
   optionLabel?: string;
+  secondaryOptionLabel?: string;
   optionValue?: string;
-  value?: string;
-  onChange?: (value: string) => void;
+  selectedKey?: string | number | null;
+  onSelectionChange?: (value: string | number | null) => void;
   placeholder?: string;
   name?: string;
+  label?: string;
   error?: string;
   isRequired?: boolean;
+  size?: "sm" | "md" | "lg";
+  textValue?: any;
+  itemStartContent?: React.ReactNode;
+  itemEndContent?: React.ReactNode;
 }
 
-
-const AutocompleteUI = ({
+export const AutocompleteUI = ({
   options = [],
   optionLabel = "label",
+  secondaryOptionLabel = "",
   optionValue = "value",
-  value = "",
-  onChange,
+  selectedKey = "",
+  onSelectionChange,
   placeholder = "Select option",
   name,
+  label,
   error,
   isRequired = false,
+  size = "md",
+  textValue,
+  itemStartContent,
+  itemEndContent,
   ...props
-}: AutocompleteProps & Props) => {
+}: Props ) => {
   return (
     <Autocomplete
+      label={label}
       labelPlacement="outside"
       placeholder={placeholder}
-      selectedKey={value}
+      selectedKey={selectedKey}
       name={name}
       isInvalid={!!error}
       errorMessage={error}
       className="w-full"
+      defaultItems={options}
       isRequired={isRequired}
-      onSelectionChange={(key) => onChange?.(key?.toString() ?? "")}
+      onSelectionChange={onSelectionChange}
+      inputProps={{
+        classNames: {
+          inputWrapper: `autocomplete-${size}-ui`,
+          label: "translate-y-7"
+
+        }
+      }}
+      listboxProps={{
+        itemClasses: {
+          base: [
+            "rounded-xl px-3",
+          ],
+        },
+      }}
+      popoverProps={{
+        classNames: {
+          content: "rounded-[20px]  bg-zinc-50 dark:bg-zinc-800 border-white dark:border-transparent border-2",
+        },
+      }}
       {...props}
     >
-      {options.map((item, index) => (
+      {(item) => (
         <AutocompleteItem
-          key={item[optionValue] ?? index}
-          textValue={item[optionLabel]}
+          key={item[optionValue]}
+          textValue={ textValue ? textValue : item[optionLabel]}
         >
-          <p className="truncate w-[95%]">
-            {item[optionLabel]}
-          </p>
+          {itemStartContent}
+          <p className="truncate w-[95%]">{item[optionLabel] + (secondaryOptionLabel && " - " + item[secondaryOptionLabel])}</p>
+          {itemEndContent}
         </AutocompleteItem>
-      ))}
+      )}
     </Autocomplete>
   );
 };
 
-
-AutocompleteUI.displayName = 'Autocomplete';
-export default AutocompleteUI;
+AutocompleteUI.displayName = "AutocompleteUI";

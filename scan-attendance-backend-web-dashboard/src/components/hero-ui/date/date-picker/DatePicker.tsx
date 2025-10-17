@@ -10,5 +10,6 @@ export const DatePicker = extendVariants(DatePickerComponent, {
   },
   defaultVariants: {
     size: "md",
+    showMonthAndYearPickers: "true",
   },
 });

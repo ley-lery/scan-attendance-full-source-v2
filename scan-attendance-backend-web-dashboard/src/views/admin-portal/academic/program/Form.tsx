@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { InputNumber, Modal, ShowToast, Autocomplete, AutocompleteItem } from "@/components/hero-ui";
+import { InputNumber, Modal, ShowToast, AutocompleteUI } from "@/components/hero-ui";
 import { type ChangeEventHandler, type FormEvent, type Key, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Validation } from "@/validations/index";
-import { Radio, RadioGroup, Select, SelectItem } from "@heroui/react";
+import { Radio, RadioGroup } from "@heroui/react";
 import { useMutation } from "@/hooks/useMutation";
 import { useFetch } from "@/hooks/useFetch";
-import AutocompleteUI from "@/components/hero-ui/auto-complete/Autocomplete";
 
 interface FormProps {
   isOpen?: boolean;
@@ -37,6 +36,9 @@ export const programTypes = [
 
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+  
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Program>(initialFormData);
@@ -52,6 +54,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   // Load form data when modal opens or row changes
   useEffect(() => {
+    console.log(row, "row");
     if (isOpen) {
       if (isEdit && row) {
         setFormData({
@@ -77,10 +80,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const handleSelectionChange = (e: any) => {
-    setFormData((prev) => ({ ...prev, type: e.target.value }));
   };
 
   const onSubmit = async (): Promise<boolean> => {
@@ -157,7 +156,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   const closeForm = () => (isEdit || !isFormDirty() ? onClose(false) : onClose(false));
 
-  if (!isOpen) return null;
 
   return (
     <>
@@ -176,108 +174,73 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
         disabledBtn={loading || creating || updating}
       >
         <div className="grid grid-cols-2 gap-4">
-          <Select
-            label={t("programType")}
+          <AutocompleteUI
             name="type"
-            labelPlacement="outside"
+            label={t("programType")}
             placeholder={t("chooseProgramType")}
-            selectedKeys={[formData.type] as any}
-            onChange={handleSelectionChange}
-            multiple={false}
-            isInvalid={!!errors.type}
-            errorMessage={errors.type}
+            options={programTypes}
+            optionLabel="label"
+            optionValue="key"
+            selectedKey={formData.type}
+            onSelectionChange={(key) =>
+              handleInputChange({
+                target: { name: "type", value: key ?? "" },
+              })
+            }
+            error={errors.type}
             isRequired
-          >
-            {programTypes.map((item) => (
-              <SelectItem key={item.key}>{item.label}</SelectItem>
-            ))}
-          </Select>
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("faculty")}
-            labelPlacement="outside"
+          />
+          <AutocompleteUI
             name="faculty"
+            label={t("faculty")}
             placeholder={t("chooseFaculty")}
+            options={formLoad?.data?.faculties}
+            optionLabel="name_en"
+            secondaryOptionLabel="name_kh"
+            optionValue="id"
             selectedKey={formData.faculty}
-            isInvalid={!!errors.faculty}
-            errorMessage={errors.faculty}
-            className="w-full"
             onSelectionChange={(key) =>
               handleInputChange({
                 target: { name: "faculty", value: key ?? "" },
               })
             }
-            isRequired
-          >
-            {formLoad?.data?.faculties.map((item: any) => (
-              <AutocompleteItem  key={item.id} textValue={item.name_en + " - " + item.name_kh}>
-                <p className={`truncate w-[95%] `}>{item.name_en} - {item.name_kh}</p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
-          
-          {/* <AutocompleteUI
-            name="faculty"
-            label="Faculty"
-            placeholder="Select Faculty"
-            options={formLoad?.data?.faculties}
-            optionLabel="name_en"
-            optionValue="id"
-            value={formData.faculty}
-            onChange={(val) => setFormData({ ...formData, faculty: val })}
             error={errors.faculty}
             isRequired
-          /> */}
-
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("field")}
-            labelPlacement="outside"
+          />
+          <AutocompleteUI
             name="field"
+            label={t("field")}
             placeholder={t("chooseField")}
+            options={formLoad?.data?.fields}
+            optionLabel="field_name_en"
+            secondaryOptionLabel="field_name_kh"
+            optionValue="id"
             selectedKey={formData.field}
-            isInvalid={!!errors.field}
-            errorMessage={errors.field}
-            className="w-full"
             onSelectionChange={(key) =>
               handleInputChange({
                 target: { name: "field", value: key ?? "" },
               })
             }
+            error={errors.field}
             isRequired
-          >
-            {formLoad?.data?.fields.map((item: any) => (
-              <AutocompleteItem  key={item.id} textValue={item.field_name_en + " - " + item.field_name_kh}>
-                <p className={`truncate w-[95%] `}>{item.field_name_en} - {item.field_name_kh}</p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("course")}
-            labelPlacement="outside"
+          />
+          <AutocompleteUI
             name="course"
+            label={t("course")}
             placeholder={t("chooseCourse")}
+            options={formLoad?.data?.courses}
+            optionLabel="name_en"
+            secondaryOptionLabel="name_kh"
+            optionValue="id"
             selectedKey={formData.course}
-            isInvalid={!!errors.course}
-            errorMessage={errors.course}
-            className="w-full"
             onSelectionChange={(key) =>
               handleInputChange({
                 target: { name: "course", value: key ?? "" },
               })
             }
+            error={errors.course}
             isRequired
-          >
-            {formLoad?.data?.courses.map((item: any) => (
-              <AutocompleteItem  key={item.id} textValue={item.name_en + " - " + item.name_kh}>
-                <p className={`truncate w-[95%] `}>{item.name_en} - {item.name_kh}</p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
+          />
 
           {["promotionNo", "termNo", "credits"].map((field) => (
             <InputNumber

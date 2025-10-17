@@ -35,7 +35,7 @@ export const ScheduleController = {
                 res.send({ message: "No schedule found" });
                 return;
             }
-            sendSuccessResponse(res, true, "Student schedule", { rows: rows }, 200);
+            sendSuccessResponse(res, true, "Student schedule", { rows: rows, statistics: rows[0] }, 200);
         } catch (e) {
             handleError(res, e as Error, "Error fetching student schedule", 500);
         }

@@ -50,6 +50,9 @@ interface UserPermissionData {
 }
 
 const Permission = ({ isOpen = false, onClose, userId }: PermissionProps) => {
+  
+  if (!isOpen) return null;
+
   const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
   const [groupedPermissions, setGroupedPermissions] = useState<Record<string, Permission[]>>({});
   const [userInfo, setUserInfo] = useState<User | null>(null);

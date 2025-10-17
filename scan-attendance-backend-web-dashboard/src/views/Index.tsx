@@ -33,7 +33,7 @@ const Index = () => {
 
         {/* Main Content */}
         <main className="flex-1 overflow-hidden rounded-tl-3xl border-l border-t border-zinc-200 dark:border-zinc-700">
-          <div className="overflow-y-auto has-scrollbar max-h-full">
+          <div className="overflow-y-auto has-scrollbar max-h-[calc(100%-0px)]">
             <Outlet />
           </div>
         </main>

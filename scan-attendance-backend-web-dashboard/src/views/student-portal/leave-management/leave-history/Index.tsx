@@ -268,7 +268,7 @@ const Index = () => {
     },
   ];
 
-  const customizeColClosed = useCallback((data: any, key: string) => {
+  const customizeCols = useCallback((data: any, key: string) => {
     const value = data[key];
     return (
       <span
@@ -292,22 +292,22 @@ const Index = () => {
           "px-3 py-1 rounded-full w-fit text-xs/tight font-medium inline-flex items-center gap-2 bg-zinc-200 dark:bg-zinc-800",
         )}
       >
-        {value}
+        {value} {value > 1 ? t("days") : t("day")}
       </span>
     );
   }, []);
 
   const colsKeys = useMemo(
     () => [
-      { key: "approved_by_lecturer_en", value: (data: any) => customizeColClosed(data, "approved_by_lecturer_en") },
-      { key: "approved_by_username", value: (data: any) => customizeColClosed(data, "approved_by_username") },
-      { key: "approved_by_user_email", value: (data: any) => customizeColClosed(data, "approved_by_user_email") },
-      { key: "approved_by_lecturer_kh", value: (data: any) => customizeColClosed(data, "approved_by_lecturer_kh") },
-      { key: "approved_by_lecturer_en", value: (data: any) => customizeColClosed(data, "approved_by_lecturer_en") },
-      { key: "deleted_date", value: (data: any) => customizeColClosed(data, "deleted_date") },
+      { key: "approved_by_lecturer_en", value: (data: any) => customizeCols(data, "approved_by_lecturer_en") },
+      { key: "approved_by_username", value: (data: any) => customizeCols(data, "approved_by_username") },
+      { key: "approved_by_user_email", value: (data: any) => customizeCols(data, "approved_by_user_email") },
+      { key: "approved_by_lecturer_kh", value: (data: any) => customizeCols(data, "approved_by_lecturer_kh") },
+      { key: "approved_by_lecturer_en", value: (data: any) => customizeCols(data, "approved_by_lecturer_en") },
+      { key: "deleted_date", value: (data: any) => customizeCols(data, "deleted_date") },
       { key: "total_days", value: (data: any) => customizeColTotalDays(data, "total_days") },
     ],
-    [customizeColClosed]
+    [customizeCols]
   );
 
   return (
@@ -320,8 +320,6 @@ const Index = () => {
         setFilter={setFilter}
         onApplyFilter={onFilter}
         onResetFilter={resetFilter}
-        formLoad={formLoad}
-        formLoadLoading={formLoadLoading}
         filterLoading={filterLoading}
       />
       <View

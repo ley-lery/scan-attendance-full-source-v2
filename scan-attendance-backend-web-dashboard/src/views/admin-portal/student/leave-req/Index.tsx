@@ -88,10 +88,6 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== Form Load ====
-  const { data: formLoad, loading: formLoadLoading } = useFetch<{ users: any[] }>(
-    "/student/leavereq/formload"
-  );
 
   // ==== Fetch Data ====
   const endpoint =
@@ -342,7 +338,7 @@ const Index = () => {
       <span
         className={cn(
           "flex items-center gap-2",
-          "px-3 py-1 rounded-full w-fit text-xs/tight font-medium inline-flex items-center gap-2",
+          "px-3 py-1 rounded-full w-fit font-medium inline-flex items-center gap-2",
           value === "Closed" && "text-danger bg-danger/20"
         )}
       >
@@ -463,8 +459,6 @@ const Index = () => {
         setFilter={setFilter}
         onApplyFilter={applyFilter}
         onResetFilter={resetFilter}
-        formLoad={formLoad}
-        formLoadLoading={formLoadLoading}
         filterLoading={filterLoading}
       />
 

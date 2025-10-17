@@ -3,11 +3,10 @@ import React, {  useState } from 'react';
 import moment from 'moment';
 import { getLocalTimeZone, today } from '@internationalized/date';
 import { type DateValue } from '@heroui/react';
-import Modal from '@/components/ui/modal/ModalSystem';
 import { CalendarDate } from '@internationalized/date';
 import { useTranslation } from 'react-i18next';
 import ShowToast from '@/components/hero-ui/toast/ShowToast';
-import { InputNumber, DatePicker, Textarea } from '@/components/hero-ui';
+import { InputNumber, DatePicker, Textarea, ModalRequest } from '@/components/hero-ui';
 import { useMutation } from '@/hooks/useMutation';
 
 interface FormData {
@@ -27,11 +26,13 @@ const initialFormData: FormData = {
 
 interface Props {
   isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  onClose: () => void;
   loadList: () => void;
 }
 
-const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
+const Form: React.FC<Props> = ({ isOpen, onClose, loadList }) => {
+
+
     const { t } = useTranslation();
     const [formData, setFormData] = useState<FormData>(initialFormData);
 
@@ -41,7 +42,7 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
     // Mutation
     const { mutate: createLeaveRequest, loading: creating } = useMutation({
         onSuccess: (response) => {
-            onOpenChange(false);
+            onClose();
             ShowToast({
                 color: "success",
                 title: "Success",
@@ -63,7 +64,7 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
       
     const handleDateChange = (field: keyof FormData, value: DateValue | null) => {
         if (value) {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+            setFormData((prev) => ({ ...prev, [field]: value }));
         }
     };
 
@@ -84,8 +85,28 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleDaysChange = (value: number | React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            if (value as number > 0) {
+                const startMoment = moment(formData.startDate.toDate(getLocalTimeZone()));
+                const newEndDate = startMoment.add(value as number - 1, 'days');
+                
+                // Convert back to CalendarDate
+                const newEndCalendarDate = new CalendarDate(
+                    newEndDate.year(),
+                    newEndDate.month() + 1, // moment months are 0-indexed
+                    newEndDate.date()
+                );
+                
+                setFormData((prev) => ({ ...prev, endDate: newEndCalendarDate }));
+            }
+        } catch (error) {
+            console.error('Error updating end date:', error);
+        }
+    };
+
+    const handleSubmit = async () => {
+        
         const payload = {
             requestDate : formatDateValue(formData.requestDate),
             startDate : formatDateValue(formData.startDate),
@@ -105,17 +126,19 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
         });
     }
 
+    if (!isOpen) return null;
+
     return (
-        <Modal
+        <ModalRequest
             title="Submit Leave Request"
             isOpen={isOpen}
-            onOpenChange={onOpenChange}
+            onClose={onClose}
+            onRequest={handleSubmit}
             onSubmit={handleSubmit}
-            loading={creating}
-            size='2xl'
-            saveCloseLabel={creating ? t('requesting') : t('request')}
+            isLoading={creating}
         >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <DatePicker
                     labelPlacement="outside"
                     label={t('startDate')}
@@ -141,28 +164,29 @@ const Form: React.FC<Props> = ({ isOpen, onOpenChange, loadList }) => {
                 <InputNumber
                     label={ t('numberOfDays')}
                     value={calculateDays()}
-                    isReadOnly
+                    onChange={handleDaysChange}
                     isDisabled={creating}
                     hideStepper
                     labelPlacement="outside"
                     radius="md"
                     isClearable={false}
+                    min={1}
+                />
+                <Textarea
+                    name="reason"
+                    label="Reason for Leave"
+                    labelPlacement="outside"
+                    value={formData.reason}
+                    onChange={handleInputChange}
+                    placeholder="Enter reason here..."
+                    isRequired
+                    className="w-full col-span-3"
+                    isDisabled={creating}
+                    isClearable
+                    onClear={handleClear}
                 />
             </div>
-            <Textarea
-                name="reason"
-                label="Reason for Leave"
-                labelPlacement="outside"
-                value={formData.reason}
-                onChange={handleInputChange}
-                placeholder="Enter reason here..."
-                isRequired
-                className="w-full"
-                isDisabled={creating}
-                isClearable
-                onClear={handleClear}
-            />
-        </Modal>
+        </ModalRequest>
     );
 };
 

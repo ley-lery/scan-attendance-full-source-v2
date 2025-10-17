@@ -3,9 +3,9 @@ import { Button as ButtonComponent, extendVariants } from "@heroui/react";
 export const Button = extendVariants(ButtonComponent, {
   variants: {
     size: {
-      // sm: "btn-small-ui",
-      // md: "btn-medium-ui",
-      // lg: "btn-large-ui",
+      sm: "text-sm",
+      md: "text-base",
+      lg: "text-lg",
     },
     // radius: {
     //   sm: "btn-radius-sm",
@@ -18,21 +18,21 @@ export const Button = extendVariants(ButtonComponent, {
     radius: "md",
   },
 
-  compoundVariants: [
-    {
-      isIconOnly: "true", 
-      size: "sm",
-      class: "w-6 h-6 p-0", 
-    },
-    {
-      isIconOnly: "true",
-      size: "md",
-      class: "w-8 h-8 p-0",
-    },
-    {
-      isIconOnly: "true",
-      size: "lg",
-      class: "w-10 h-10 p-0",
-    },
-  ],
+  // compoundVariants: [
+  //   {
+  //     isIconOnly: "true", 
+  //     size: "sm",
+  //     class: "w-6 h-6 p-0", 
+  //   },
+  //   {
+  //     isIconOnly: "true",
+  //     size: "md",
+  //     class: "w-8 h-8 p-0",
+  //   },
+  //   {
+  //     isIconOnly: "true",
+  //     size: "lg",
+  //     class: "w-10 h-10 p-0",
+  //   },
+  // ],
 });

@@ -23,6 +23,9 @@ const initialFormData: Faculty = {
 };
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+  
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Faculty>(initialFormData);
@@ -127,7 +130,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   const closeForm = () => (isEdit || !isFormDirty() ? onClose(false) : onClose(false));
 
-  if (!isOpen) return null;
 
   return (
     <>

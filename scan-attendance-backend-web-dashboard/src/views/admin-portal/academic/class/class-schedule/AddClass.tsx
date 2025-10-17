@@ -1,7 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Autocomplete, AutocompleteItem, Modal } from "@/components/hero-ui";
-import { useMemo, type Key } from "react";
+import { AutocompleteUI, Modal } from "@/components/hero-ui";
+import { type Key } from "react";
 import { useTranslation } from "react-i18next";
+
+const credits = [
+  {key: "1", label: "1"},
+  {key: "2", label: "2"},
+  {key: "3", label: "3"},
+  {key: "4", label: "4"},
+  {key: "5", label: "5"},
+  {key: "6", label: "6"},
+];
 
 interface Props {
   onApply: () => void;
@@ -39,42 +48,11 @@ const AddClass = ({
   handleTempInputChange,
   resetTempForm,
 }: Props) => {
+
+
   const { t } = useTranslation();
 
-  const filteredCourses = useMemo(() => {
-    const lecturers = formLoad?.data?.lecturers || [];
-    const courses = formLoad?.data?.courses || [];
-  
-    // if not lecturer selected, return all courses
-    if (!tempSessionData.lecturer) return courses;
-  
-    // convert lecturer to number
-    const selectedLecturerId = Number(tempSessionData.lecturer);
-  
-    // find course_id that matches lecturer
-    const lecturerCourseIds = lecturers
-      .filter((lec: any) => lec.id === selectedLecturerId && lec.course_id !== null)
-      .map((lec: any) => lec.course_id);
-  
-    // if lecturer has no course_id, return empty array
-    if (lecturerCourseIds.length === 0) return [];
-  
-    // otherwise filter by course_id
-    return courses.filter((course: any) => lecturerCourseIds.includes(course.id));
-  }, [tempSessionData.lecturer, formLoad?.data]);
-
-  const handleChangeLecturer = (key: Key) => {
-    handleTempInputChange({
-      target: { name: "lecturer", value: key },
-    });
-    if (tempSessionData.course) {
-      handleTempInputChange({
-        target: { name: "course", value: "" },
-      });
-    }
-  };
-
-  
+  if (!isOpen) return null;
 
   return (
     <Modal
@@ -101,99 +79,56 @@ const AddClass = ({
           </div>
         )}
 
-        {/* Course, Lecturer, and Credits Selection */}
         <div className="grid grid-cols-3 gap-4">
-          {/* Lecturer Selection - Now First */}
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("lecturer")}
-            labelPlacement="outside"
+          <AutocompleteUI
             name="lecturer"
+            label={t("lecturer")}
             placeholder={t("chooselecturer")}
+            options={formLoad?.data?.lecturers}
+            optionLabel="name_en"
+            optionValue="id"
             selectedKey={tempSessionData.lecturer?.toString()}
-            isInvalid={!!errors.lecturer}
-            errorMessage={errors.lecturer}
-            className="w-full"
-            onSelectionChange={(key: any) => handleChangeLecturer(key)}
+            onSelectionChange={(key) =>
+              handleTempInputChange({
+                target: { name: "lecturer", value: key ?? "" },
+              })
+            }
+            error={errors.lecturer}
             isRequired
-          >
-            {/* Group lecturers by unique lecturer_id to avoid duplicates */}
-            {Array.from(
-              new Map(
-                formLoad?.data?.lecturers?.map((item: any) => [
-                  item.id,
-                  item,
-                ])
-              ).values()
-            ).map((item: any) => (
-              <AutocompleteItem
-                key={item.id}
-                textValue={item.name_en + " - " + item.name_kh}
-              >
-                <p className="truncate w-[95%]">
-                  {item.name_en} - {item.name_kh}
-                </p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
-
-          {/* Course Selection - Filtered by Lecturer */}
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("course")}
-            labelPlacement="outside"
+          />
+          <AutocompleteUI
             name="course"
+            label={t("course")}
             placeholder={t("chooseCourse")}
+            options={formLoad?.data?.courses}
+            optionLabel="name_en"
+            optionValue="id"
             selectedKey={tempSessionData.course?.toString()}
-            isInvalid={!!errors.course}
-            errorMessage={errors.course}
-            className="w-full"
-            isDisabled={!tempSessionData.lecturer}
             onSelectionChange={(key) =>
               handleTempInputChange({
                 target: { name: "course", value: key ?? "" },
               })
             }
+            error={errors.course}
             isRequired
-          >
-            {filteredCourses.map((item: any) => (
-              <AutocompleteItem
-                key={item.id}
-                textValue={item.name_en + " - " + item.name_kh}
-              >
-                <p className="truncate w-[95%]">
-                  {item.name_en} - {item.name_kh}
-                </p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
-
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("credits")}
-            labelPlacement="outside"
+          />
+          <AutocompleteUI
             name="credits"
+            label={t("credits")}
             placeholder={t("chooseCredits")}
+            options={credits}
+            optionLabel="label"
+            optionValue="key"
             selectedKey={tempSessionData.credits?.toString()}
-            isInvalid={!!errors.credits}
-            errorMessage={errors.credits}
-            className="w-full"
             onSelectionChange={(key) =>
               handleTempInputChange({
                 target: { name: "credits", value: key ?? "" },
               })
             }
+            error={errors.credits}
             isRequired
-          >
-            {[1, 2, 3, 4, 5, 6].map((credit) => (
-              <AutocompleteItem key={credit} textValue={credit.toString()}>
-                {credit} Credits
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
+          />
+
         </div>
 
         {errors.general && (

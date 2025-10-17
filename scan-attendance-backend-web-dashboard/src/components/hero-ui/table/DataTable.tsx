@@ -1,42 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { type SVGProps, memo, useMemo, useCallback, useState } from "react";
-import {
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Chip,
-  type Selection,
-  type ChipProps,
-  type SortDescriptor,
-  Input,
-  Pagination,
-  Spinner,
-  Tooltip,
-} from "@heroui/react";
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, type Selection, type ChipProps, type SortDescriptor, Input, Pagination, Spinner, Tooltip } from "@heroui/react";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ShowToast, Button } from "@/components/hero-ui";
 import { FiChevronDown } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import { CiCalendar, CiFilter, CiSearch } from "react-icons/ci";
 import { RiCheckLine, RiCloseLine, RiFilter2Fill, RiSettings6Line } from "react-icons/ri";
-import { useToggleStore } from "@/stores/userToggleStore";
-import { IoChevronBackOutline, IoChevronForward } from "react-icons/io5";
-import { 
-  ButtonAdd, 
-  ButtonEdit, 
-  ButtonView, 
-  ButtonDelete, 
-  ButtonCancelLeave, 
-  ButtonReqLeave, 
-  ButtonMarkPresent, 
-  ButtonMarkAbsent, 
-  ButtonMarkLate, 
-  ButtonMarkPermission 
-} from "../button-permission";
+import { ButtonAdd, ButtonEdit, ButtonView, ButtonDelete, ButtonCancelLeave, ButtonReqLeave, ButtonMarkPresent, ButtonMarkAbsent, ButtonMarkLate, ButtonMarkPermission } from "../button-permission";
 import { cn } from "@/lib/utils";
 import { PiSealWarning } from "react-icons/pi";
+import { useRenderCount } from "@/hooks/testing-render/useRenderCount";
+import { useWhyDidYouUpdate } from "@/hooks/indext";
 
 export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
@@ -116,6 +89,7 @@ interface DataTableProps {
   };
   isFiltered?: boolean;
   loadingButton?: boolean;
+  isPending?: boolean;
 }
 
 // Memoize status color map
@@ -202,12 +176,7 @@ const ActionButtons = memo(({
     if (data.status === "Pending" && onApprove) {
       onApprove(data.id);
     } else {
-      ShowToast({
-        title: "Approved",
-        description: "This leave request is already approved.",
-        color: "warning",
-        icon: <PiSealWarning size={20} />,
-      });
+      ShowToast({ title: "Approved", description: "Cannot approve this leave request.", color: "warning", icon: <PiSealWarning size={20} /> });
     }
   }, [data.status, data.id, onApprove]);
 
@@ -215,154 +184,51 @@ const ActionButtons = memo(({
     if (data.status === "Pending" && onReject) {
       onReject(data.id);
     } else {
-      ShowToast({
-        title: "Rejected",
-        description: "This leave request is already rejected.",
-        color: "warning",
-        icon: <PiSealWarning size={20} />,
-      });
+      ShowToast({ title: "Rejected", description: "Cannot reject this leave request.", color: "warning", icon: <PiSealWarning size={20} /> });
     }
   }, [data.status, data.id, onReject]);
 
   return (
     <div className="relative flex items-center justify-center gap-1">
-      {onView && (
-        <ButtonView
-          permissionType={permissionView}
-          onPress={() => onView(data)}
-        />
-      )}
-      {onEdit && (
-        <ButtonEdit
-          permissionType={permissionEdit}
-          onPress={() => onEdit(data)}
-          content="Edit"
-          radius="full"
-          variant="light"
-          color="secondary"
-          tooltipColor="secondary"
-        />
-      )}
-      {onDelete && loadData && (
-        <ButtonDelete
-          confirmDelete={() => onDelete(data.id, loadData)}
-          id={data.id}
-          permissionType={permissionDelete}
-        />
-      )}
+      {onView && (<ButtonView permissionType={permissionView} onPress={() => onView(data)} /> )}
+      {onEdit && (<ButtonEdit permissionType={permissionEdit} onPress={() => onEdit(data)} content="Edit" radius="full" variant="light" color="secondary" tooltipColor="secondary" /> )}
+      {onDelete && loadData && (<ButtonDelete confirmDelete={() => onDelete(data.id, loadData)} id={data.id} permissionType={permissionDelete} /> )}
       {onCreateSchedule && (
-        <Tooltip
-          showArrow
-          content={t("shedule")}
-          color="primary"
-          placement="top"
-          closeDelay={0}
-        >
-          <Button
-            onPress={() => onCreateSchedule(data)}
-            startContent={<CiCalendar size={20} />}
-            isIconOnly
-            variant="light"
-            color="primary"
-            radius="full"
-          />
+        <Tooltip showArrow content={t("shedule")} color="primary" placement="top" closeDelay={0} >
+          <Button onPress={() => onCreateSchedule(data)} startContent={<CiCalendar size={20} />} isIconOnly variant="light" color="primary" radius="full" />
         </Tooltip>
       )}
       {onPermission && (
-        <Tooltip
-          showArrow
-          content={t("permission")}
-          color="primary"
-          placement="top"
-          closeDelay={0}
-        >
-          <Button
-            variant="light"
-            color="primary"
-            radius="full"
-            size="sm"
-            onPress={() => onPermission(data.id)}
-            isIconOnly
-          >
+        <Tooltip showArrow content={t("permission")} color="primary" placement="top" closeDelay={0} >
+          <Button variant="light" color="primary" radius="full" size="sm" onPress={() => onPermission(data.id)} isIconOnly>
             <RiSettings6Line size={20} />
           </Button>
         </Tooltip>
       )}
       {onApprove && loadData && (
-        <Tooltip
-          showArrow
-          content={t(data.status === "Pending" ? "approve" : "approved")}
-          color="primary"
-          placement="top"
-          closeDelay={0}
-        >
-          <Button
-            variant="light"
-            color="primary"
-            radius="full"
-            size="sm"
-            onPress={handleApproveClick}
-            isIconOnly
-            className={data.status !== "Pending" ? "opacity-50" : ""}
-            startContent={<RiCheckLine size={20} />}
-          />
+        <Tooltip showArrow content={t(data.status === "Pending" ? "approve" : "approved")} color="primary" placement="top" closeDelay={0} >
+          <Button variant="light" color="primary" radius="full" size="sm" onPress={handleApproveClick} isIconOnly className={data.status !== "Pending" ? "opacity-50" : ""} startContent={<RiCheckLine size={20} />} />
         </Tooltip>
       )}
       {onReject && loadData && (
-        <Tooltip
-          showArrow
-          content={t(data.status === "Pending" ? "reject" : "rejected")}
-          color="danger"
-          placement="top"
-          closeDelay={0}
-        >
-          <Button
-            variant="light"
-            color="danger"
-            radius="full"
-            size="sm"
-            onPress={handleRejectClick}
-            isIconOnly
-            className={data.status !== "Pending" ? "opacity-50" : ""}
-            startContent={<RiCloseLine size={20} />}
-          />
+        <Tooltip showArrow content={t(data.status === "Pending" ? "reject" : "rejected")} color="danger" placement="top" closeDelay={0} >
+          <Button variant="light" color="danger" radius="full" size="sm" onPress={handleRejectClick} isIconOnly className={data.status !== "Pending" ? "opacity-50" : ""} startContent={<RiCloseLine size={20} />}/>
         </Tooltip>
       )}
       {permissionCancel && (
-        <ButtonCancelLeave
-          permissionType={permissionCancel}
-          onPress={() => onCancelLeave?.(data.id)}
-          isDisabled={data.status !== "Pending" || loadingButton}
-          isLoading={loadingButton}
-        />
+        <ButtonCancelLeave permissionType={permissionCancel} onPress={() => onCancelLeave?.(data.id)} isDisabled={data.status !== "Pending" || loadingButton} isLoading={loadingButton} />
       )}
       {permissionMarkPresent && (
-        <ButtonMarkPresent
-          permissionType={permissionMarkPresent}
-          onPress={() => onMarkPresent?.(data)}
-          isLoading={loadingButton}
-        />
+        <ButtonMarkPresent permissionType={permissionMarkPresent} onPress={() => onMarkPresent?.(data)} isLoading={loadingButton} />
       )}
       {permissionMarkAbsent && (
-        <ButtonMarkAbsent
-          permissionType={permissionMarkAbsent}
-          onPress={() => onMarkAbsent?.(data)}
-          isLoading={loadingButton}
-        />
+        <ButtonMarkAbsent permissionType={permissionMarkAbsent} onPress={() => onMarkAbsent?.(data)} isLoading={loadingButton} />
       )}
       {permissionMarkLate && (
-        <ButtonMarkLate
-          permissionType={permissionMarkLate}
-          onPress={() => onMarkLate?.(data)}
-          isLoading={loadingButton}
-        />
+        <ButtonMarkLate permissionType={permissionMarkLate} onPress={() => onMarkLate?.(data)} isLoading={loadingButton} />
       )}
       {permissionMarkPermission && (
-        <ButtonMarkPermission
-          permissionType={permissionMarkPermission}
-          onPress={() => onMarkPermission?.(data)}
-          isLoading={loadingButton}
-        />
+        <ButtonMarkPermission permissionType={permissionMarkPermission} onPress={() => onMarkPermission?.(data)} isLoading={loadingButton} />
       )}
       {customAction}
     </div>
@@ -371,7 +237,7 @@ const ActionButtons = memo(({
 
 ActionButtons.displayName = 'ActionButtons';
 
-// ✅ OPTIMIZATION 4: Memoize TableControls component
+// OPTIMIZATION 4: Memoize TableControls component
 interface TableControlsProps {
   searchKeyword: string;
   onSearchInputChange?: React.ChangeEventHandler<HTMLInputElement>;
@@ -441,7 +307,7 @@ const TableControls = memo(({
           startContent={<CiSearch className="text-lg text-default-500" />}
         />
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-1">
         {customHeader}
         {status && (
           <Dropdown>
@@ -521,7 +387,7 @@ const TableControls = memo(({
 
 TableControls.displayName = 'TableControls';
 
-// ✅ MAIN COMPONENT
+// MAIN COMPONENT
 const DataTable = memo(({
   dataApi = [],
   cols = [],
@@ -569,14 +435,16 @@ const DataTable = memo(({
   handleSearch = () => {},
   handleClearSearch = () => {},
   loading = true,
-  scrollable = false,
   customizes,
   loadingButton = false,
+  isPending = false,
 }: DataTableProps) => {
-  const { t } = useTranslation();
-  const useToggle = useToggleStore((state) => state.isOpen);
 
-  // ✅ OPTIMIZATION 5: Memoize initial states
+  useRenderCount("DataTable");
+
+  const { t } = useTranslation();
+
+  // Memoize initial states
   const [internalSelectedKeys, setInternalSelectedKeys] = useState<Selection>(new Set([]));
   const [statusFilter, setStatusFilter] = useState<Selection>("all");
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>(
@@ -584,7 +452,7 @@ const DataTable = memo(({
   );
   const [visibleColumns, setVisibleColumns] = useState<Selection>(new Set(visibleCols));
 
-  // ✅ OPTIMIZATION 6: Memoize data and columns
+  // Memoize data and columns
   const columns = useMemo(() => cols, [cols]);
   const statusOptions = useMemo(() => status || [], [status]);
   const data = useMemo(() => dataApi, [dataApi]);
@@ -593,13 +461,13 @@ const DataTable = memo(({
   const isControlled = controlledSelectedKeys !== undefined;
   const selectedKeys = isControlled ? controlledSelectedKeys : internalSelectedKeys;
 
-  // ✅ OPTIMIZATION 7: Memoize header columns
+  // Memoize header columns
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) => Array.from(visibleColumns).includes(column.uid));
   }, [columns, visibleColumns]);
 
-  // ✅ OPTIMIZATION 8: Memoize filtered items
+  // Memoize filtered items
   const filteredItems = useMemo(() => {
     let filtered = [...data];
     if (
@@ -615,7 +483,7 @@ const DataTable = memo(({
     return filtered;
   }, [data, statusFilter, statusOptions.length]);
 
-  // ✅ OPTIMIZATION 9: Memoize sorted items
+  //  Memoize sorted items
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a: Data, b: Data) => {
       const first = a[sortDescriptor.column as keyof Data];
@@ -625,7 +493,7 @@ const DataTable = memo(({
     });
   }, [filteredItems, sortDescriptor]);
 
-  // ✅ OPTIMIZATION 10: Memoize renderCell with useCallback
+  // Memoize renderCell with useCallback
   const renderCell = useCallback(
     (data: Data, columnKey: React.Key) => {
       const cellValue = data[columnKey as keyof Data];
@@ -684,7 +552,7 @@ const DataTable = memo(({
             />
           );
         default:
-          return cellValue;
+          return <span className="whitespace-nowrap text-zinc-600 dark:text-zinc-300 *:text-zinc-600 *:dark:text-zinc-300">{cellValue}</span>;
       }
     },
     [
@@ -716,7 +584,7 @@ const DataTable = memo(({
     ]
   );
 
-  // ✅ OPTIMIZATION 11: Memoize selection change handler
+  // Memoize selection change handler
   const handleSelectionChange = useCallback(
     (keys: Selection) => {
       if (isControlled) {
@@ -728,14 +596,6 @@ const DataTable = memo(({
     [isControlled, controlledOnSelectionChange]
   );
 
-  // ✅ OPTIMIZATION 12: Memoize scroll handler
-  const handleScroll = useCallback((direction: "left" | "right") => {
-    const tableContainer = document.querySelector(".ui-table-container");
-    if (tableContainer) {
-      const scrollAmount = direction === "left" ? -200 : 200;
-      tableContainer.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
-  }, []);
 
   return (
     <div className="relative">
@@ -771,8 +631,17 @@ const DataTable = memo(({
           )}
         </div>
       </div>
-
-      <div className="has-scrollbar h-[calc(100vh-19rem)] overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4">
+      {loading && !isPending && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center">
+          <Spinner size="sm" variant="spinner" color="primary" label={t("loading")}/>
+        </div>
+      )}
+      {/* {(loading || isPending) && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/60 dark:bg-black/60 backdrop-blur-sm">
+          <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-400 border-t-transparent" />
+        </div>
+      )} */}
+      <div className="has-scrollbar overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4" style={{ minHeight: 'calc(100vh - 19rem)', maxHeight: 'calc(100vh - 19rem)' }}>
         <Table
           isCompact
           removeWrapper
@@ -799,15 +668,7 @@ const DataTable = memo(({
             )}
           </TableHeader>
           <TableBody
-            emptyContent={
-              loading ? (
-                <div className="flex h-72 items-end justify-center">
-                  <Spinner variant="spinner" size="sm" label={t("loading")} />
-                </div>
-              ) : (
-                t("noData")
-              )
-            }
+            emptyContent={!loading && t("noData")}
             items={sortedItems}
           >
             {(item) => (
@@ -833,22 +694,6 @@ const DataTable = memo(({
           hidden={totalPages < 2}
           size="sm"
         />
-        {scrollable && (
-          <div className="flex gap-2">
-            <Button
-              onPress={() => handleScroll("left")}
-              isIconOnly
-              radius="full"
-              startContent={<IoChevronBackOutline />}
-            />
-            <Button
-              onPress={() => handleScroll("right")}
-              isIconOnly
-              radius="full"
-              startContent={<IoChevronForward />}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

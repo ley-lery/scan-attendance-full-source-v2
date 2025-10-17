@@ -81,11 +81,6 @@ const Index = () => {
   const [filter, setFilter] = useState<any>(defaultFilter);
 
   // ==== API Calls ====
-  const { data: formLoad } = useFetch<{ courses: any[] }>(
-    "/lecturer/markattstudent/formload"
-  );
-  
-
   const { mutate: fetchList, loading: fetchLoading } = useMutation({
     onSuccess: (response) => {
       setRows(response?.data?.rows || []);
@@ -430,7 +425,7 @@ const Index = () => {
   // === Header Action ===
   const headerAction = (
     <div className="flex items-center gap-2">
-      {selectedLength > 1 ? (
+      {selectedLength > 0 ? (
         <>
           <Button
             onPress={onSetPresentStatus}
@@ -549,7 +544,6 @@ const Index = () => {
         setFilter={setFilter}
         onApplyFilter={onFilter}
         onResetFilter={resetFilter}
-        formLoad={formLoad}
         filterLoading={filterLoading}
         errors={errors}
         setErrors={setErrors}

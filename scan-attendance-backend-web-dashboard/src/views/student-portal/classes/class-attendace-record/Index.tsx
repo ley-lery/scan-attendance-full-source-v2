@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFetch } from "@/hooks/useFetch";
 import { DataTable, ShowToast } from "@/components/hero-ui";
@@ -87,10 +87,7 @@ const Index = () => {
     },
   });
 
-  // ==== Fetch Data with useFetch ====
-  const { data: formLoad, loading: formLoadLoading } = useFetch<any>(
-    "/student/leavehistory/formload"
-  );
+
 
   const {
     data: dataList,
@@ -109,10 +106,6 @@ const Index = () => {
     }
   );
 
-  useEffect(() => {
-    console.log("Fetched data:", dataList);
-    console.log("Fetched formLoad:", formLoad);
-  }, [dataList, formLoad]);
 
   // ==== Table Data & Total Pages ====
   const dataRows = isFiltered ? filteredData?.rows : dataList?.data?.rows;
@@ -275,8 +268,7 @@ const Index = () => {
         setFilter={setFilter}
         onApplyFilter={onFilter}
         onResetFilter={resetFilter}
-        formLoad={formLoad}
-        formLoadLoading={formLoadLoading}
+
         filterLoading={filterLoading}
       />
 

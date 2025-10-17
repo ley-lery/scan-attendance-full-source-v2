@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable, ShowToast } from "@/components/hero-ui";
 import Form from "./Form";
 import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
+import { cn } from "@/lib/utils";
 
 
 
@@ -111,6 +112,27 @@ const Index = () => {
     refetchList();
   };
 
+  // Customize cols
+   const customizeCols = useCallback((data: any, key: string) => {
+      const value = data[key];
+      return (
+        <span
+          className={cn(
+            "flex items-center gap-2",
+            "px-3 py-1 bg-black/10 dark:bg-white/10 text-xs rounded-full w-fit font-medium inline-flex items-center gap-2",
+          )}
+        >
+          {value || "N/A"}
+        </span>
+      );
+    }, []);
+    const colsKeys = useMemo(
+      () => [
+        { key: "reason", value: (data: any) => customizeCols(data, "reason") },
+      ],
+      [customizeCols]
+    );
+
 
 
   return (
@@ -122,6 +144,7 @@ const Index = () => {
         dataApi={rows}
         cols={cols}
         visibleCols={visibleCols}
+        colKeys={colsKeys}
         onReqLeave={onReqLeave}
         onCancelLeave={onCancelLeave}
         loadData={refetchList} 

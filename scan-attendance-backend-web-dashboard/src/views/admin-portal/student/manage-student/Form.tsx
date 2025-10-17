@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DatePicker, Input, Modal, ShowToast } from "@/components/hero-ui";
+import { DatePicker, Input, Modal, SelectUI, ShowToast } from "@/components/hero-ui";
 import { type FormEvent, type Key, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Validation } from "@/validations/index";
-import { Radio, RadioGroup, Select, SelectItem } from "@heroui/react";
+import { Radio, RadioGroup } from "@heroui/react";
 import { useMutation } from "@/hooks/useMutation";
 import moment from "moment";
 import {
@@ -42,6 +42,8 @@ export const genders = [
 ];
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Student>(initialFormData);
@@ -170,8 +172,9 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     Object.entries(formData).some(([key, value]) => value !== (initialFormData as any)[key]);
 
   const closeForm = () => (isEdit || !isFormDirty() ? onClose(false) : null);
-
+  
   if (!isOpen) return null;
+
 
   return (
     <>
@@ -224,22 +227,18 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
             errorMessage={errors.dob}
           />
 
-          <Select
+          <SelectUI
             label={t("gender")}
             name="gender"
-            labelPlacement="outside"
             placeholder={t("chooseGender")}
+            options={genders}
+            optionLabel="label"
+            optionValue="key"
             selectedKeys={[formData.gender] as any}
             onChange={handleSelectionChange}
-            multiple={false}
-            isInvalid={!!errors.gender}
-            errorMessage={errors.gender}
+            error={errors.gender}
             isRequired
-          >
-            {genders.map((item) => (
-              <SelectItem key={item.key}>{item.label}</SelectItem>
-            ))}
-          </Select>
+          />
 
           <RadioGroup 
             className="flex gap-4" 

@@ -1,71 +1,120 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalView } from "@/components/hero-ui";
-import { cn } from "@/lib/utils";
+import { Chip, Divider } from "@heroui/react";
+import { KhmerDate } from "@/helpers";
+
+interface LecturerLeave {
+  id: number;
+  lecturer_id: number;
+  lecturer_code: string;
+  lecturer_name_kh: string;
+  lecturer_name_en: string;
+  lecturer_email: string;
+  lecturer_phone?: string | null;
+  request_date: string;
+  start_date: string;
+  end_date: string;
+  total_days: number;
+  reason_preview?: string;
+  status: "Approved" | "Rejected" | "Pending" | "Cancelled";
+  approved_by_username?: string | null;
+  approval_date?: string | null;
+}
 
 interface ViewProps {
   isOpen?: boolean;
-  onClose: () => void;
-  row: Partial<{
-    id: number;
-    lecturer_code: string;
-    lecturer_name_en: string;
-    lecturer_name_kh: string;
-    course_code: string;
-    course_name_en: string;
-    course_name_kh: string;
-    status: string;
-    deleted_date: string | null;
-  }>;
+  onClose: (isOpen: boolean) => void;
+  row: Partial<LecturerLeave> | null;
 }
 
-const View = ({ isOpen = false, onClose, row }: ViewProps) => {
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div>
+    <h2 className="text-base text-zinc-500 dark:text-zinc-400 ">{title}</h2>
+    <Divider className="mb-4" />
+    {children}
+  </div>
+);
+
+const View = memo(({ isOpen = false, onClose, row }: ViewProps) => {
+  
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
-  const fields: { label: string; value: any; isStatus?: boolean; isDate?: boolean }[] = [
-    { label: t("id"), value: row?.id },
-    { label: t("lecturerCode"), value: row?.lecturer_code },
-    { label: t("lecturerNameEn"), value: row?.lecturer_name_en },
-    { label: t("lecturerNameKh"), value: row?.lecturer_name_kh },
-    { label: t("courseCode"), value: row?.course_code },
-    { label: t("courseNameEn"), value: row?.course_name_en },
-    { label: t("courseNameKh"), value: row?.course_name_kh },
-    { label: t("deletedDate"), value: row?.deleted_date, isDate: true },
-  ];
+  if (!row) return null;
+
+  const getStatusColor = (status?: LecturerLeave["status"]) => {
+    const colorMap: Record<LecturerLeave["status"], string> = {
+      Approved: "success",
+      Rejected: "danger",
+      Pending: "warning",
+      Cancelled: "default",
+    };
+    return status ? colorMap[status] : "default";
+  };
+
+  const InfoItem = ({ label, value }: { label: string; value?: React.ReactNode }) => (
+    <div className="grid grid-cols-2 gap-4">
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-left">{label} </p>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400 text-right break-words">
+        {value || "N/A"}
+      </p>
+    </div>
+  );
 
   return (
-    <ModalView isOpen={isOpen} onClose={onClose} title={t("viewDetail")} size="xl">
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          
-          {/* Labels */}
-          <div className="space-y-2 text-base font-medium text-zinc-700 dark:text-zinc-300">
-            {fields.map((field) => (
-              <p key={field.label}>{field.label}</p>
-            ))}
+    <ModalView
+      isOpen={isOpen}
+      onClose={() => onClose(false)}
+      title={t("leaveRequestDetails")}
+      size="xl"
+    >
+      <div className="space-y-6 pr-4">
+        {/* Lecturer Info */}
+        <Section title={t("lecturerInformation")}>
+          <div className="grid grid-cols-1 gap-4">
+            <InfoItem label={t("lecturerId")} value={row.lecturer_id} />
+            <InfoItem label={t("lecturerCode")} value={row.lecturer_code} />
+            <InfoItem label={t("lecturerNameKh")} value={row.lecturer_name_kh} />
+            <InfoItem label={t("lecturerNameEn")} value={row.lecturer_name_en} />
+            <InfoItem label={t("lecturerEmail")} value={row.lecturer_email} />
+            <InfoItem label={t("lecturerPhone")} value={row.lecturer_phone} />
           </div>
+        </Section>
 
-          {/* Values */}
-          <div className="space-y-2 text-base font-normal text-zinc-500 dark:text-zinc-400">
-            {fields.map((field) => {
-              if (field.isStatus) {
-                return (
-                  <p key={field.label} className={cn(field.value === "Active" ? "text-success" : "text-danger")}>
-                    : {field.value ?? "-"}
-                  </p>
-                );
+        {/* Leave Info */}
+        <Section title={t("leaveRequestInformation")}>
+          <div className="grid grid-cols-1 gap-4">
+            <InfoItem label={t("requestDate")} value={row.request_date} />
+            <InfoItem label={t("startDate")} value={row.start_date} />
+            <InfoItem label={t("endDate")} value={row.end_date} />
+            <InfoItem label={t("totalDays")} value={row.total_days} />
+            <InfoItem label={t("reasonPreview")} value={row.reason_preview} />
+            <InfoItem
+              label={t("status")}
+              value={
+                <Chip size="sm" color={getStatusColor(row.status) as any} variant="light">
+                  {t(row.status || "unknown")}
+                </Chip>
               }
-              if (field.isDate) {
-                return <p key={field.label}>: {field.value ?? t("notDeleted")}</p>;
-              }
-              return <p key={field.label}>: {field.value ?? "-"}</p>;
-            })}
+            />
           </div>
-        </div>
+        </Section>
+
+        {/* Approval Info */}
+        <Section title={t("approvedInfo")}>
+          <div className="grid grid-cols-1 gap-4">
+            <InfoItem label={t("approvedByUser")} value={row.approved_by_username} />
+            <InfoItem label={t("approvedDate")} value={row.approval_date} />
+            <InfoItem label={t("fullDate")} value={<KhmerDate date={String(row.approval_date)} withDayName />} />
+          </div>
+        </Section>
       </div>
     </ModalView>
   );
-};
+});
 
-export default memo(View);
+export default View;
+
+

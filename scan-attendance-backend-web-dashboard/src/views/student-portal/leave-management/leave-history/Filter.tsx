@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Autocomplete, AutocompleteItem, DatePicker } from "@/components/hero-ui";
+import { AutocompleteUI, DatePicker } from "@/components/hero-ui";
 import { Divider } from "@heroui/react";
 import { type DateValue } from "@internationalized/date";
 import { DrawerFilter } from "@/components/ui";
+import { useFetch } from "@/hooks/useFetch";
+import { useEffect, useState } from "react";
 
 interface FilterData {
   class: number | null;
@@ -21,8 +23,6 @@ interface FilterProps {
   setFilter: React.Dispatch<React.SetStateAction<FilterData>>;
   onApplyFilter: () => void;
   onResetFilter: () => void;
-  formLoad: any;
-  formLoadLoading: boolean;
   filterLoading: boolean;
 }
 
@@ -33,18 +33,44 @@ const Filter = ({
   setFilter,
   onApplyFilter,
   onResetFilter,
-  formLoad,
-  formLoadLoading,
   filterLoading,
 }: FilterProps) => {
+
   const { t } = useTranslation();
+  const [list, setList] = useState<any>({
+    classes: [],
+    statuses: [],
+  });
+
+  // ==== Form Load ==== 
+  const { data: formLoad, loading: formLoadLoading } = useFetch<{ classes: any[] }>(
+    "/student/leavereq/formload"
+  );
+
+  // ==== Get list from form load ==== 
+  useEffect(() => {
+    console.log(formLoad);
+    if (formLoad) {
+      setList({
+        classes: formLoad.data.classes,
+        statuses: formLoad.data.status,
+      });
+    }
+  }, [formLoad]);
+
+  // ==== Event Handler ==== 
+  const handleSelectChange = (key: string, field: keyof FilterData) => {
+    setFilter((prev) => ({ ...prev, [field]: key }));
+  };
 
   const handleDateChange = (field: keyof FilterData, value: DateValue | null) => {
     setFilter((prev) => ({ ...prev, [field]: value }));
   };
 
+  // if (!isOpen) return null;
+
   return (
-    <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading} loadingType="regular" hideIconLoading={false} isAutoFilter={true}>
+    <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading || formLoadLoading} loadingType="regular" hideIconLoading={false} isAutoFilter={true}>
       <form className="space-y-4">
         {/* Date & Time */}
         <div>
@@ -59,11 +85,6 @@ const Filter = ({
               onChange={(val) => handleDateChange("startDate", val)}
               maxValue={filter.endDate}
               labelPlacement="outside"
-              size="sm"
-              classNames={{
-                selectorIcon: "text-sm",
-                selectorButton: "p-0",
-              }}
             />
             <DatePicker
               label={t("endDate")}
@@ -71,11 +92,6 @@ const Filter = ({
               onChange={(val) => handleDateChange("endDate", val)}
               minValue={filter.startDate}
               labelPlacement="outside"
-              size="sm"
-              classNames={{
-                selectorIcon: "text-sm",
-                selectorButton: "p-0",
-              }}
             />
           </div>
         </div>
@@ -86,44 +102,26 @@ const Filter = ({
           </h3>
           <Divider className="mb-4" />
           <div className="grid grid-cols-1 gap-2">
-            <Autocomplete
+            <AutocompleteUI
+              name="class"
               label={t("class")}
               placeholder={t("chooseClass")}
-              selectedKey={filter.class ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev: any) => ({
-                  ...prev,
-                  class: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-              isLoading={formLoadLoading}
-            >
-              {formLoad?.data?.classes?.map((u: { id: string; class_name: string }) => (
-                <AutocompleteItem key={u.id}>{u.class_name}</AutocompleteItem>
-              ))}
-            </Autocomplete>
-            <Autocomplete
+              options={list.classes}
+              optionLabel="class_name"
+              optionValue="id"
+              selectedKey={filter.class}
+              onSelectionChange={(key: any) => handleSelectChange(key, "class")}
+            />
+            <AutocompleteUI
+              name="status"
               label={t("status")}
               placeholder={t("chooseStatus")}
-              selectedKey={filter.status ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev: any) => ({
-                  ...prev,
-                  status: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-              isLoading={formLoadLoading}
-            >
-              {formLoad?.data?.status?.map((u: { id: string; label: string }) => (
-                <AutocompleteItem key={u.id}>{u.label}</AutocompleteItem>
-              ))}
-            </Autocomplete>
+              options={list.statuses}
+              optionLabel="label"
+              optionValue="value"
+              selectedKey={filter.status}
+              onSelectionChange={(key: any) => handleSelectChange(key, "status")}
+            />
           </div>
         </div>
       </form>

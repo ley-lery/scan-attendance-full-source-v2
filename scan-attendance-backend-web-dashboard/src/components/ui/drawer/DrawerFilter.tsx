@@ -132,6 +132,8 @@ const DrawerFilter = memo(({
     </div>
   ), [onResetFilter, onApplyFilter, filterLoading, t]);
 
+  // if (!isOpen) return null;
+
   return (
     <Drawer
       isOpen={isOpen}

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DatePicker, Input, Modal, ShowToast } from "@/components/hero-ui";
+import { DatePicker, Input, Modal, SelectUI, ShowToast } from "@/components/hero-ui";
 import { type FormEvent, type Key, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Validation } from "@/validations/index";
-import { Radio, RadioGroup, Select, SelectItem } from "@heroui/react";
+import { Radio, RadioGroup } from "@heroui/react";
 import { useMutation } from "@/hooks/useMutation";
 import moment from "moment";
 import {
@@ -12,6 +12,7 @@ import {
   parseDate,
   today,
 } from "@internationalized/date";
+import { formatDateValue } from "@/helpers";
 
 interface FormProps {
   isOpen?: boolean;
@@ -42,6 +43,9 @@ export const genders = [
 ];
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+  
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Lecturer>(initialFormData);
@@ -104,7 +108,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       lecturerNameEn: formData.lecturerNameEn,
       lecturerNameKh: formData.lecturerNameKh,
       lecturerCode: formData.lecturerCode,
-      dob: moment(formData.dob).format("YYYY-MM-DD"),
+      dob: formData.dob ? formatDateValue(formData.dob) : null,
       gender: formData.gender,
       email: formData.email,
       phone: formData.phone,
@@ -168,7 +172,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   const closeForm = () => (isEdit || !isFormDirty() ? onClose() : null);
 
-  if (!isOpen) return null;
 
   return (
     <>
@@ -220,22 +223,18 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
             errorMessage={errors.dob}
           />
 
-          <Select
+          <SelectUI
             label={t("gender")}
             name="gender"
-            labelPlacement="outside"
             placeholder={t("chooseGender")}
+            options={genders}
+            optionLabel="label"
+            optionValue="key"
             selectedKeys={[formData.gender] as any}
             onChange={handleSelectionChange}
-            multiple={false}
-            isInvalid={!!errors.gender}
-            errorMessage={errors.gender}
+            error={errors.gender}
             isRequired
-          >
-            {genders.map((item) => (
-              <SelectItem key={item.key}>{item.label}</SelectItem>
-            ))}
-          </Select>
+          />
 
           <RadioGroup 
             className="flex gap-4" 

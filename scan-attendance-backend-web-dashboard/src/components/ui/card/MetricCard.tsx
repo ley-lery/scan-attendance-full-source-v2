@@ -77,6 +77,7 @@ export function LineChart({ data, color, shadowSize, strokeWidth }: LineChartPro
 interface MetricCardProps {
   title: string
   value: number
+  maxValue?: number
   icon: React.ReactNode
   variant?: "primary" | "success" | "warning" | "danger" | "secondary"
   colorChart?: string
@@ -94,7 +95,7 @@ interface MetricCardProps {
   }
 }
 
-export function MetricCard({ title, value, icon, variant, description, type, showProgress = true, showChart = false, colorChart,classNames }: MetricCardProps) {
+export function MetricCard({ title, value, maxValue = 100, icon, variant, description, type, showProgress = true, showChart = false, colorChart,classNames }: MetricCardProps) {
   const getIcon = () => {
     if (icon) {
       return icon
@@ -175,7 +176,7 @@ export function MetricCard({ title, value, icon, variant, description, type, sho
         {showProgress && <div className="relative h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full border-2 border-zinc-200/50 dark:border-zinc-700 overflow-hidden">
           <div
             className={`absolute inset-y-0 left-0  ${getProgressColor()} rounded-full transition-all duration-300`}
-            style={{ width: `${value}%` }}
+            style={{ width: `${value / maxValue * 100}%` }}
           />
         </div>}
       </div>

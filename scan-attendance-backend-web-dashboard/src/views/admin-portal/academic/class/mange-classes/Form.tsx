@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Input, Modal, ShowToast, Autocomplete, AutocompleteItem, InputNumber } from "@/components/hero-ui";
-import { type ChangeEventHandler, type FormEvent, type Key, memo, useEffect, useState } from "react";
+import { Input, Modal, ShowToast, InputNumber, AutocompleteUI } from "@/components/hero-ui";
+import { type FormEvent, type Key, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Validation } from "@/validations/index";
-import { Radio, RadioGroup, Select, SelectItem } from "@heroui/react";
+import { Radio, RadioGroup } from "@heroui/react";
 import { useMutation } from "@/hooks/useMutation";
 import { useFetch } from "@/hooks/useFetch";
 
@@ -34,6 +34,8 @@ export const programTypes = [
 
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Class>(initialFormData);
@@ -76,10 +78,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const handleSelectionChange = (e: any) => {
-    setFormData((prev) => ({ ...prev, programType: e.target.value }));
   };
 
   const onSubmit = async (): Promise<boolean> => {
@@ -175,22 +173,22 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
         disabledBtn={loading || creating || updating}
       >
         <div className="grid grid-cols-2 gap-4">
-          <Select
-            label={t("programType")}
+          <AutocompleteUI
             name="programType"
-            labelPlacement="outside"
+            label={t("programType")}
             placeholder={t("chooseProgramType")}
-            selectedKeys={[formData.programType] as any}
-            onChange={handleSelectionChange}
-            multiple={false}
-            isInvalid={!!errors.programType}
-            errorMessage={errors.programType}
+            options={programTypes}
+            optionLabel="label"
+            optionValue="key"
+            selectedKey={formData.programType?.toString()}
+            onSelectionChange={(key) =>
+              handleInputChange({
+                target: { name: "programType", value: key ?? "" },
+              })
+            }
+            error={errors.programType}
             isRequired
-          >
-            {programTypes.map((item) => (
-              <SelectItem key={item.key}>{item.label}</SelectItem>
-            ))}
-          </Select>
+          />
           {["className", "roomName"].map((field) => (
             <Input
               key={field}
@@ -208,54 +206,41 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
             />
           ))}
           
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("faculty")}
-            labelPlacement="outside"
+          <AutocompleteUI
             name="faculty"
+            label={t("faculty")}
             placeholder={t("chooseFaculty")}
+            options={formLoad.data.faculties}
+            optionLabel="name_en"
+            secondaryOptionLabel="name_kh"
+            optionValue="id"
             selectedKey={formData.faculty}
-            isInvalid={!!errors.faculty}
-            errorMessage={errors.faculty}
-            className="w-full"
             onSelectionChange={(key) =>
               handleInputChange({
                 target: { name: "faculty", value: key ?? "" },
               })
             }
+            error={errors.faculty}
             isRequired
-          >
-            {formLoad.data.faculties.map((item: any) => (
-              <AutocompleteItem  key={item.id} textValue={item.name_en + " - " + item.name_kh}>
-                <p className={`truncate w-[95%] `}>{item.name_en} - {item.name_kh}</p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("field")}
-            labelPlacement="outside"
+          />
+          <AutocompleteUI
             name="field"
+            label={t("field")}
             placeholder={t("chooseField")}
+            options={formLoad.data.fields}
+            optionLabel="field_name_en"
+            secondaryOptionLabel="field_name_kh"
+            optionValue="id"
             selectedKey={formData.field}
-            isInvalid={!!errors.field}
-            errorMessage={errors.field}
-            className="w-full"
             onSelectionChange={(key) =>
               handleInputChange({
                 target: { name: "field", value: key ?? "" },
               })
             }
+            error={errors.field}
             isRequired
-          >
-            {formLoad.data.fields.map((item: any) => (
-              <AutocompleteItem  key={item.id} textValue={item.field_name_en + " - " + item.field_name_kh}>
-                <p className={`truncate w-[95%] `}>{item.field_name_en} - {item.field_name_kh}</p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
+          />
+          
           {["promotionNo", "termNo"].map((field) => (
             <InputNumber
               key={field}
@@ -268,10 +253,14 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
               isInvalid={!!errors[field]}
               errorMessage={errors[field]}
               className="w-full"
-              onChange={handleInputChange as ChangeEventHandler<HTMLInputElement> & ((value: number) => void)}
+              onValueChange={(value) => {
+                setFormData((prev) => ({ ...prev, [field]: value }));
+                if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+              }}
               isRequired
             />
           ))}
+
           <RadioGroup 
             className="flex gap-4" 
             classNames={{ label: "text-sm" }} 

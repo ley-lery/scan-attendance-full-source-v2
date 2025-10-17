@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Autocomplete, AutocompleteItem } from "@/components/hero-ui";
+import { Autocomplete, AutocompleteItem, AutocompleteUI } from "@/components/hero-ui";
 import { Divider } from "@heroui/react";
 import { GoClock } from "react-icons/go";
 import { DrawerFilter } from "@/components/ui";
+import { useFetch } from "@/hooks/useFetch";
 
 // === Types ===
 
@@ -36,7 +37,6 @@ interface FilterProps {
   setFilter: React.Dispatch<React.SetStateAction<Filter>>;
   onApplyFilter: () => void;
   onResetFilter: () => void;
-  formLoad: any;
   filterLoading: boolean;
   errors: Record<string, string>;
   setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
@@ -49,12 +49,17 @@ const Filter = ({
   setFilter,
   onApplyFilter,
   onResetFilter,
-  formLoad,
+
   filterLoading,
   errors,
   setErrors,
 }: FilterProps) => {
+
   const { t } = useTranslation();
+  const [list, setList] = useState<any>({
+    courses: [],
+    sessions: [],
+  });
   const [details, setDetails] = useState<Details>({
     course: "",
     dayOfWeek: "",
@@ -64,15 +69,27 @@ const Filter = ({
     totalStudents: 0,
   });
 
-  const courses = formLoad?.data?.courses;
-  const sessions = formLoad?.data?.sessions;
+  // ==== Form Load ====
+  const { data: formLoad } = useFetch<{ courses: any[] }>(
+    "/lecturer/markattstudent/formload"
+  );
+  
+  // ==== Get list from form load ====
+  useEffect(() => {
+    if (formLoad) {
+      setList({
+        courses: formLoad?.data?.courses,
+        sessions: formLoad?.data?.sessions,
+      });
+    }
+  }, [formLoad]);
   
   const handleSelectChange = (key: string, field: keyof Filter) => {
     setFilter((prev) => ({ ...prev, [field]: key }));
     setErrors({});
 
     if (field === "course") {
-      const selected = courses?.find((c: ApiType) => c.id === Number(key));
+      const selected = list.courses?.find((c: ApiType) => c.id === Number(key));
       setDetails({
         course: selected?.course_name_en ?? "",
         dayOfWeek: selected?.day_of_week ?? "",
@@ -84,6 +101,9 @@ const Filter = ({
     }
   };
 
+
+
+  // if (!isOpen) return null;
 
   return (
     <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading} loadingType="regular" hideIconLoading={false} isAutoFilter={true}>
@@ -106,38 +126,27 @@ const Filter = ({
         <Divider />
 
         {/* Autocomplete Filters */}
-        <Autocomplete
+        <AutocompleteUI
+          name="course"
           label={t("course")}
           placeholder={t("chooseCourse")}
-          selectedKey={filter.course ?? ""}
-          isClearable
+          options={list.courses}
+          optionLabel="course_name_en"
+          optionValue="id"
+          selectedKey={filter.course}
           onSelectionChange={(key: any) => handleSelectChange(key, "course")}
-          labelPlacement="outside"
-        >
-          {courses?.map((c: ApiType) => (
-            <AutocompleteItem key={c.id} description={`${c.day_of_week}, ${c.room_name}, ${c.time_slots}`}>
-              {c.course_name_en}
-            </AutocompleteItem>
-          ))}
-        </Autocomplete>
+        />
 
-        <Autocomplete
+        <AutocompleteUI
+          name="session"
           label={t("session")}
           placeholder={t("chooseSession")}
-          selectedKey={filter.session ?? ""}
-          isClearable
+          options={list.sessions}
+          optionLabel="label"
+          optionValue="value"
+          selectedKey={filter.session}
           onSelectionChange={(key: any) => handleSelectChange(key, "session")}
-          labelPlacement="outside"
-          defaultSelectedKey={filter.session}
-          isInvalid={!!errors.session}
-          errorMessage={errors.session}
-          isRequired
-
-        >
-          {sessions?.map((s: { value: string; label: string }) => (
-            <AutocompleteItem key={s.value} startContent={<GoClock />}>{s.label}</AutocompleteItem>
-          ))}
-        </Autocomplete>
+        />
       </form>
     </DrawerFilter>
   );

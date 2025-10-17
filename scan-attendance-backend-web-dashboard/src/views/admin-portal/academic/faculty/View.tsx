@@ -18,6 +18,9 @@ interface ViewProps {
 }
 
 const View = ({ isOpen = false, onClose, row }: ViewProps) => {
+  
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   const fields: { label: string; value: any; isStatus?: boolean; isDate?: boolean }[] = [
@@ -28,6 +31,7 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
     { label: t("status"), value: row?.status, isStatus: true },
     { label: t("deletedData"), value: row?.deleted_date, isDate: true },
   ];
+
 
   return (
     <ModalView isOpen={isOpen} onClose={onClose} title={t("viewDetail")} size="xl">

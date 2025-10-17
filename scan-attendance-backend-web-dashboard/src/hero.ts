@@ -4,7 +4,7 @@ export default heroui({
     layout:{
         radius: {
             small: "4px",
-            medium: "10px",
+            medium: "11px",
             large: "14px",
         },
     },

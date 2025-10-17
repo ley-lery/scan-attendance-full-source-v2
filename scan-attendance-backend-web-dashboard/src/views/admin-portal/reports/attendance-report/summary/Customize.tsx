@@ -47,6 +47,9 @@ interface PopoverEditProps {
 }
 
 const PopoverEdit = memo(({ isOpen, value, style, onChange, onStyleChange, onClose, position }: PopoverEditProps) => {
+   
+  if (!isOpen) return null;
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [localStyle, setLocalStyle] = useState<StyleConfig>(style || {});
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -268,7 +271,7 @@ const PopoverEdit = memo(({ isOpen, value, style, onChange, onStyleChange, onClo
                       startContent={<MdFormatSize size={18} />}
                     >
                       {fontSizes.map((size: any) => (
-                        <SelectItem key={size} value={size }>
+                        <SelectItem key={size} value={size}>
                           {size}
                         </SelectItem>
                       ))}
@@ -384,6 +387,9 @@ const PopoverEdit = memo(({ isOpen, value, style, onChange, onStyleChange, onClo
 PopoverEdit.displayName = 'PopoverEdit';
 
 const Customize = ({ isOpenReportModal, onCloseReportModal, data, loading }: CustomizeProps) => {
+  
+  if (!isOpenReportModal) return null;
+
   const [isOpenPopover, setIsOpenPopover] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [editingKey, setEditingKey] = useState<string>('');

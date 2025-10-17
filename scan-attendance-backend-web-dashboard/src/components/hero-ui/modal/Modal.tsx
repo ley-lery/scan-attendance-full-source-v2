@@ -43,7 +43,7 @@ interface ModalUIProps {
     clearButton?: string;
     cancelButton?: string;
   }
-
+  scrollBehavior?: boolean;
 }
 
 const ModalUI = memo(({
@@ -58,15 +58,14 @@ const ModalUI = memo(({
   onSaveNew,
   onSaveDraft,
   onOpenDraft,
-  closeForm,
   onSubmit,
   size = "xl",
   radius = "lg",
   backdrop = "regular",
   loadingType = "regular",
   hideIconLoading = true,
-  labels
-  }: ModalUIProps) => {
+  scrollBehavior = false,
+}: ModalUIProps) => {
   const { t } = useTranslation();
   const targetRef = useRef(null);
   const { moveProps } = useDraggable({ 
@@ -79,7 +78,7 @@ const ModalUI = memo(({
   //  Memoize loading overlay className
   const loadingOverlayClass = useMemo(() => 
     cn(
-      "flex items-center justify-center min-h-36 inset-0 absolute bg-white/20 dark:bg-black/20 z-50",
+      "flex items-center justify-center min-h-36 inset-0 absolute bg-white/40 dark:bg-black/20 z-50",
       loadingType === "blur" ? "backdrop-blur-sm" : ""
     ),
     [loadingType]
@@ -200,6 +199,7 @@ const ModalUI = memo(({
       animation="fade-down"
       isDismissable={false}
       isDraggable
+      scrollBehavior={scrollBehavior}
     >
       <ModalContent>
         {() => (

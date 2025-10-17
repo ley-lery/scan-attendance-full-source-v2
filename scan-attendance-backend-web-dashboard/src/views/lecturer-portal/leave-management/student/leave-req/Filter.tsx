@@ -1,16 +1,19 @@
 import { useTranslation } from "react-i18next";
-import { Autocomplete, AutocompleteItem, DatePicker } from "@/components/hero-ui";
+import { AutocompleteUI, DatePicker } from "@/components/hero-ui";
 import { Divider } from "@heroui/react";
 import { type DateValue } from "@internationalized/date";
+import { useFetch } from "@/hooks/useFetch";
 import { DrawerFilter } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
-type Filter = {
-  startDate: DateValue | null;
-  endDate: DateValue | null;
-  course: string | null;
-  status: string | null;
-};
+interface Filter {
+  course?: number | null;
+  status?: string;
+  startDate?: DateValue | null;
+  endDate?: DateValue | null;
+  page?: number;
+  limit?: number;
+}
 
 interface FilterProps {
   isOpen: boolean;
@@ -19,8 +22,6 @@ interface FilterProps {
   setFilter: React.Dispatch<React.SetStateAction<Filter>>;
   onApplyFilter: () => void;
   onResetFilter: () => void;
-  formLoad: any;
-  formLoadLoading: boolean;
   filterLoading: boolean;
 }
 
@@ -31,33 +32,45 @@ const Filter = ({
   setFilter,
   onApplyFilter,
   onResetFilter,
-  formLoad,
-  formLoadLoading,
   filterLoading,
 }: FilterProps) => {
+
+
   const { t } = useTranslation();
+
+  const [list, setList] = useState<any>({
+    courses: [],
+    status: [],
+  });
+
+   // ==== Form Load ====
+  const { data: formLoad, loading: formLoadLoading } = useFetch<{ users: any[] }>(
+    "/lecturer/student/leavereq/formload"
+  );
+  
+  useEffect(() => {
+    console.log(formLoad);
+    if (formLoad) {
+      setList({
+        courses: formLoad.data.courses,
+        status: formLoad.data.status,
+      });
+    }
+  }, [formLoad]);
+
+  // ==== Event Handler ==== 
+  const handleSelectChange = (key: string, field: keyof Filter) => {
+    setFilter((prev) => ({ ...prev, [field]: key }));
+  };
 
   const handleDateChange = (field: keyof Filter, value: DateValue | null) => {
     setFilter((prev) => ({ ...prev, [field]: value }));
   };
 
-  const statusColor = (status: string) => {
-    switch (status) {
-      case "Pending":
-        return "warning";
-      case "Approved":
-        return "success";
-      case "Rejected":
-        return "danger";
-      case "Cancelled":
-        return "secondary";
-      default:
-        return "default";
-    }
-  };
+  // if (!isOpen) return null;
 
   return (
-    <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading} loadingType="regular" >
+    <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading || formLoadLoading} loadingType="regular" hideIconLoading={false} isAutoFilter={true}>
       <form className="space-y-4">
         {/* Date & Time */}
         <div>
@@ -71,26 +84,15 @@ const Filter = ({
               value={filter.startDate}
               onChange={(val) => handleDateChange("startDate", val)}
               maxValue={filter.endDate}
-              showMonthAndYearPickers
               labelPlacement="outside"
-              size="sm"
-              classNames={{
-                selectorIcon: "text-sm",
-                selectorButton: "p-0",
-              }}
+              
             />
             <DatePicker
               label={t("endDate")}
               value={filter.endDate}
               onChange={(val) => handleDateChange("endDate", val)}
               minValue={filter.startDate}
-              showMonthAndYearPickers
               labelPlacement="outside"
-              size="sm"
-              classNames={{
-                selectorIcon: "text-sm",
-                selectorButton: "p-0",
-              }}
             />
           </div>
         </div>
@@ -102,55 +104,28 @@ const Filter = ({
           </h3>
           <Divider className="mb-4" />
           <div className="grid grid-cols-1 gap-2">
-            <Autocomplete
+            
+            <AutocompleteUI
+              name="course"
               label={t("course")}
               placeholder={t("chooseCourse")}
-              selectedKey={filter.course ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev) => ({
-                  ...prev,
-                  course: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-              isLoading={formLoadLoading}
-            >
-              {formLoad?.data?.courses?.map(
-                (u: { id: string; course_name_en: string; course_name_kh: string }) => (
-                  <AutocompleteItem key={u.id}>
-                    {u.course_name_en + " - " + u.course_name_kh}
-                  </AutocompleteItem>
-                )
-              ) || []}
-            </Autocomplete>
-            <Autocomplete
+              options={list.courses}
+              optionLabel="course_name_en"
+              secondaryOptionLabel="course_name_kh"
+              optionValue="id"
+              selectedKey={filter.course}
+              onSelectionChange={(key: any) => handleSelectChange(key, "course")}
+            />
+            <AutocompleteUI
+              name="status"
               label={t("status")}
               placeholder={t("chooseStatus")}
-              selectedKey={filter.status ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev) => ({
-                  ...prev,
-                  status: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-              isLoading={formLoadLoading}
-            >
-              {formLoad?.data?.status?.map(
-                (u: { value: string; label: string }) => (
-                 <AutocompleteItem key={u.value} textValue={u.label}>
-                    <div className="flex items-center gap-2">
-                      <span className={cn("w-2 h-2 rounded-full flex", `bg-${statusColor(u.label)}`)}/>
-                      <span className="text-xs font-medium">{u.label}</span>
-                    </div>
-                  </AutocompleteItem>
-                )
-              ) || []}
-            </Autocomplete>
+              options={list.status}
+              optionLabel="label"
+              optionValue="value"
+              selectedKey={filter.status}
+              onSelectionChange={(key: any) => handleSelectChange(key, "status")}
+            />
           </div>
         </div>
       </form>

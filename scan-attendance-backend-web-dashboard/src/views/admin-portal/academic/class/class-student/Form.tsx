@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Modal, ShowToast, Autocomplete, AutocompleteItem } from "@/components/hero-ui";
+import { Modal, ShowToast,AutocompleteUI } from "@/components/hero-ui";
 import { type FormEvent, type Key, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Validation } from "@/validations/index";
-import { Radio, RadioGroup, useDisclosure } from "@heroui/react";
+import { Radio, RadioGroup } from "@heroui/react";
 import { useMutation } from "@/hooks/useMutation";
 import { useFetch } from "@/hooks/useFetch";
 
@@ -22,18 +22,8 @@ const initialFormData: ClassStudent = {
   status: "Active",
 };
 
-const useConfirmClosure = () => {
-  const { isOpen, onOpen, onOpenChange, onClose, ...rest } = useDisclosure();
-  return {
-    isOpenConfirm: isOpen,
-    onOpenConfirm: onOpen,
-    onOpenChangeConfirm: onOpenChange,
-    onCloseConfirm: onClose,
-    ...rest,
-  };
-};
-
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
+
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<ClassStudent>(initialFormData);
@@ -163,54 +153,38 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       >
         
         <div className="grid grid-cols-2 gap-4">
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("class")}
-            labelPlacement="outside"
+          <AutocompleteUI
             name="classId"
+            label={t("class")}
             placeholder={t("chooseClass")}
-            selectedKey={formData.classId}
-            isInvalid={!!errors.classId}
-            errorMessage={errors.classId}
-            className="w-full"
+            options={formLoad?.data?.classList}
+            optionLabel="class_name"
+            optionValue="id"
+            selectedKey={formData.classId?.toString()}
             onSelectionChange={(key) =>
               handleInputChange({
                 target: { name: "classId", value: key ?? "" },
               })
             }
+            error={errors.classId}
             isRequired
-          >
-            {formLoad.data.classList.map((item: any) => (
-              <AutocompleteItem  key={item.id} textValue={item.class_name}>
-                <p className={`truncate w-[95%] `}>{item.class_name}</p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
-          <Autocomplete
-            radius="md"
-            size="md"
-            label={t("student")}
-            labelPlacement="outside"
+          />
+          <AutocompleteUI
             name="studentId"
+            label={t("student")}
             placeholder={t("chooseStudent")}
-            selectedKey={formData.studentId}
-            isInvalid={!!errors.studentId}
-            errorMessage={errors.studentId}
-            className="w-full"
+            options={formLoad?.data?.studentList}
+            optionLabel="name_en"
+            optionValue="id"
+            selectedKey={formData.studentId?.toString()}
             onSelectionChange={(key) =>
               handleInputChange({
                 target: { name: "studentId", value: key ?? "" },
               })
             }
+            error={errors.studentId}
             isRequired
-          >
-            {formLoad.data.studentList.map((item: any) => (
-              <AutocompleteItem  key={item.id} textValue={item.name_en + " - " + item.name_kh}>
-                <p className={`truncate w-[95%] `}>{item.name_en} - {item.name_kh}</p>
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
+          />
           <RadioGroup 
             className="flex gap-4" 
             classNames={{ label: "text-sm" }} 

@@ -21,5 +21,17 @@ export const Student = (formData: Student, t: (key: string) => string) => {
     newErrors.gender = t("validation.required");
   }
 
+  if (!formData.email?.trim()) {
+    newErrors.email = t("validation.required");
+  }
+
+  if (!formData.phone?.trim()) {
+    newErrors.phone = t("validation.required");
+  }
+
+  if (!formData.password?.trim()) {
+    newErrors.password = t("validation.required");
+  }
+
   return newErrors;
 };

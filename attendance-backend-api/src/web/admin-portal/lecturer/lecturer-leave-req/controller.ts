@@ -8,18 +8,20 @@ import { FieldModel } from "../../academic/field/model";
 import { StudentModel } from "../../student/manage-student/model";
 import { ClassModel } from "../../academic/classes/manage-class/model";
 import { UserModel } from "../../manage-user/user/model";
+import { CourseModel } from "../../academic/course/model";
+import { LecturerModel } from "../manage-lecturer/model";
 
 const model = LecturerLeaveModel;
 
 export const LecturerLeaveController = {
 
     async getAll(req: FastifyRequest, res: FastifyReply): Promise<void> {
-        const { page = 1, limit = 10 } = req.query as { page?: number; limit?: number };
+        const { page, limit } = req.query as { page: number; limit: number };
         try {
             const [rows, [{ total } = { total: 0 }]] = await model.getAll(page, limit);
 
             if (!rows?.length) {
-                res.status(404).send({ message: "No lecturer leave found" });
+                res.status(400).send({ message: "No lecturer leave found" });
                 return;
             }
 
@@ -35,7 +37,7 @@ export const LecturerLeaveController = {
             const [rows] = await model.getById(id);
 
             if (!rows?.length) {
-                res.status(404).send({ message: "lecturer leave not found" });
+                res.status(400).send({ message: "lecturer leave not found" });
                 return;
             }
             sendSuccessResponse(res, true, "lecturer leave details", { row: rows[0] }, 200);
@@ -119,35 +121,30 @@ export const LecturerLeaveController = {
         }
     },
 
-    // async filter(req: FastifyRequest, res: FastifyReply): Promise<void> {
-    //     const data = req.body as StudentLeaveRequest;
-    //     try {
-    //         const [results] = await model.filter(data);
-    //         console.log(results, "results")
+    async filter(req: FastifyRequest, res: FastifyReply): Promise<void> {
+        const data = req.body as any;
+        try {
+            const [results] = await model.filter(data);
     
-    //         // results[0] = rows, results[1] = total count
-    //         const rows = results[0] || [];
-    //         const [{ total } = { total: 0 }] = results[1] || [];
+            const rows = results[0] || [];
+            const [{ total } = { total: 0 }] = results[1] || [];
     
-    //         if (!rows.length) {
-    //             res.send({ message: "No lecturer leave found" });
-    //             return;
-    //         }
+            if (!rows.length) {
+                res.send({ message: "No lecturer leave found" });
+                return;
+            }
     
-    //         sendSuccessResponse(res, true, "lecturer leave list", { rows, total }, 200);
+            sendSuccessResponse(res, true, "lecturer leave list", { rows, total }, 200);
     
-    //     } catch (e: any) {
-    //         handleError(res, e as Error, "Error filter lecturer leave", 500);
-    //     }
-    // },
+        } catch (e: any) {
+            handleError(res, e as Error, "Error filter lecturer leave", 500);
+        }
+    },
     
     async formLoad(req: FastifyRequest, res: FastifyReply): Promise<void> {
         try {
-            const [faculty] = await FacultyModel.getAll();
-            const [field] = await FieldModel.getAll();
-            const [student] = await StudentModel.getAll();
-            const [classes] = await ClassModel.getAll();
-            const [users] = await UserModel.getAll();
+            const [courses] = await CourseModel.getAll();
+            const [lecturers] = await LecturerModel.getAll();
             const status = [
                 { value: "Approved", label : "Approved" },
                 { value: "Rejected", label : "Rejected" },
@@ -155,7 +152,7 @@ export const LecturerLeaveController = {
                 { value: "Cancelled", label : "Cancelled" }
             ]
 
-            sendSuccessResponse(res, true, "Form load", { faculties: faculty, fields: field, lecturer: student, classes: classes, users: users, status: status }, 200);
+            sendSuccessResponse(res, true, "Form load", { courses: courses, lecturers: lecturers, status: status }, 200);
         } catch (e) {
             handleError(res, e as Error, "Error loading form", 500);
         }

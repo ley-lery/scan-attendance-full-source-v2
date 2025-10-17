@@ -1,19 +1,19 @@
 import { useTranslation } from "react-i18next";
-import { Autocomplete, AutocompleteItem, Input, InputNumber } from "@/components/hero-ui";
-import { Checkbox, CheckboxGroup, Divider } from "@heroui/react";
+import { AutocompleteUI, } from "@/components/hero-ui";
+import { Checkbox, Divider } from "@heroui/react";
 // import { type DateValue } from "@internationalized/date";
 import { DrawerFilter } from "@/components/ui";
 import { useFetch } from "@/hooks/useFetch";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const termList = [
   {
-    id: "1",
-    name: "Term 1",
+    value: "1",
+    label: "Term 1",
   },
   {
-    id: "2",
-    name: "Term 2",
+    value: "2",
+    label: "Term 2",
   },
 ]
 
@@ -56,6 +56,9 @@ const Filter = ({
   offAutoClose = false,
   setOffAutoClose = () => {},
 }: FilterProps) => {
+  
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   // ==== Fetch Data with useFetch ====
@@ -63,11 +66,30 @@ const Filter = ({
     "/reports/attendance-report/summary/formload"
   );
 
+  const [list, setList] = useState<any>({
+    courses: [],
+    fields: [],
+    faculties: [],
+    classes: [],
+    students: [],
+  });
+
   useEffect(() => {
-    console.log(formLoad, 'formLoad')
+    console.log(formLoad);
+    if (formLoad) {
+      setList({
+        courses: formLoad.data.courses,
+        fields: formLoad.data.fields,
+        faculties: formLoad.data.faculties,
+        classes: formLoad.data.classes,
+        students: formLoad.data.students,
+      });
+    }
   }, [formLoad]);
 
-  
+  const handleSelectChange = (key: string, field: keyof FilterData) => {
+    setFilter((prev) => ({ ...prev, [field]: key }));
+  };
 
   // const handleDateChange = (field: keyof FilterData, value: DateValue | null) => {
   //   setFilter((prev: FilterData) => ({ ...prev, [field]: value }));
@@ -76,6 +98,7 @@ const Filter = ({
   return (
     <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading || formLoadLoading} loadingType="regular" hideIconLoading={false} isAutoFilter={true} offAutoClose={offAutoClose} setOffAutoClose={setOffAutoClose} >
       <form className="space-y-4">
+        
         {/* Date & Time */}
         {/* <div>
           <h3 className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
@@ -90,11 +113,6 @@ const Filter = ({
               maxValue={filter.endDate}
               labelPlacement="outside"
               showMonthAndYearPickers
-              size="sm"
-              classNames={{
-                selectorIcon: "text-sm",
-                selectorButton: "p-0",
-              }}
             />
             <DatePicker
               label={t("endDate")}
@@ -103,11 +121,6 @@ const Filter = ({
               minValue={filter.startDate}
               labelPlacement="outside"  
               showMonthAndYearPickers
-              size="sm"
-              classNames={{
-                selectorIcon: "text-sm",
-                selectorButton: "p-0",
-              }}
             />
           </div>
         </div> */}
@@ -118,114 +131,72 @@ const Filter = ({
           </h3>
           <Divider className="mb-4" />
           <div className="grid grid-cols-1 gap-2">
-            <Autocomplete
+            <AutocompleteUI
+              name="faculty"
               label={t("faculty")}
               placeholder={t("chooseFaculty")}
-              selectedKey={filter.faculty ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev: any) => ({
-                  ...prev,
-                  faculty: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-            >
-              {formLoad?.data?.faculties?.map((u: { id: string; name_kh: string, name_en: string }) => (
-                <AutocompleteItem key={u.id} classNames={{base: "truncate"}}>{u.name_kh}</AutocompleteItem>
-              ))}
-            </Autocomplete>
-            <Autocomplete
+              options={list.faculties}
+              optionLabel="name_en"
+              secondaryOptionLabel="name_kh"
+              optionValue="id"
+              selectedKey={filter.faculty}
+              onSelectionChange={(key: any) => handleSelectChange(key, "faculty")}
+
+            />
+            <AutocompleteUI
+              name="field"
               label={t("field")}
               placeholder={t("chooseField")}
-              selectedKey={filter.field ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev: any) => ({
-                  ...prev,
-                  field: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-            >
-              {formLoad?.data?.fields?.map((u: { id: string; field_name_kh: string, faculty_name_en: string }) => (
-                <AutocompleteItem key={u.id} classNames={{base: "truncate"}}>{u.field_name_kh}</AutocompleteItem>
-              ))}
-            </Autocomplete>
-            <Autocomplete
+              options={list.fields}
+              optionLabel="field_name_en"
+              secondaryOptionLabel="field_name_kh"
+              optionValue="id"
+              selectedKey={filter.field}
+              onSelectionChange={(key: any) => handleSelectChange(key, "field")}
+            />
+            <AutocompleteUI
+              name="class"
               label={t("class")}
               placeholder={t("chooseClass")}
-              selectedKey={filter.classId ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev: any) => ({
-                  ...prev,
-                  classId: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-            >
-              {formLoad?.data?.classes?.map((u: { id: string; class_name: string }) => (
-                <AutocompleteItem key={u.id}>{u.class_name}</AutocompleteItem>
-              ))}
-            </Autocomplete>
-            <Autocomplete
+              options={list.classes}
+              optionLabel="class_name"
+              optionValue="id"
+              selectedKey={filter.classId}
+              onSelectionChange={(key: any) => handleSelectChange(key, "classId")}
+            />
+            <AutocompleteUI
+              name="course"
               label={t("course")}
               placeholder={t("chooseCourse")}
-              selectedKey={filter.course ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev: any) => ({
-                  ...prev,
-                  course: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-            >
-              {formLoad?.data?.courses?.map((u: { id: string; name_kh: string, name_en: string }) => (
-                <AutocompleteItem key={u.id}>{u.name_kh}</AutocompleteItem>
-              ))}
-            </Autocomplete>
-            <Autocomplete
+              options={list.courses}
+              optionLabel="name_en"
+              secondaryOptionLabel="name_kh"
+              optionValue="id"
+              selectedKey={filter.course}
+              onSelectionChange={(key: any) => handleSelectChange(key, "course")}
+            />
+            <AutocompleteUI
+              name="student"
               label={t("student")}
               placeholder={t("chooseStudent")}
-              selectedKey={filter.student ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev: any) => ({
-                  ...prev,
-                  student: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-            >
-              {formLoad?.data?.students?.map((u: { id: string; name_kh: string, name_en: string }) => (
-                <AutocompleteItem key={u.id}>{u.name_kh}</AutocompleteItem>
-              ))}
-            </Autocomplete>
-            <Autocomplete
+              options={list.students}
+              optionLabel="name_en"
+              secondaryOptionLabel="name_kh"
+              optionValue="id"
+              selectedKey={filter.student}
+              onSelectionChange={(key: any) => handleSelectChange(key, "student")}
+            />
+            <AutocompleteUI
+              name="term"
               label={t("term")}
               placeholder={t("chooseTerm")}
-              selectedKey={filter.termNo ?? ""}
-              isClearable
-              onSelectionChange={(key) =>
-                setFilter((prev: any) => ({
-                  ...prev,
-                  termNo: key?.toString() || null,
-                }))
-              }
-              labelPlacement="outside"
-              size="sm"
-            >
-              {termList?.map((u: { id: string; name: string }) => (
-                <AutocompleteItem key={u.id}>{u.name}</AutocompleteItem>
-              ))}
-            </Autocomplete>
+              options={termList}
+              optionLabel="label"
+              optionValue="value"
+              selectedKey={filter.termNo}
+              onSelectionChange={(key: any) => handleSelectChange(key, "termNo")}
+            />
+           
             {/* <InputNumber
               label={t("promotionNo")}
               placeholder={t("enterPromotionNo")}

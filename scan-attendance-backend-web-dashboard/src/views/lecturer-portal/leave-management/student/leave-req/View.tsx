@@ -71,6 +71,9 @@ interface ViewProps {
 }
 
 const View = ({ isOpen = false, onClose, row }: ViewProps) => {
+
+  if (!isOpen) return null;
+
   const { t } = useTranslation();
 
   if (!row) return null;

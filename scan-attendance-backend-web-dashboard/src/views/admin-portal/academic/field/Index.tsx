@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable, ShowToast } from "@/components/hero-ui";
 import Form from "./Form";
@@ -29,6 +29,9 @@ const Index = () => {
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [editRow, setEditRow] = useState<any>(null);
   const [viewRow, setViewRow] = useState<any>(null);
+
+  // ==== transition for smooth UI ====
+  const [isPending, startTransition] = useTransition();
 
   // ==== Pagination State ====
   const [pagination, setPagination] = useState({
@@ -81,65 +84,66 @@ const Index = () => {
     { name: "Inactive", uid: "Inactive" },
   ];
 
-  // ==== Search Input Handlers ====
-  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchKeyword(e.target.value);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  const handleClearSearch = () => {
-    setSearchKeyword("");
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  // ==== Handle Create/Edit/View/Delete ====
-
-  const { mutate: deleteField } = useMutation();
   
-  const onCreate = () => {
+  // ==== Search Handler (stable with useCallback) ====
+  const onSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    startTransition(() => {
+      setSearchKeyword(value);
+      setPagination((prev) => ({ ...prev, page: 1 }));
+    });
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    startTransition(() => {
+      setSearchKeyword("");
+      setPagination((prev) => ({ ...prev, page: 1 }));
+    });
+  }, []);
+
+  // ==== CRUD Actions (stable) ====
+  const { mutate: deleteField } = useMutation({
+    onSuccess: () => {
+      refetch();
+      ShowToast({ color: "success", title: t("success"), description: t("fieldDeleted") });
+    },
+    onError: (err) => {
+      ShowToast({
+        color: "error",
+        title: t("error"),
+        description: err.message || t("failedToDelete"),
+      });
+    },
+  });
+  
+  const onCreate = useCallback(() => {
     setIsEdit(false);
     onOpen();
-  };
+  }, [onOpen]);
 
-  const onEdit = (row: object) => {
+  const onEdit = useCallback((row: object) => {
     setEditRow(row);
     onOpen();
     setIsEdit(true);
-  };
+  }, [onOpen]);
 
-  const onDelete = async (id: number) => {
-    try {
+  const onDelete = useCallback(async (id: number) => {
+    await deleteField(`/field/${id}`, id, "DELETE");
+  }, [deleteField]);
 
-      await deleteField(`/field/${id}`, id, "DELETE");
-      await refetch();
-      ShowToast({ color: "success", title: "Success", description: "Field deleted successfully" });
-
-    } catch (error) {
-
-      console.error(error);
-      ShowToast({ color: "error", title: "Error", description: "Failed to delete field" });
-
-    }
-  };
-
-  const onView = (row: object) => {
+  const onView = useCallback((row: object) => {
     setViewRow(row);
     setIsEdit(false);
     onOpenView();
-  };
+  }, [onOpenView]);
 
-  const formProps = {
-    isOpen,
-    onClose,
-    isEdit,
-    row: editRow,
-    loadList: refetch, // call refetch after CRUD
-  };
-  const viewProps = {
-    isOpen: isOpenView,
-    onClose: onCloseView,
-    row: viewRow,
-  };
+  const formProps = useMemo(() => {
+    return { isOpen, onClose, isEdit, row: editRow, loadList: refetch };
+  }, [isOpen, onClose, isEdit, editRow, refetch]);
+
+  const viewProps = useMemo(() => {
+    return { isOpen: isOpenView, onClose: onCloseView, row: viewRow };
+  }, [isOpenView, onCloseView, viewRow]);
 
   return (
     <div className="p-4">
@@ -147,9 +151,10 @@ const Index = () => {
       <View {...viewProps} />
 
       <DataTable
-        loading={loading}
         dataApi={rows}
         cols={cols}
+        loading={loading}
+        isPending={isPending}
         visibleCols={visibleCols}
         onCreate={onCreate}
         onEdit={onEdit}
