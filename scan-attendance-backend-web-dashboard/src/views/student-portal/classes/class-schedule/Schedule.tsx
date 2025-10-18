@@ -32,10 +32,9 @@ const Schedule: React.FC<Props> = ({ data, classInfo }) => {
         <ScheduleInfo classInfo={classInfo} />
 
         {/* Schedule Table */}
-        <div className=" shadow-lg overflow-hidden mt-6">
+        <div className=" shadow-lg overflow-auto mt-6">
           {/* Desktop View */}
-          <ScrollShadow size={0} orientation="horizontal" className="has-scrollbar pb-4">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse scale-[0.85]">
               <thead>
                 <tr className="bg-white dark:bg-zinc-800 ">
                   <th className="py-2 px-4 text-center font-bold border border-blue-950 text-blue-950 dark:border-zinc-700 dark:text-zinc-100">
@@ -82,7 +81,6 @@ const Schedule: React.FC<Props> = ({ data, classInfo }) => {
                 })}
               </tbody>
             </table>
-          </ScrollShadow>
         </div>
 
         {/* Footer info  */}

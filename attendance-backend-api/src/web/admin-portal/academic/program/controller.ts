@@ -2,9 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { handleError, sendSuccessResponse, getClientIP, getSessionInfo, AuthUserPayload, RequestWithUser  } from "../../../../index";
 import {Program, SearchParams } from "../../../../types/interface";
 import { ProgramModel } from "./model";
-import { FacultyModel } from "../faculty/model";
-import { FieldModel } from "../field/model";
-import { CourseModel } from "../course/model";
+import { CourseProgramListModel, FacultyListModel, FieldListModel } from "../../../form-load";
 
 const model = ProgramModel;
 
@@ -135,11 +133,11 @@ export const ProgramController = {
 
     async formLoad(req: FastifyRequest, res: FastifyReply): Promise<void> {
         try {
-            const [faculty] = await FacultyModel.getAll();
-            const [field] = await FieldModel.getAll();
-            const [course] = await CourseModel.getAll();
+            const [faculties] = await FacultyListModel.getAll();
+            const [fields] = await FieldListModel.getAll();
+            const [courses] = await CourseProgramListModel.getAll();
 
-            sendSuccessResponse(res, true, "Form load", { faculties: faculty, fields: field, courses: course }, 200);
+            sendSuccessResponse(res, true, "Form load", { faculties: faculties, fields: fields, courses: courses }, 200);
         } catch (e) {
             handleError(res, e as Error, "Error loading form", 500);
         }

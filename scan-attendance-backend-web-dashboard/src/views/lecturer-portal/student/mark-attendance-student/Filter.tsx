@@ -49,7 +49,6 @@ const Filter = ({
   setFilter,
   onApplyFilter,
   onResetFilter,
-
   filterLoading,
   errors,
   setErrors,

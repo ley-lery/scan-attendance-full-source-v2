@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable, ShowToast } from "@/components/hero-ui";
-import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { cn } from "@/lib/utils";
 import View from "./View";
@@ -10,13 +9,24 @@ import Filter from "./Filter";
 import { Button, type Selection } from "@heroui/react";
 import { MdFilterTiltShift } from "react-icons/md";
 import { GoDotFill } from "react-icons/go";
+import { useFetch } from "@/hooks/useFetch";
 
 // ============ Types ============
 type DataFilter = {
-  course: string;
-  session: string;
-  page: number;
-  limit: number;
+  faculty: number | null,
+  field: number | null,
+  classId: number | null,
+  course: number | null,
+  student: number | null,
+  promotionNo: number | null,
+  termNo: number | null,
+  programType: string | null,
+  gender: string | null,
+  studentStatus: string | null,
+  searchKeyword: string | null,
+  sessionNo: string | null,
+  page: number,
+  limit: number
 };
 
 type AttendanceStatus = "1" | "A" | "P" | "L";
@@ -63,15 +73,20 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== useEffect ====
-  useEffect(() => {
-    onOpen();
-  }, []);
-
   const defaultFilter: DataFilter = useMemo(
     () => ({
-      course: "",
-      session: "s1",
+      faculty: null,
+      field: null,
+      classId: null,
+      course: null,
+      student: null,
+      promotionNo: null,
+      termNo: null,
+      programType: null,
+      gender: null,
+      studentStatus: null,
+      searchKeyword: null,
+      sessionNo: 's1',
       page: pagination.page,
       limit: pagination.limit,
     }),
@@ -80,25 +95,14 @@ const Index = () => {
 
   const [filter, setFilter] = useState<any>(defaultFilter);
 
-  // ==== API Calls ====
-  const { data: formLoad } = useFetch<{ courses: any[] }>(
-    "/lecturer/markattstudent/formload"
-  );
+  // ==== Data fetching ====
+  const { data: fetchList, refetch: refetchList, loading: fetchListLoading } = useFetch<{ rows: any[]; total_count: number }>("/admin/markattstudent/list");
+  useEffect(() => {
+    console.log(fetchList, "fetchList");
+    setRows(fetchList?.data?.rows || []);
+    setTotalPage(Math.ceil((fetchList?.data?.total || 0) / pagination.limit) || 1);
+  }, [fetchList]);
   
-
-  const { mutate: fetchList, loading: fetchLoading } = useMutation({
-    onSuccess: (response) => {
-      setRows(response?.data?.rows || []);
-      setTotalPage(Math.ceil((response?.data?.total || 0) / pagination.limit) || 1);
-    },
-    onError: (err) => {
-      ShowToast({
-        color: "error",
-        title: "Error",
-        description: err.message || "Failed to fetch data",
-      });
-    },
-  });
 
   const { mutate: markAttendance, loading: markAttendanceLoading } = useMutation({
     onSuccess: (response) => {
@@ -107,7 +111,7 @@ const Index = () => {
         title: "Success",
         description: response?.response?.data?.message || "Mark attendance successfully",
       });
-      refetch();
+      refetchList();
     },
     onError: (err) => {
       ShowToast({
@@ -120,7 +124,7 @@ const Index = () => {
 
   const { mutate: multiAction, loading: multiActionLoading } = useMutation({
     onSuccess: async (res) => {
-      await refetch();
+      await refetchList();
       setSelectedIds(new Set([]));
       ShowToast({
         color: "success",
@@ -139,6 +143,7 @@ const Index = () => {
 
   const { mutate: filterData, loading: filterLoading } = useMutation({
     onSuccess: (response) => {
+      console.log(response, "response");
       setRows(response?.data?.rows || []);
       setTotalPage(Math.ceil((response?.data?.total || 0) / pagination.limit) || 1);
       setIsFiltered(true);
@@ -153,23 +158,32 @@ const Index = () => {
     },
   });
 
-  // ==== Helper Functions ====
   const refetch = async () => {
-    const payload = {
-      course: filter.course ? parseInt(filter.course) : undefined,
-      session: filter.session ? String(filter.session) : undefined,
+    const payload: DataFilter = {
+      faculty: filter.faculty ? parseInt(filter.faculty) : null,
+      field: filter.field ? parseInt(filter.field) : null,
+      classId: filter.classId ? parseInt(filter.classId) : null,
+      course: filter.course ? parseInt(filter.course) : null,
+      student: filter.student ? parseInt(filter.student) : null,
+      promotionNo: filter.promotionNo ? parseInt(filter.promotionNo) : null,
+      termNo: filter.termNo ? parseInt(filter.termNo) : null,
+      programType: filter.programType,
+      gender: filter.gender,
+      studentStatus: filter.studentStatus,
+      searchKeyword: filter.searchKeyword,
+      sessionNo: filter.sessionNo ? String(filter.sessionNo) : null,
       page: pagination.page,
       limit: pagination.limit,
     };
 
-    await fetchList(`/lecturer/markattstudent/list`, payload, "POST");
+    await filterData(`/admin/markattstudent/filter`, payload, "POST");
   };
 
   const FilterData = (formData: Filter, t: (key: string) => string) => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.session?.trim()) {
-      newErrors.session = t("validation.required");
+    if (!formData.sessionNo?.trim()) {
+      newErrors.sessionNo = t("validation.required");
     }
 
     return newErrors;
@@ -178,18 +192,29 @@ const Index = () => {
     const validationErrors = FilterData(filter, t);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      ShowToast({color: "warning", title: "Warning", description: "Please select a session to apply filter"});
       return false;
     }
 
-    const payload = {
-      course: filter.course ? parseInt(filter.course) : undefined,
-      session: filter.session ? String(filter.session) : undefined,
+    const payload: DataFilter = {
+      faculty: filter.faculty ? parseInt(filter.faculty) : null,
+      field: filter.field ? parseInt(filter.field) : null,
+      classId: filter.classId ? parseInt(filter.classId) : null,
+      course: filter.course ? parseInt(filter.course) : null,
+      student: filter.student ? parseInt(filter.student) : null,
+      promotionNo: filter.promotionNo ? parseInt(filter.promotionNo) : null,
+      termNo: filter.termNo ? parseInt(filter.termNo) : null,
+      programType: filter.programType,
+      gender: filter.gender,
+      studentStatus: filter.studentStatus,
+      searchKeyword: filter.searchKeyword,
+      sessionNo: filter.sessionNo ? String(filter.sessionNo) : null,
       page: page,
       limit: pagination.limit,
     };
+    console.log(payload, "payload");
 
-    const filtered = await filterData(`/lecturer/markattstudent/list`, payload, "POST");
-    console.log(filtered, "filtered");
+    const filtered = await filterData(`/admin/markattstudent/filter`, payload, "POST");
     
     if (filtered?.data?.rows?.length > 0) {
       setMarkMultiAttendanceData({
@@ -211,9 +236,8 @@ const Index = () => {
       session: sessionNumber,
       status: "1",
     };
-    console.log(payload, "payload");
 
-    await markAttendance(`/lecturer/markattstudent/marksignle`, payload, "POST");
+    await markAttendance(`/admin/markattstudent/marksignle`, payload, "POST");
   };
   const onMarkAbsent = async (data: any) => {
     const payload = {
@@ -223,7 +247,7 @@ const Index = () => {
       session: sessionNumber,
       status: "A",
     };
-    await markAttendance(`/lecturer/markattstudent/marksignle`, payload, "POST");
+    await markAttendance(`/admin/markattstudent/marksignle`, payload, "POST");
   };
   const onMarkLate = async (data: any) => {
     const payload = {
@@ -233,7 +257,7 @@ const Index = () => {
       session: sessionNumber,
       status: "L",
     };
-    await markAttendance(`/lecturer/markattstudent/marksignle`, payload, "POST");
+    await markAttendance(`/admin/markattstudent/marksignle`, payload, "POST");
   };
   const onMarkPermission = async (data: any) => {
     const payload = {
@@ -243,7 +267,7 @@ const Index = () => {
       session: sessionNumber,
       status: "P",
     };
-    await markAttendance(`/lecturer/markattstudent/marksignle`, payload, "POST");
+    await markAttendance(`/admin/markattstudent/marksignle`, payload, "POST");
 
   };
 
@@ -270,7 +294,7 @@ const Index = () => {
       attData: attendanceData,
     };
 
-    await multiAction(`/lecturer/markattstudent/markmulti`, payload, "POST");
+    await multiAction(`/admin/markattstudent/markmulti`, payload, "POST");
   };
 
   // ==== Filter Handlers ====
@@ -549,7 +573,6 @@ const Index = () => {
         setFilter={setFilter}
         onApplyFilter={onFilter}
         onResetFilter={resetFilter}
-        formLoad={formLoad}
         filterLoading={filterLoading}
         errors={errors}
         setErrors={setErrors}
@@ -558,7 +581,7 @@ const Index = () => {
 
       {/* Data Table */}
       <DataTable
-        loading={fetchLoading || filterLoading}
+        loading={fetchListLoading || filterLoading}
         dataApi={rows}
         cols={cols}
         visibleCols={visibleCols}

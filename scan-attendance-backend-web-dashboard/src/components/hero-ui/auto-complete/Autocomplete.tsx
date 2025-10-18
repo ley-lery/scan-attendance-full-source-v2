@@ -1,6 +1,5 @@
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
 
-
 interface Option {
   [key: string | number]: any;
 }

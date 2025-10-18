@@ -144,7 +144,11 @@ const Index = () => {
           />
         ))}
       </div>
-      <Accordion variant="splitted" itemClasses={{ base: "shadow-none rounded-2xl bg-white dark:bg-zinc-800"}} >
+      <Accordion 
+        variant="splitted" 
+        itemClasses={{ base: "shadow-none rounded-2xl bg-white dark:bg-zinc-800"}} 
+        defaultExpandedKeys={["0"]}
+      >
         {scheduleList.map(({ classInfo, scheduleData } : { classInfo: ClassInfo, scheduleData: ScheduleData }, index: number) => (
           <AccordionItem
             key={index}

@@ -10,5 +10,5 @@ export const programRoutes = async (fastify: FastifyInstance)=>{
     fastify.post('/', ctr.create);
     fastify.put('/:id', ctr.update);
     fastify.delete('/:id', ctr.delete);
-    fastify.get('/formLoad', ctr.formLoad);
+    fastify.get('/formload', ctr.formLoad);
 }

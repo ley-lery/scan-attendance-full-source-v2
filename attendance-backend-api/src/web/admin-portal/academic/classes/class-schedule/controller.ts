@@ -1,10 +1,9 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { handleError, sendSuccessResponse, AuthUserPayload, RequestWithUser } from "../../../../../../src/index";
 import { ScheduleModel } from "./model";
-import { CourseModel } from "../../course/model";
 import { ClassModel } from "../manage-class/model";
-import { LecturerModel } from "../../../lecturer/manage-lecturer/model";
 import { Schedule, ScheduleUpdate } from "../../../../../types/interface";
+import { LecturerCourseListModel, LecturerListModel } from "../../../../form-load";
 
 const model = ScheduleModel;
 
@@ -99,8 +98,8 @@ export const ScheduleController = {
     async formLoad(req: FastifyRequest, res: FastifyReply): Promise<void> {
         try {
             const [classes] = await ClassModel.getAll();
-            const [courses] = await CourseModel.getAll();
-            const [lecturers] = await LecturerModel.getAll();
+            const [courses] = await LecturerCourseListModel.getAll();
+            const [lecturers] = await LecturerListModel.getAll();
 
             sendSuccessResponse(res, true, "Form load", { classes: classes, courses: courses, lecturers: lecturers }, 200);
         } catch (e) {

@@ -1,11 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { InputNumber, Modal, ShowToast, AutocompleteUI } from "@/components/hero-ui";
-import { type ChangeEventHandler, type FormEvent, type Key, memo, useEffect, useState } from "react";
+import { type ChangeEventHandler, type FormEvent, type Key, memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Validation } from "@/validations/index";
 import { Radio, RadioGroup } from "@heroui/react";
 import { useMutation } from "@/hooks/useMutation";
 import { useFetch } from "@/hooks/useFetch";
+
+type FormLoad = {
+  faculties: any[];
+  fields: any[];
+  courses: any[];
+};
 
 interface FormProps {
   isOpen?: boolean;
@@ -37,24 +43,33 @@ export const programTypes = [
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
   
-  if (!isOpen) return null;
 
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<Program>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const [list, setList] = useState<FormLoad>({
+    faculties: [],
+    fields: [],
+    courses: [],
+  });
 
   const id = row?.id ?? null;
 
   const { mutate: createField, loading: creating } = useMutation();
   const { mutate: updateField, loading: updating } = useMutation();
 
-  const { data: formLoad } = useFetch<{ faculties: any[], fields: any[], courses: any[] }>("/program/formLoad");
+  const { data: formLoad } = useFetch<FormLoad>("/program/formload");
 
   // Load form data when modal opens or row changes
   useEffect(() => {
-    console.log(row, "row");
+    console.log(formLoad, "formLoad");
+    setList({
+      faculties: formLoad?.data?.faculties,
+      fields: formLoad?.data?.fields,
+      courses: formLoad?.data?.courses,
+    });
     if (isOpen) {
       if (isEdit && row) {
         setFormData({
@@ -74,13 +89,39 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       setErrors({});
       setLoading(false);
     }
-  }, [isOpen, row, id, isEdit]);
+  }, [isOpen, row, id, isEdit, formLoad]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement> | { target: { name: string; value: Key } }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
+
+
+  const handleSelectChange = (key: any, field: keyof Program) => {
+    console.log(formData, "formData");
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: key };
+
+      // Cascade reset logic
+      if (field === "faculty") {
+        updated.field = null;
+        updated.course = null;
+      } else if (field === "field") {
+        updated.course = null;
+      }
+
+      return updated;
+    });
+  };
+
+  
+  // === FILTER CASCADE LOGIC ===
+  const filteredFields = useMemo(
+    () => list.fields?.filter((f) => f.faculty_id === Number(formData.faculty)),
+    [list.fields, formData.faculty]
+  );
+
 
   const onSubmit = async (): Promise<boolean> => {
     const validationErrors = Validation.Program(formData, t);
@@ -156,6 +197,8 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   const closeForm = () => (isEdit || !isFormDirty() ? onClose(false) : onClose(false));
 
+  if (!isOpen) return null;
+
 
   return (
     <>
@@ -194,53 +237,46 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
             name="faculty"
             label={t("faculty")}
             placeholder={t("chooseFaculty")}
-            options={formLoad?.data?.faculties}
-            optionLabel="name_en"
-            secondaryOptionLabel="name_kh"
-            optionValue="id"
+            options={list.faculties}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
+            optionValue="value"
             selectedKey={formData.faculty}
-            onSelectionChange={(key) =>
-              handleInputChange({
-                target: { name: "faculty", value: key ?? "" },
-              })
-            }
+            onSelectionChange={(key) => handleSelectChange(key, "faculty")}
             error={errors.faculty}
             isRequired
           />
+
           <AutocompleteUI
             name="field"
             label={t("field")}
             placeholder={t("chooseField")}
-            options={formLoad?.data?.fields}
-            optionLabel="field_name_en"
-            secondaryOptionLabel="field_name_kh"
-            optionValue="id"
+            options={filteredFields}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
+            optionValue="value"
             selectedKey={formData.field}
-            onSelectionChange={(key) =>
-              handleInputChange({
-                target: { name: "field", value: key ?? "" },
-              })
-            }
+            onSelectionChange={(key) => handleSelectChange(key, "field")}
             error={errors.field}
             isRequired
           />
+
           <AutocompleteUI
             name="course"
             label={t("course")}
             placeholder={t("chooseCourse")}
-            options={formLoad?.data?.courses}
-            optionLabel="name_en"
-            secondaryOptionLabel="name_kh"
-            optionValue="id"
+            options={list.courses}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
+            optionValue="value"
             selectedKey={formData.course}
             onSelectionChange={(key) =>
-              handleInputChange({
-                target: { name: "course", value: key ?? "" },
-              })
+              handleInputChange({ target: { name: "course", value: key ?? "" } })
             }
             error={errors.course}
             isRequired
           />
+
 
           {["promotionNo", "termNo", "credits"].map((field) => (
             <InputNumber

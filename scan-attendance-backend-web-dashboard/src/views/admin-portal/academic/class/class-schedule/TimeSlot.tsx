@@ -62,7 +62,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({
           <p className="text-sm">{course.credits} Credits</p>
           <p className="text-sm">Room: {course.room}</p>
           <p className="text-sm">{course.lecturerName}</p>
-          <p className="text-xs">Tel: {course.phone}</p>
+          <p className="text-sm">Tel: {course.phone}</p>
         </div>
       ) : (
         <div className="min-h-full min-w-full bg-zinc-200 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 flex justify-center items-center">

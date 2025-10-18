@@ -10,4 +10,5 @@ export const fieldRoutes = async (fastify: FastifyInstance)=>{
     fastify.post('/', ctr.create);
     fastify.put('/:id', ctr.update);
     fastify.delete('/:id', ctr.delete);
+    fastify.get('/formload', ctr.formLoad);
 }

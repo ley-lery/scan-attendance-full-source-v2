@@ -49,9 +49,14 @@ const AddClass = ({
   resetTempForm,
 }: Props) => {
 
+  const filteredCourses = formLoad?.data?.courses?.filter((course: any) => {
+    if (!tempSessionData.lecturer) return true;
+
+    return Number(course.lecturer_id) === Number(tempSessionData.lecturer);
+  });
 
   const { t } = useTranslation();
-
+  
   if (!isOpen) return null;
 
   return (
@@ -85,7 +90,8 @@ const AddClass = ({
             label={t("lecturer")}
             placeholder={t("chooselecturer")}
             options={formLoad?.data?.lecturers}
-            optionLabel="name_en"
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
             optionValue="id"
             selectedKey={tempSessionData.lecturer?.toString()}
             onSelectionChange={(key) =>
@@ -100,8 +106,9 @@ const AddClass = ({
             name="course"
             label={t("course")}
             placeholder={t("chooseCourse")}
-            options={formLoad?.data?.courses}
-            optionLabel="name_en"
+            options={filteredCourses}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
             optionValue="id"
             selectedKey={tempSessionData.course?.toString()}
             onSelectionChange={(key) =>

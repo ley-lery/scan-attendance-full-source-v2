@@ -2,6 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { handleError, sendSuccessResponse, AuthUserPayload, RequestWithUser, getClientIP, getSessionInfo } from "../../../../index";
 import {Field, SearchParams } from "../../../../types/interface";
 import { FieldModel } from "./model";
+import { FacultyListModel } from "../../../form-load";
 
 const model = FieldModel;
 
@@ -134,5 +135,14 @@ export const FieldController = {
         } catch (e: any) {
             handleError(res, e as Error, "Error deleting lecturer", 500);
         }
-    }
+    },
+    async formLoad(req: FastifyRequest, res: FastifyReply): Promise<void> {
+        try {
+            const [faculyties] = await FacultyListModel.getAll();
+
+            sendSuccessResponse(res, true, "student sessions", { faculyties: faculyties }, 200);
+        } catch (e) {
+            handleError(res, e as Error, "Error fetching student sessions", 500);
+        }
+    },
 };

@@ -1,33 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Autocomplete, AutocompleteItem, AutocompleteUI } from "@/components/hero-ui";
-import { Divider } from "@heroui/react";
-import { GoClock } from "react-icons/go";
+import { AutocompleteUI } from "@/components/hero-ui";
 import { DrawerFilter } from "@/components/ui";
+import { useFetch } from "@/hooks/useFetch";
 
 // === Types ===
 
-type ApiType = {
-  id: number;
-  course_name_en: string;
-  day_of_week: string;
-  room_name: string;
-  time_slots: string;
+type FormLoad = {
+  faculyties: any[]; 
+  fields: any[];
+  classes: any[];
+  courses: any[];
+  students: any[];
+  sessions: any[];
 };
 
 type Filter = {
-  course: string;
-  session: string;
+  faculty: number | null,
+  field: number | null,
+  classId: number | null,
+  course: number | null,
+  student: number | null,
+  promotionNo: number | null,
+  termNo: number | null,
+  programType: string | null,
+  gender: string | null,
+  studentStatus: string | null,
+  searchKeyword: string | null,
+  sessionNo: string | null,
+  page: number,
+  limit: number
 };
 
-type Details = {
-  course: string;
-  dayOfWeek: string;
-  room: string;
-  timeSlots: string;
-  session: string;
-  totalStudents: number;
-};
 
 interface FilterProps {
   isOpen: boolean;
@@ -36,7 +40,6 @@ interface FilterProps {
   setFilter: React.Dispatch<React.SetStateAction<Filter>>;
   onApplyFilter: () => void;
   onResetFilter: () => void;
-  formLoad: any;
   filterLoading: boolean;
   errors: Record<string, string>;
   setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
@@ -49,86 +52,176 @@ const Filter = ({
   setFilter,
   onApplyFilter,
   onResetFilter,
-  formLoad,
   filterLoading,
   errors,
   setErrors,
 }: FilterProps) => {
-
-
   const { t } = useTranslation();
-  const [details, setDetails] = useState<Details>({
-    course: "",
-    dayOfWeek: "",
-    room: "",
-    timeSlots: "",
-    session: "",
-    totalStudents: 0,
+
+  const [list, setList] = useState<FormLoad>({
+    faculyties: [],
+    fields: [],
+    classes: [],
+    courses: [],
+    students: [],
+    sessions: [],
   });
 
-  const courses = formLoad?.data?.courses;
-  const sessions = formLoad?.data?.sessions;
-  
-  const handleSelectChange = (key: string, field: keyof Filter) => {
-    setFilter((prev) => ({ ...prev, [field]: key }));
-    setErrors({});
+  const { data: formLoad } = useFetch<FormLoad>("/admin/markattstudent/formload");
 
-    if (field === "course") {
-      const selected = courses?.find((c: ApiType) => c.id === Number(key));
-      setDetails({
-        course: selected?.course_name_en ?? "",
-        dayOfWeek: selected?.day_of_week ?? "",
-        room: selected?.room_name ?? "",
-        timeSlots: selected?.time_slots ?? "",
-        session: selected?.session ?? "",
-        totalStudents: selected?.total_student ?? 0,
+  useEffect(() => {
+    console.log(formLoad, "formLoad");
+    
+    if (isOpen && formLoad) {
+      setList({
+        faculyties: formLoad.data.faculyties,
+        fields: formLoad.data.fields,
+        classes: formLoad.data.classes,
+        courses: formLoad.data.courses,
+        students: formLoad.data.students,
+        sessions: formLoad.data.sessions,
       });
+    }
+  }, [formLoad, isOpen]);
+
+  const handleSelectChange = (key: any, field: keyof Filter) => {
+
+    // clear next-level selections when parent changes
+    setFilter((prev) => {
+      const updated = { ...prev, [field]: key };
+
+      if (field === "faculty") {
+        updated.field = null;
+        updated.classId = null;
+        updated.course = null;
+        updated.student = null;
+      } else if (field === "field") {
+        updated.classId = null;
+        updated.course = null;
+        updated.student = null;
+      } else if (field === "classId") {
+        updated.course = null;
+        updated.student = null;
+      } else if (field === "course") {
+        updated.student = null;
+      }
+      return updated;
+    });
+    if(filter.sessionNo?.trim() !== ""){
+      setErrors({});
     }
   };
 
+  // === FILTER CASCADE LOGIC ===
+  const filteredFields = useMemo(() => list.fields?.filter((f) => f.faculty_id === Number(filter.faculty)),
+    [list.fields, filter.faculty]
+  );
 
-  // if (!isOpen) return null;
+  const filteredClasses = useMemo(() => list.classes?.filter((c) => !filter.field || c.field_id === Number(filter.field)),
+    [list.classes, filter.field]
+  );
 
+  const filteredCourses = useMemo(() => list.courses?.filter((co) => !filter.classId || co.class_id === Number(filter.classId)),
+    [list.courses, filter.classId]
+  );
+
+  const filteredStudents = useMemo(() => list.students?.filter((s) => (!filter.classId || s.class_id === Number(filter.classId)) && (!filter.course || s.course_id === Number(filter.course))),
+    [list.students, filter.classId, filter.course]
+  );
+
+  // === UI ===
   return (
-    <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading} loadingType="regular" hideIconLoading={false} isAutoFilter={true}>
+    <DrawerFilter
+      isOpen={isOpen}
+      onClose={onClose}
+      title="filter"
+      onApplyFilter={onApplyFilter}
+      onResetFilter={onResetFilter}
+      filterLoading={filterLoading}
+      isLoading={filterLoading}
+      loadingType="regular"
+      hideIconLoading={false}
+      isAutoFilter={true}
+    >
       <form className="space-y-4">
-        
-        {/* Details */}
-        <div className="space-y-2">
-          <h3 className="text-sm font-normal text-zinc-500 dark:text-zinc-400">{t("details")}</h3>
-          <Divider />
-          <div className="grid grid-cols-1 gap-2 text-sm text-zinc-500 dark:text-zinc-300">
-            <div className="flex justify-between"><span>{t("course")}:</span> <span>{details.course || '-'}</span></div>
-            <div className="flex justify-between"><span>{t("dayOfWeek")}:</span> <span>{details.dayOfWeek || '-'}</span></div>
-            <div className="flex justify-between"><span>{t("room")}:</span> <span>{details.room || '-'}</span></div>
-            <div className="flex justify-between"><span>{t("timeSlots")}:</span> <span>{details.timeSlots || '-'}</span></div>
-            <div className="flex justify-between"><span>{t("session")}:</span> <span>{details.session || '-'}</span></div>
-            <div className="flex justify-between"><span>{t("totalStudents")}:</span> <span>{details.totalStudents || '-'} {t("student")}</span></div>
-          </div>
-        </div>
 
-        <Divider />
+        {/* Faculty */}
+        <AutocompleteUI
+          name="faculty"
+          label={t("faculty")}
+          placeholder={t("chooseFaculty")}
+          options={list.faculyties}
+          optionLabel="label_1"
+          secondaryOptionLabel="label_2"
+          optionValue="id"
+          selectedKey={filter.faculty}
+          onSelectionChange={(key: any) => handleSelectChange(key, "faculty")}
+        />
 
+        {/* Field */}
+        <AutocompleteUI
+          name="field"
+          label={t("field")}
+          placeholder={t("chooseField")}
+          options={filteredFields}
+          optionLabel="label_1"
+          secondaryOptionLabel="label_2"
+          optionValue="id"
+          selectedKey={filter.field}
+          onSelectionChange={(key: any) => handleSelectChange(key, "field")}
+        />
+
+        {/* Class */}
+        <AutocompleteUI
+          name="class"
+          label={t("class")}
+          placeholder={t("chooseClass")}
+          options={filteredClasses}
+          optionLabel="label_1"
+          secondaryOptionLabel="label_2"
+          optionValue="id"
+          selectedKey={filter.classId}
+          onSelectionChange={(key: any) => handleSelectChange(key, "classId")}
+        />
+
+        {/* Course */}
         <AutocompleteUI
           name="course"
           label={t("course")}
           placeholder={t("chooseCourse")}
-          options={courses}
-          optionLabel="course_name_en"
-          secondaryOptionLabel="course_name_kh"
+          options={filteredCourses}
+          optionLabel="label_1"
+          secondaryOptionLabel="label_2"
           optionValue="id"
           selectedKey={filter.course}
           onSelectionChange={(key: any) => handleSelectChange(key, "course")}
         />
+
+        {/* Student */}
+        <AutocompleteUI
+          name="student"
+          label={t("student")}
+          placeholder={t("chooseStudent")}
+          options={filteredStudents}
+          optionLabel="label_1"
+          secondaryOptionLabel="label_2"
+          optionValue="id"
+          selectedKey={filter.student}
+          onSelectionChange={(key: any) => handleSelectChange(key, "student")}
+        />
+
+        {/* Session */}
         <AutocompleteUI
           name="session"
           label={t("session")}
           placeholder={t("chooseSession")}
-          options={sessions}
+          options={list.sessions}
           optionLabel="label"
           optionValue="value"
-          selectedKey={filter.session}
-          onSelectionChange={(key: any) => handleSelectChange(key, "session")}
+          selectedKey={filter.sessionNo}
+          onSelectionChange={(key: any) => handleSelectChange(key, "sessionNo")}
+          error={errors.sessionNo}
+          isRequired
         />
       </form>
     </DrawerFilter>

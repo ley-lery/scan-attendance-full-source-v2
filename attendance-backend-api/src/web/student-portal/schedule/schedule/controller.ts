@@ -1,6 +1,5 @@
-import { FastifyReply, FastifyRequest } from "fastify";
+import { FastifyReply } from "fastify";
 import { handleError, sendSuccessResponse } from "../../../../utils/response";
-import { Schedule } from "../../../../types/interface";
 import { ScheduleModel } from "./model";
 import { AuthUserPayload, RequestWithUser } from "../../../../middlewares/auth.middleware";
 

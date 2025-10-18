@@ -41,7 +41,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   const { mutate: updateField, loading: updating } = useMutation();
 
 
-  const { data: facultiesData } = useFetch<{ rows: any[]; total_count: number }>("/faculty/list");
+  const { data: formLoad } = useFetch<{ rows: any[]; total_count: number }>("/field/formload");
 
 
   // ====== get data when modal opens or row changes
@@ -163,10 +163,10 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
             name="faculty"
             label={t("faculty")}
             placeholder={t("chooseFaculty")}
-            options={facultiesData?.data?.rows}
-            optionLabel="name_en"
-            secondaryOptionLabel="name_kh"
-            optionValue="id"
+            options={formLoad?.data?.faculyties}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
+            optionValue="value"
             selectedKey={formData.faculty}
             onSelectionChange={(key) =>
               handleInputChange({

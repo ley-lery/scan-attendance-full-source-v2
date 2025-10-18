@@ -181,7 +181,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   // Initialize form data when modal opens
   useEffect(() => {
-    console.log("row", row);
+    console.log("formLoad", formLoad);
     if (isOpen) {
       if (isEdit && row) {
         // Edit mode: populate form with existing data
@@ -472,7 +472,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       onClose(false);
       resetForm();
     } else {
-      // Could add confirmation dialog here
       onClose(false);
       resetForm();
     }
@@ -504,10 +503,10 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       const lecturer = formLoad?.data?.lecturers?.find((l: any) => l.id === Number(session.lecturer));
       
       display[session.time_slot][session.day] = {
-        courseName: course?.name_en || "Unknown Course",
+        courseName: course?.label_1 || "Unknown Course",
         credits: session.credits,
         room: dataClassInfo.room_name,
-        lecturerName: lecturer?.name_en || "Unknown Lecturer",
+        lecturerName: lecturer?.label_1 || "Unknown Lecturer",
         phone: lecturer?.phone_number || ""
       };
     });
