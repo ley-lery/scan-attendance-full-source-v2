@@ -14,9 +14,26 @@ export const MarkAttStudentController = {
 
     async getAll(req: RequestWithUser, res: FastifyReply): Promise<void> {
         const userPayload = req.user as AuthUserPayload;
-        const data = req.body as any;
+        const {page, limit} = req.query as {page: number, limit: number};
         try {
-            const [rows, [{ total } = { total: 0 }]] = await MarkAttStudentModel.getAll(userPayload.assign_to, data);
+            const [rows, [{ total } = { total: 0 }]] = await MarkAttStudentModel.getAll(userPayload.assign_to, page, limit);
+            console.log(rows, "rows")
+            if (!rows?.length) {
+                res.send({ message: "No students found" });
+                return;
+            }
+
+            sendSuccessResponse(res, true, "students list", { rows: rows, total:total }, 200);
+        } catch (e) {
+            handleError(res, e as Error, "Error fetching students", 500);
+        }
+    },
+    async filter(req: RequestWithUser, res: FastifyReply): Promise<void> {
+        const userPayload = req.user as AuthUserPayload;
+        const data = req.body as any;
+        
+        try {
+            const [rows, [{ total } = { total: 0 }]] = await MarkAttStudentModel.filter(userPayload.assign_to, data);
             console.log(rows, "rows")
             if (!rows?.length) {
                 res.send({ message: "No students found" });
@@ -31,6 +48,7 @@ export const MarkAttStudentController = {
     async getStudentSessionDetail(req: RequestWithUser, res: FastifyReply): Promise<void> {
         const userPayload = req.user as AuthUserPayload;
         const data = req.body as any;
+        
         try {
             const [rows] = await MarkAttStudentModel.getStudentSessionDetail(userPayload.assign_to, data);
             console.log(rows, "rows")

@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AutocompleteUI } from "@/components/hero-ui";
+import { AutocompleteUI, Input, InputNumber } from "@/components/hero-ui";
 import { DrawerFilter } from "@/components/ui";
 import { useFetch } from "@/hooks/useFetch";
+import { Divider } from "@heroui/react";
 
 // === Types ===
 
@@ -13,6 +14,11 @@ type FormLoad = {
   courses: any[];
   students: any[];
   sessions: any[];
+  promotionNo: any[];
+  termNo: any[];
+  programType: any[];
+  gender: any[];
+  studentStatus: any[];
 };
 
 type Filter = {
@@ -21,7 +27,7 @@ type Filter = {
   classId: number | null,
   course: number | null,
   student: number | null,
-  promotionNo: number | null,
+  promotionNo: number | (readonly string[] & number) | undefined,
   termNo: number | null,
   programType: string | null,
   gender: string | null,
@@ -65,6 +71,11 @@ const Filter = ({
     courses: [],
     students: [],
     sessions: [],
+    programType: [],
+    promotionNo: [],
+    termNo: [],
+    gender: [],
+    studentStatus: [],
   });
 
   const { data: formLoad } = useFetch<FormLoad>("/admin/markattstudent/formload");
@@ -80,6 +91,11 @@ const Filter = ({
         courses: formLoad.data.courses,
         students: formLoad.data.students,
         sessions: formLoad.data.sessions,
+        promotionNo: formLoad.data.promotionNo,
+        termNo: formLoad.data.termNo,
+        programType: formLoad.data.programType,
+        gender: formLoad.data.gender,
+        studentStatus: formLoad.data.studentStatus,
       });
     }
   }, [formLoad, isOpen]);
@@ -121,7 +137,7 @@ const Filter = ({
     [list.classes, filter.field]
   );
 
-  const filteredCourses = useMemo(() => list.courses?.filter((co) => !filter.classId || co.class_id === Number(filter.classId)),
+  const filteredCourses = useMemo(() => list.courses?.filter((co) =>  co.class_id === Number(filter.classId)),
     [list.courses, filter.classId]
   );
 
@@ -129,7 +145,8 @@ const Filter = ({
     [list.students, filter.classId, filter.course]
   );
 
-  // === UI ===
+
+
   return (
     <DrawerFilter
       isOpen={isOpen}
@@ -144,85 +161,161 @@ const Filter = ({
       isAutoFilter={true}
     >
       <form className="space-y-4">
+        {/* === Academic Info === */}
+        <div className="space-y-2">
+          <div>
+            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              {t("academicInfo")}
+            </h2>
+            <Divider />
+          </div>
 
-        {/* Faculty */}
-        <AutocompleteUI
-          name="faculty"
-          label={t("faculty")}
-          placeholder={t("chooseFaculty")}
-          options={list.faculyties}
-          optionLabel="label_1"
-          secondaryOptionLabel="label_2"
-          optionValue="id"
-          selectedKey={filter.faculty}
-          onSelectionChange={(key: any) => handleSelectChange(key, "faculty")}
-        />
+          <AutocompleteUI
+            name="faculty"
+            label={t("faculty")}
+            placeholder={t("chooseFaculty")}
+            options={list.faculyties}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
+            optionValue="id"
+            selectedKey={filter.faculty}
+            onSelectionChange={(key: any) => handleSelectChange(key, "faculty")}
+          />
 
-        {/* Field */}
-        <AutocompleteUI
-          name="field"
-          label={t("field")}
-          placeholder={t("chooseField")}
-          options={filteredFields}
-          optionLabel="label_1"
-          secondaryOptionLabel="label_2"
-          optionValue="id"
-          selectedKey={filter.field}
-          onSelectionChange={(key: any) => handleSelectChange(key, "field")}
-        />
+          <AutocompleteUI
+            name="field"
+            label={t("field")}
+            placeholder={t("chooseField")}
+            options={filteredFields}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
+            optionValue="id"
+            selectedKey={filter.field}
+            onSelectionChange={(key: any) => handleSelectChange(key, "field")}
+          />
 
-        {/* Class */}
-        <AutocompleteUI
-          name="class"
-          label={t("class")}
-          placeholder={t("chooseClass")}
-          options={filteredClasses}
-          optionLabel="label_1"
-          secondaryOptionLabel="label_2"
-          optionValue="id"
-          selectedKey={filter.classId}
-          onSelectionChange={(key: any) => handleSelectChange(key, "classId")}
-        />
+          <AutocompleteUI
+            name="class"
+            label={t("class")}
+            placeholder={t("chooseClass")}
+            options={filteredClasses}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
+            optionValue="id"
+            selectedKey={filter.classId}
+            onSelectionChange={(key: any) => handleSelectChange(key, "classId")}
+          />
 
-        {/* Course */}
-        <AutocompleteUI
-          name="course"
-          label={t("course")}
-          placeholder={t("chooseCourse")}
-          options={filteredCourses}
-          optionLabel="label_1"
-          secondaryOptionLabel="label_2"
-          optionValue="id"
-          selectedKey={filter.course}
-          onSelectionChange={(key: any) => handleSelectChange(key, "course")}
-        />
+          <AutocompleteUI
+            name="course"
+            label={t("course")}
+            placeholder={t("chooseCourse")}
+            options={filteredCourses}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
+            optionValue="id"
+            selectedKey={filter.course}
+            onSelectionChange={(key: any) => handleSelectChange(key, "course")}
+          />
+        </div>
 
-        {/* Student */}
-        <AutocompleteUI
-          name="student"
-          label={t("student")}
-          placeholder={t("chooseStudent")}
-          options={filteredStudents}
-          optionLabel="label_1"
-          secondaryOptionLabel="label_2"
-          optionValue="id"
-          selectedKey={filter.student}
-          onSelectionChange={(key: any) => handleSelectChange(key, "student")}
-        />
+        {/* === Student Info === */}
+        <div className="space-y-2">
+          <div>
+            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              {t("studentInfo")}
+            </h2>
+            <Divider />
+          </div>
 
-        {/* Session */}
-        <AutocompleteUI
-          name="session"
-          label={t("session")}
-          placeholder={t("chooseSession")}
-          options={list.sessions}
-          optionLabel="label"
-          optionValue="value"
-          selectedKey={filter.sessionNo}
-          onSelectionChange={(key: any) => handleSelectChange(key, "sessionNo")}
-          error={errors.sessionNo}
-          isRequired
-        />
+          <AutocompleteUI
+            name="student"
+            label={t("student")}
+            placeholder={t("chooseStudent")}
+            options={filteredStudents}
+            optionLabel="label_1"
+            secondaryOptionLabel="label_2"
+            optionValue="id"
+            selectedKey={filter.student}
+            onSelectionChange={(key: any) => handleSelectChange(key, "student")}
+          />
+
+          <AutocompleteUI
+            name="gender"
+            label={t("gender")}
+            placeholder={t("chooseGender")}
+            options={list.gender}
+            optionLabel="label"
+            optionValue="value"
+            selectedKey={filter.gender}
+            onSelectionChange={(key: any) => handleSelectChange(key, "gender")}
+          />
+
+          <AutocompleteUI
+            name="studentStatus"
+            label={t("studentStatus")}
+            placeholder={t("chooseStudentStatus")}
+            options={list.studentStatus}
+            optionLabel="label"
+            optionValue="value"
+            selectedKey={filter.studentStatus}
+            onSelectionChange={(key: any) => handleSelectChange(key, "studentStatus")}
+          />
+        </div>
+
+        {/* === Study Info === */}
+        <div className="space-y-2">
+          <div>
+            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              {t("studyInfo")}
+            </h2>
+            <Divider />
+          </div>
+
+          <AutocompleteUI
+            name="session"
+            label={t("session")}
+            placeholder={t("chooseSession")}
+            options={list.sessions}
+            optionLabel="label"
+            optionValue="value"
+            selectedKey={filter.sessionNo}
+            onSelectionChange={(key: any) => handleSelectChange(key, "sessionNo")}
+          />
+
+          <AutocompleteUI
+            name="programType"
+            label={t("programType")}
+            placeholder={t("chooseProgramType")}
+            options={list.programType}
+            optionLabel="label"
+            optionValue="value"
+            selectedKey={filter.programType}
+            onSelectionChange={(key: any) => handleSelectChange(key, "programType")}
+          />
+
+          <AutocompleteUI
+            name="promotionNo"
+            label={t("promotionNo")}
+            placeholder={t("choosePromotion")}
+            options={list.promotionNo}
+            optionLabel="label"
+            optionValue="value"
+            selectedKey={filter.promotionNo}
+            onSelectionChange={(key: any) => handleSelectChange(key, "promotionNo")}
+          />
+
+          <AutocompleteUI
+            name="termNo"
+            label={t("termNo")}
+            placeholder={t("chooseTerm")}
+            options={list.termNo}
+            optionLabel="label"
+            optionValue="value"
+            selectedKey={filter.termNo}
+            onSelectionChange={(key: any) => handleSelectChange(key, "termNo")}
+          />
+        </div>
       </form>
     </DrawerFilter>
   );

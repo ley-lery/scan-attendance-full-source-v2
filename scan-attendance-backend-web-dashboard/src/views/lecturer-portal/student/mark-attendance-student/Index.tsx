@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable, ShowToast } from "@/components/hero-ui";
-import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { cn } from "@/lib/utils";
 import View from "./View";
 import { useMutation } from "@/hooks/useMutation";
 import Filter from "./Filter";
-import { Button, type Selection } from "@heroui/react";
+import { type Selection } from "@heroui/react";
+import { Button } from "@/components/hero-ui";
 import { MdFilterTiltShift } from "react-icons/md";
 import { GoDotFill } from "react-icons/go";
+import { useFetch } from "@/hooks/useFetch";
 
 // ============ Types ============
 type DataFilter = {
@@ -63,10 +64,6 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== useEffect ====
-  useEffect(() => {
-    onOpen();
-  }, []);
 
   const defaultFilter: DataFilter = useMemo(
     () => ({
@@ -81,54 +78,54 @@ const Index = () => {
   const [filter, setFilter] = useState<any>(defaultFilter);
 
   // ==== API Calls ====
-  const { mutate: fetchList, loading: fetchLoading } = useMutation({
-    onSuccess: (response) => {
-      setRows(response?.data?.rows || []);
-      setTotalPage(Math.ceil((response?.data?.total || 0) / pagination.limit) || 1);
-    },
-    onError: (err) => {
-      ShowToast({
-        color: "error",
-        title: "Error",
-        description: err.message || "Failed to fetch data",
+  const { data: fetchList, loading: fetchListLoading } = useFetch<{ rows: any[]; total_count: number }>("/lecturer/markattstudent/list", 
+    {
+      params: {
+        page: pagination.page,
+        limit: pagination.limit,
+      },
+      deps: [pagination.page, pagination.limit],
+      enabled: !isFiltered,
+    }
+  );
+  useEffect(() => {
+    if (fetchList?.data?.rows?.length > 0) {
+      setMarkMultiAttendanceData({
+        classId: fetchList.data.rows[0].class_id,
+        course: fetchList.data.rows[0].course_id,
       });
-    },
-  });
+      setSession(fetchList.data.rows[0].session_name);
+    }
+    setRows(fetchList?.data?.rows || []);
+    setTotalPage(Math.ceil((fetchList?.data?.total || 0) / pagination.limit) || 1);
+  }, [fetchList]);
 
   const { mutate: markAttendance, loading: markAttendanceLoading } = useMutation({
     onSuccess: (response) => {
-      ShowToast({
-        color: "success",
-        title: "Success",
-        description: response?.response?.data?.message || "Mark attendance successfully",
-      });
+      setTimeout(()=>{
+        ShowToast({ color: "success", title: "Success", description: response?.response?.data?.message || "Mark attendance successfully" });
+      }, 500);      
       refetch();
     },
     onError: (err) => {
-      ShowToast({
-        color: "error",
-        title: "Error",
-        description: err?.response?.data?.message || "Failed to mark attendance",
-      });
+      setTimeout(()=>{
+        ShowToast({ color: "error", title: "Error", description: err?.response?.data?.message || "Failed to mark attendance" });
+      }, 500);
     },
   });
 
   const { mutate: multiAction, loading: multiActionLoading } = useMutation({
     onSuccess: async (res) => {
+      setTimeout(()=>{
+        ShowToast({ color: "success", title: "Success", description: res.response?.data?.message || "Attendance marked successfully" });
+      }, 500);      
       await refetch();
       setSelectedIds(new Set([]));
-      ShowToast({
-        color: "success",
-        title: "Success",
-        description: res.response?.data?.message || "Attendance marked successfully",
-      });
     },
     onError: (err) => {
-      ShowToast({
-        color: "error",
-        title: "Error",
-        description: err.response?.data?.message || "Failed to mark attendance",
-      });
+      setTimeout(()=>{
+        ShowToast({ color: "error", title: "Error", description: err.response?.data?.message || "Failed to mark attendance" });
+      }, 500);
     },
   });
 
@@ -140,11 +137,7 @@ const Index = () => {
       onClose();
     },
     onError: (err) => {
-      ShowToast({
-        color: "error",
-        title: "Error",
-        description: err.message || "Failed to apply filter",
-      });
+      ShowToast({ color: "error", title: "Error", description: err.message || "Failed to apply filter" });
     },
   });
 
@@ -157,7 +150,7 @@ const Index = () => {
       limit: pagination.limit,
     };
 
-    await fetchList(`/lecturer/markattstudent/list`, payload, "POST");
+    await filterData(`/lecturer/markattstudent/filter`, payload, "POST");
   };
 
   const FilterData = (formData: Filter, t: (key: string) => string) => {
@@ -183,7 +176,7 @@ const Index = () => {
       limit: pagination.limit,
     };
 
-    const filtered = await filterData(`/lecturer/markattstudent/list`, payload, "POST");
+    const filtered = await filterData(`/lecturer/markattstudent/filter`, payload, "POST");
     console.log(filtered, "filtered");
     
     if (filtered?.data?.rows?.length > 0) {
@@ -198,49 +191,48 @@ const Index = () => {
   // ==== Single Mark Attendance Handlers ====
 
   const sessionNumber = parseInt(session.replace(/^s/, ""), 10);
-  const onMarkPresent = async (data: any) => {
+  const onMarkPresent = useCallback(async (data: any) => {
     const payload = {
       classId: data.class_id,
       course: data.course_id,
-      student: data.id,
+      student: data.student_id,
       session: sessionNumber,
       status: "1",
     };
     console.log(payload, "payload");
 
     await markAttendance(`/lecturer/markattstudent/marksignle`, payload, "POST");
-  };
-  const onMarkAbsent = async (data: any) => {
+  }, [sessionNumber]);
+  const onMarkAbsent = useCallback(async (data: any) => {
     const payload = {
       classId: data.class_id,
       course: data.course_id,
-      student: data.id,
+      student: data.student_id,
       session: sessionNumber,
       status: "A",
     };
     await markAttendance(`/lecturer/markattstudent/marksignle`, payload, "POST");
-  };
-  const onMarkLate = async (data: any) => {
+  }, [sessionNumber]);
+  const onMarkLate = useCallback(async (data: any) => {
     const payload = {
       classId: data.class_id,
       course: data.course_id,
-      student: data.id,
+      student: data.student_id,
       session: sessionNumber,
       status: "L",
     };
     await markAttendance(`/lecturer/markattstudent/marksignle`, payload, "POST");
-  };
-  const onMarkPermission = async (data: any) => {
+  }, [sessionNumber]);
+  const onMarkPermission = useCallback(async (data: any) => {
     const payload = {
       classId: data.class_id,
       course: data.course_id,
-      student: data.id,
+      student: data.student_id,
       session: sessionNumber,
       status: "P",
     };
     await markAttendance(`/lecturer/markattstudent/marksignle`, payload, "POST");
-
-  };
+  }, [sessionNumber]);
 
 
 
@@ -252,8 +244,16 @@ const Index = () => {
   const onSetPermissionStatus = () => onMultiMarkAttendance("P");
 
   const onMultiMarkAttendance = async (status: AttendanceStatus) => {
-    const selected = Array.from(selectedIds);
-    const attendanceData = selected.map((id) => ({
+    
+    let studentIds: number[];
+
+    if (selectedIds === "all") {
+      studentIds = rows.map((row) => Number(row.student_id));
+    } else {
+      studentIds = Array.from(selectedIds).map((id) => Number(id));
+    }
+
+    const attendanceData = studentIds.map((id) => ({
       student_id: Number(id),
       status: status,
     }));
@@ -297,10 +297,10 @@ const Index = () => {
   };
 
   // ==== View Handler ====
-  const onView = (row: any) => {
+  const onView = useCallback((row: any) => {
     setViewRow(row);
     onOpenView();
-  };
+  }, []);
 
   // ==== Pagination Handler ====
   const handlePageChange = async (newPage: number) => {
@@ -409,8 +409,22 @@ const Index = () => {
       </span>
     );
   };
+  const customizeColSession = (data: any) => {
+    return (
+      <span
+        className={cn(
+          "px-3 py-1 rounded-full w-fit text-xs font-semibold inline-flex items-center gap-1 bg-black/10 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 uppercase",
+        )}
+      >
+        {data.session_name}
+      </span>
+    );
+  };
 
-  const colsKeys = [{ key: "attendance_status", value: (data: any) => customizeCols(data) }];
+  const colsKeys = [
+    { key: "attendance_status", value: (data: any) => customizeCols(data) },
+    { key: "session_name", value: (data: any) => customizeColSession(data) },
+  ];
 
   const selectedLength = Array.from(selectedIds).length;
 
@@ -429,10 +443,7 @@ const Index = () => {
         <>
           <Button
             onPress={onSetPresentStatus}
-            size="sm"
-            variant="solid"
             color="success"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             isDisabled={multiActionLoading}
           >
@@ -440,10 +451,7 @@ const Index = () => {
           </Button>
           <Button
             onPress={onSetAbsentStatus}
-            size="sm"
-            variant="solid"
             color="danger"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             isDisabled={multiActionLoading}
           >
@@ -451,10 +459,7 @@ const Index = () => {
           </Button>
           <Button
             onPress={onSetLateStatus}
-            size="sm"
-            variant="solid"
             color="warning"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             isDisabled={multiActionLoading}
           >
@@ -462,10 +467,7 @@ const Index = () => {
           </Button>
           <Button
             onPress={onSetPermissionStatus}
-            size="sm"
-            variant="solid"
             color="primary"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             isDisabled={multiActionLoading}
           >
@@ -477,10 +479,7 @@ const Index = () => {
         <>
           <Button
             onPress={notSelected}
-            size="sm"
-            variant="solid"
             color="success"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             isDisabled={multiActionLoading}
             className="opacity-50"
@@ -489,10 +488,7 @@ const Index = () => {
           </Button>
           <Button
             onPress={notSelected}
-            size="sm"
-            variant="solid"
             color="danger"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             isDisabled={multiActionLoading}
             className="opacity-50"
@@ -501,10 +497,7 @@ const Index = () => {
           </Button>
           <Button
             onPress={notSelected}
-            size="sm"
-            variant="solid"
             color="warning"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             isDisabled={multiActionLoading}
             className="opacity-50"
@@ -513,10 +506,7 @@ const Index = () => {
           </Button>
           <Button
             onPress={notSelected}
-            size="sm"
-            variant="solid"
             color="primary"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             isDisabled={multiActionLoading}
             className="opacity-50"
@@ -552,10 +542,11 @@ const Index = () => {
 
       {/* Data Table */}
       <DataTable
-        loading={fetchLoading || filterLoading}
+        rowKey="student_id"
         dataApi={rows}
         cols={cols}
         visibleCols={visibleCols}
+        loading={fetchListLoading || filterLoading}
         onView={onView}
         onMarkPresent={onMarkPresent}
         onMarkAbsent={onMarkAbsent}
@@ -581,7 +572,7 @@ const Index = () => {
         totalPages={totalPage}
         page={pagination.page}
         onChangePage={handlePageChange}
-        loadingButton={markAttendanceLoading || multiActionLoading}
+        // loadingButton={markAttendanceLoading || multiActionLoading}
         customizes={{
           header: headerAction,
         }}

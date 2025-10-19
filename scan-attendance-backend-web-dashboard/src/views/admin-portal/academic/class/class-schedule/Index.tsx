@@ -6,27 +6,16 @@ import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
 
-// Custom hook for separate view dialog
-const useViewClosure = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  return {
-    isOpenView: isOpen,
-    onOpenView: onOpen,
-    onCloseView: onClose,
-  };
-};
 
 const Index = () => {
   const { t } = useTranslation();
   // ==== State Modal Management ====
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isOpenView, onOpenView, onCloseView } = useViewClosure();
 
   // ==== State Management ====
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [editRow, setEditRow] = useState<any>(null);
-  const [viewRow, setViewRow] = useState<any>(null);
 
   // ==== Pagination State ====
   const [pagination, setPagination] = useState({
@@ -60,20 +49,14 @@ const Index = () => {
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
-      { name: t("className"), uid: "class_name", sortable: true },
-      { name: t("roomName"), uid: "room_name" },
-      { name: t("courseCode"), uid: "course_code", sortable: true },
-      { name: t("courseNameEn"), uid: "course_name_en", sortable: true },
+      { name: t("class"), uid: "class_name", sortable: true },
+      { name: t("room"), uid: "room_name" },
       { name: t("facultyNameEn"), uid: "faculty_name_en", sortable: true },
       { name: t("fieldNameEn"), uid: "field_name_en", sortable: true },
-      { name: t("lecturerNameEn"), uid: "lecturer_name_en", sortable: true },
-      { name: t("lecturerEmail"), uid: "lecturer_email" },
-      { name: t("lecturerPhone"), uid: "lecturer_phone" },
       { name: t("programType"), uid: "program_type" },
       { name: t("promotion"), uid: "promotion_no" },
-      { name: t("term"), uid: "term_no" },
-      { name: t("year"), uid: "year", sortable: true },
-      { name: t("credits"), uid: "credits" },
+      { name: t("term"), uid: "term_relative" },
+      { name: t("year"), uid: "study_year", sortable: true },
       { name: t("startDate"), uid: "start_date" },
       { name: t("endDate"), uid: "end_date" },
       { name: t("totalStudent"), uid: "total_students" },
@@ -82,17 +65,16 @@ const Index = () => {
     ],
     [t],
   );
+
   
   const visibleCols = [
     "class_name", 
     "room_name", 
-    "course_name_en", 
     "faculty_name_en", 
     "field_name_en", 
-    "lecturer_name_en", 
     "program_type", 
-    "term_no", 
-    "year", 
+    "term_relative", 
+    "study_year", 
     "total_students", 
     "class_status", 
     "actions"
@@ -144,12 +126,6 @@ const Index = () => {
     }
   };
 
-  const onView = (row: object) => {
-    setViewRow(row);
-    setIsEdit(false);
-    onOpenView();
-  };
-
   const formProps = {
     isOpen,
     onClose,
@@ -169,7 +145,6 @@ const Index = () => {
         visibleCols={visibleCols}
         onCreate={onCreate}
         onEdit={onEdit}
-        onView={onView}
         onDelete={(id: number) => onDelete(id)}
         loadData={refetch} 
         selectRow={false}

@@ -81,25 +81,27 @@ const Index = () => {
     limit: pageLimit,
   });
 
-  // ==== Form Load ====
-  const { data: formLoad, loading: formLoadLoading } = useFetch<{ users: any[] }>(
-    "/lecturer/student/leavereq/formload"
-  );
+ 
 
   // ==== Fetch Data for List (Normal Mode) ====
-  const { mutate: fetchList, loading: listLoading } = useMutation({
-    onSuccess: (response) => {
-      setRows(response?.data?.rows || []);
-      setTotalPage(Math.ceil((response?.data?.total || 0) / pagination.limit) || 1);
-    },
-    onError: (err) => {
-      ShowToast({
-        color: "error",
-        title: "Error",
-        description: err.message || "Failed to fetch data",
-      });
-    },
-  });
+  const { data: dataList, loading: listLoading, refetch: refetchList } = useFetch<{ rows: any[]; total_count: number }>("/lecturer/student/leavereq/list", 
+    {
+      params: {
+        page: pagination.page,
+        limit: pagination.limit,
+      },
+      deps: [pagination.page, pagination.limit],
+      enabled: !isFiltered, 
+    }
+  );
+
+  useEffect(() => {
+    console.log("dataList", dataList);
+    if (!isFiltered && dataList?.data) {
+      setRows(dataList.data.rows || []);
+      setTotalPage(Math.ceil((dataList.data.total || 0) / pagination.limit) || 1);
+    }
+  }, [dataList, isFiltered, pagination.limit]);
 
   // ==== Fetch Data for Filter Mode ====
   const { mutate: filterStudentLeave, loading: filterLoading } = useMutation({
@@ -130,8 +132,8 @@ const Index = () => {
       payload.course = Number(filter.course);
     }
 
-    fetchList("/lecturer/student/leavereq/list", payload, "POST");
-  }, [filter.course, pagination.page, pagination.limit, fetchList]);
+    filterStudentLeave("/lecturer/student/leavereq/filter", payload, "POST");
+  }, [filter.course, pagination.page, pagination.limit, filterStudentLeave]);
 
   // Apply filter with pagination (Filter endpoint)
   const applyFilterWithPagination = useCallback(
@@ -252,14 +254,9 @@ const Index = () => {
     setPagination({ page: 1, limit: pageLimit });
     setIsFiltered(false);
     setSearchKeyword("");
-    // Trigger refetch after reset
-    setTimeout(() => {
-      fetchList("/lecturer/student/leavereq/list", {
-        page: 1,
-        limit: pageLimit,
-      }, "POST");
-    }, 0);
-  }, [defaultFilter, pageLimit, fetchList]);
+    refetchList();
+    
+  }, [defaultFilter, pageLimit, refetchList]);
 
   const applyFilter = useCallback(async () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
@@ -273,19 +270,9 @@ const Index = () => {
 
       if (isFiltered) {
         await applyFilterWithPagination(newPage);
-      } else {
-        // Use list endpoint for normal pagination
-        const payload: any = {
-          page: newPage,
-          limit: pagination.limit,
-        };
-        if (filter.course) {
-          payload.course = Number(filter.course);
-        }
-        fetchList("/lecturer/student/leavereq/list", payload, "POST");
       }
     },
-    [isFiltered, applyFilterWithPagination, pagination.limit, filter.course, fetchList]
+    [isFiltered, applyFilterWithPagination]
   );
 
   // ====== Batch Approve & Reject ======
@@ -471,7 +458,6 @@ const Index = () => {
       <Form
         isOpen={isOpenModal}
         onClose={onCloseModal}
-        loadList={isFiltered ? () => applyFilterWithPagination(pagination.page) : refetch}
         isApprove={isApprove}
         leaveId={selectedId}
       />
@@ -484,8 +470,6 @@ const Index = () => {
         setFilter={setFilter}
         onApplyFilter={applyFilter}
         onResetFilter={resetFilter}
-        formLoad={formLoad}
-        formLoadLoading={formLoadLoading}
         filterLoading={filterLoading}
       />
 

@@ -29,21 +29,25 @@ const Form = memo(({ isOpen = false, onClose, loadList, isApprove, leaveId }: Fo
     onSuccess: async (res) => {
       await loadList?.();
       onClose();
-      ShowToast({
-        color: "success",
-        title: t("success"),
-        description:
-          res.response?.data?.message || t("leaveRequestApprovedSuccessfully"),
-      });
+      setTimeout(() => {
+        ShowToast({
+          color: "success",
+          title: t("success"),
+          description:
+            res.response?.data?.message || t("leaveRequestApprovedSuccessfully"),
+        });
+      }, 500);
     },
     onError: (err) => {
       console.error("Approve error:", err);
-      ShowToast({
-        color: "error",
-        title: t("error"),
-        description:
-          err.response?.data?.message || t("failedToApproveLeaveRequest"),
-      });
+      setTimeout(() => {
+        ShowToast({
+          color: "error",
+          title: t("error"),
+          description:
+            err.response?.data?.message || t("failedToApproveLeaveRequest"),
+        });
+      }, 500);
     },
   });
 
@@ -52,21 +56,25 @@ const Form = memo(({ isOpen = false, onClose, loadList, isApprove, leaveId }: Fo
     onSuccess: async (res) => {
       await loadList?.();
       onClose();
-      ShowToast({
-        color: "success",
-        title: t("success"),
-        description:
-          res.response?.data?.message || t("leaveRequestRejectedSuccessfully"),
-      });
+      setTimeout(() => {
+        ShowToast({
+          color: "success",
+          title: t("success"),
+          description:
+            res.response?.data?.message || t("leaveRequestRejectedSuccessfully"),
+        });
+      }, 500);
     },
     onError: (err) => {
       console.error("Reject error:", err);
-      ShowToast({
-        color: "error",
-        title: t("error"),
-        description:
-          err.response?.data?.message || t("failedToRejectLeaveRequest"),
-      });
+      setTimeout(() => {
+        ShowToast({
+          color: "error",
+          title: t("error"),
+          description:
+            err.response?.data?.message || t("failedToRejectLeaveRequest"),
+        });
+      }, 500);
     },
   });
 

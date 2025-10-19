@@ -44,6 +44,11 @@ export const AdminMarkAttStudentModel = {
         const [result] = await db.query(`Call sp_admin_student_attendance_list_by_filters(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [null, null, null, null, null, null, null, null, null, null, null,'s1', 1, 10]);
         return result;
     },
+    async getStudentSessionDetail(data: {course: number, student: number}): Promise<any> {
+        const { course, student } = data;
+        const [result] = await db.query(`Call sp_admin_student_attendance_session_detail_get(?, ?)`, [course, student]);
+        return result;
+    },
     async filter(data: ParameterData): Promise<any> {
         const { faculty, field, classId, course, student, promotionNo, termNo, programType, gender, studentStatus, searchKeyword, sessionNo, page, limit } = data;
         const [result] = await db.query(

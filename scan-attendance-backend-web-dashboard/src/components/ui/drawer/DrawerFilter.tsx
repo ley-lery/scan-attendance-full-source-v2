@@ -158,7 +158,7 @@ const DrawerFilter = memo(({
       <DrawerContent>
         <DrawerBody>
           {children}
-          <Divider className='my-4'/>
+          {/* <Divider className='my-4'/>
           <div className="grid gap-2">
             <Checkbox
               isSelected={offAutoClose}
@@ -174,7 +174,7 @@ const DrawerFilter = memo(({
                 {t("autoFilter")}
               </Checkbox>
             )}
-          </div>
+          </div> */}
         </DrawerBody>
       </DrawerContent>
 

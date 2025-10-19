@@ -22,7 +22,7 @@ interface ViewProps {
   isOpen?: boolean;
   onClose: (isOpen: boolean) => void;
   row: {
-    id: number;
+    student_id: number;
     course_id: number;
   };
 }
@@ -38,9 +38,10 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
 
   const { mutate: fetchData, loading: fetchLoading } = useMutation({
     onSuccess: (response) => {
+      console.log(response.data, 'response');
       const rows = response?.data?.rows;
       setAttendanceData(rows);
-      const keys = Object.keys(rows).filter((key) => key.startsWith("s"));
+      const keys = Object.keys(rows.sessions).filter((key) => key.startsWith("s"));
       setSessionKeys(keys);
       console.log(rows, 'rows');
     },
@@ -54,12 +55,12 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
   });
 
   useEffect(() => {
-    if (isOpen && row?.id && row?.course_id) {
+    if (isOpen && row?.student_id && row?.course_id) {
       fetchData(
         "/lecturer/markattstudent/studentsession",
         {
           course: row.course_id,
-          student: row.id,
+          student: row.student_id,
         },
         "POST"
       );
@@ -116,27 +117,7 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
     );
   };
 
-  
-
-  const states = (data: any, icon: any, label: string, color: string) => {
-    <div className="text-center p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="p-2 rounded-md bg-zinc-700">
-            {icon}
-          </span>
-          <span>{label}</span>
-        </div>
-        <Button isIconOnly startContent={<BsThreeDotsVertical />}/>
-      </div>
-      <div>
-        <span>{data}</span>
-        <div>
-
-        </div>
-      </div>
-    </div>
-  }
+  if (!isOpen) return null;
 
   return (
     <ModalView
@@ -146,6 +127,7 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
       size="full"
       animation="scale"
       isLoading={fetchLoading}
+      loadingBackdrop={false}
     >
       <div className="space-y-10 p-4">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -198,7 +180,7 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
                 <TableRow key="1">
                   {sessionKeys.map((key) => (
                     <TableCell key={key}>
-                      {customizeCols(attendanceData[key])}
+                      {customizeCols(attendanceData.sessions[key])}
                     </TableCell>
                   ))}
                 </TableRow>

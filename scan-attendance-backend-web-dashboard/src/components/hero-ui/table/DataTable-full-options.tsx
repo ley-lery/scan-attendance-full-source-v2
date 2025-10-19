@@ -41,7 +41,7 @@ interface DataTableProps {
     column: string;
     direction: "ascending" | "descending";
   };
-  rowKey?: string; 
+  // Actions
   onCreate?: () => void;
   onView?: (data: object) => void;
   onEdit?: (data: object) => void;
@@ -438,7 +438,6 @@ const DataTable = memo(({
   customizes,
   loadingButton = false,
   isPending = false,
-  rowKey = "id",
 }: DataTableProps) => {
 
   useRenderCount("DataTable");
@@ -600,7 +599,7 @@ const DataTable = memo(({
 
   return (
     <div className="relative">
-      <div className={cn("flex flex-col gap-4", loading && "opacity-50")}>
+      <div className="flex flex-col gap-4">
         <TableControls
           searchKeyword={searchKeyword}
           onSearchInputChange={onSearchInputChange}
@@ -633,13 +632,11 @@ const DataTable = memo(({
         </div>
       </div>
       {loading && !isPending  && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center ">
-          {/* <div className="p-4 rounded-2xl bg-white/60 dark:bg-black/60 backdrop-blur-sm shadow-xl shadow-zinc-200/50 dark:shadow-black/20"> */}
-            <Spinner size="sm" variant="gradient" color="primary" label={t("loading")} classNames={{label: 'text-xs'}}/>
-          {/* </div> */}
+        <div className="absolute inset-0 z-40 flex items-center justify-center">
+          <Spinner size="sm" variant="spinner" color="primary" label={t("loading")}/>
         </div>
       )}
-      <div className={cn("has-scrollbar overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4", loading && "opacity-50")} style={{ minHeight: 'calc(100vh - 14rem)', maxHeight: 'calc(100vh - 14rem)' }}>
+      <div className="has-scrollbar overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4" style={{ minHeight: 'calc(100vh - 19rem)', maxHeight: 'calc(100vh - 19rem)' }}>
         <Table
           isCompact
           removeWrapper
@@ -670,7 +667,7 @@ const DataTable = memo(({
             items={sortedItems}
           >
             {(item) => (
-              <TableRow key={item[rowKey]} >
+              <TableRow key={item.id}>
                 {(columnKey) => (
                   <TableCell className="whitespace-nowrap">
                     {renderCell(item, columnKey)}
@@ -681,7 +678,7 @@ const DataTable = memo(({
           </TableBody>
         </Table>
       </div>
-      <div className={cn("flex items-center justify-between", loading && "opacity-50")}>
+      <div className="flex items-center justify-between">
         <Pagination
           initialPage={initialPage}
           variant="light"

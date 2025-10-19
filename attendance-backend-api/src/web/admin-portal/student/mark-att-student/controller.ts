@@ -23,6 +23,25 @@ const sessions: { value: string; label: string }[] = [];
 for (let i = 1; i <= 60; i++) {
     sessions.push({ value: `s${i}`, label: `Session ${i}` });
 }
+const programTypes: { value: string; label: string }[] = [];
+programTypes.push({ value: "Bachelor", label: "Bachelor" });
+programTypes.push({ value: "Associate", label: "Associate" });
+
+const promotionNos: { value: string; label: string }[] = [];
+for (let i = 1; i <= 22; i++) {
+    promotionNos.push({ value: `${i}`, label: `Promotion ${i}` });
+}
+const termNos: { value: string; label: string }[] = [];
+for (let i = 1; i <= 8; i++) {
+    termNos.push({ value: `${i}`, label: `Term ${i}` });
+}
+const studentStatus: { value: string; label: string }[] = [];
+studentStatus.push({ value: "Active", label: "Active" });
+studentStatus.push({ value: "Inactive", label: "Inactive" });
+
+const genders: { value: string; label: string }[] = [];
+genders.push({ value: "Male", label: "Male" });
+genders.push({ value: "Female", label: "Female" });
 
 const model = AdminMarkAttStudentModel;
     
@@ -38,6 +57,22 @@ export const MarkAttStudentController = {
             sendSuccessResponse(res, true, "students list", { rows: rows, total:total }, 200);
         } catch (e) {
             handleError(res, e as Error, "Error fetching students", 500);
+        }
+    },
+    async getStudentSessionDetail(req: FastifyRequest, res: FastifyReply): Promise<void> {
+        const data = req.body as any;
+        
+        try {
+            const [rows] = await model.getStudentSessionDetail(data);
+            console.log(rows, "rows")
+            if (!rows?.length) {
+                res.send({ message: "No student sessions found" });
+                return;
+            }
+
+            sendSuccessResponse(res, true, "student sessions", { rows: rows[0] }, 200);
+        } catch (e) {
+            handleError(res, e as Error, "Error fetching student sessions", 500);
         }
     },
     async filter(req: FastifyRequest, res: FastifyReply): Promise<void> {
@@ -105,7 +140,7 @@ export const MarkAttStudentController = {
             const [courses] = await CourseListModel.getAll();
             const [students] = await StudentListModel.getAll();
 
-            sendSuccessResponse(res, true, "student sessions", { faculyties: faculyties, fields: fields, classes: classes, courses: courses, students: students, sessions: sessions }, 200);
+            sendSuccessResponse(res, true, "student sessions", { faculyties: faculyties, fields: fields, classes: classes, courses: courses, students: students, sessions: sessions, promotionNo: promotionNos, termNo: termNos, studentStatus: studentStatus, programType: programTypes, gender: genders }, 200);
         } catch (e) {
             handleError(res, e as Error, "Error fetching student sessions", 500);
         }

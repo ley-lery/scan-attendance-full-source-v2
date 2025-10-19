@@ -6,20 +6,21 @@ import { useFetch } from "@/hooks/useFetch";
 import { DrawerFilter } from "@/components/ui";
 import { useEffect, useState } from "react";
 
-interface Filter {
-  course?: number | null;
-  status?: string;
-  startDate?: DateValue | null;
-  endDate?: DateValue | null;
-  page?: number;
-  limit?: number;
-}
+type StudentLeaveFilter = {
+  course: string | null;
+  status: string | null;
+  startDate: DateValue | null;
+  endDate: DateValue | null;
+  page: number;
+  limit: number;
+};
+
 
 interface FilterProps {
   isOpen: boolean;
   onClose: () => void;
-  filter: Filter;
-  setFilter: React.Dispatch<React.SetStateAction<Filter>>;
+  filter: StudentLeaveFilter;
+  setFilter: React.Dispatch<React.SetStateAction<StudentLeaveFilter>>;
   onApplyFilter: () => void;
   onResetFilter: () => void;
   filterLoading: boolean;
@@ -59,11 +60,11 @@ const Filter = ({
   }, [formLoad]);
 
   // ==== Event Handler ==== 
-  const handleSelectChange = (key: string, field: keyof Filter) => {
+  const handleSelectChange = (key: string, field: keyof StudentLeaveFilter) => {
     setFilter((prev) => ({ ...prev, [field]: key }));
   };
 
-  const handleDateChange = (field: keyof Filter, value: DateValue | null) => {
+  const handleDateChange = (field: keyof StudentLeaveFilter, value: DateValue | null) => {
     setFilter((prev) => ({ ...prev, [field]: value }));
   };
 

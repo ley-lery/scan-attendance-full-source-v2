@@ -1,15 +1,13 @@
 import React, { type SVGProps, memo, useMemo, useCallback, useState } from "react";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, type Selection, type ChipProps, type SortDescriptor, Input, Pagination, Spinner, Tooltip } from "@heroui/react";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ShowToast, Button } from "@/components/hero-ui";
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from "@/components/hero-ui";
 import { FiChevronDown } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import { CiCalendar, CiFilter, CiSearch } from "react-icons/ci";
-import { RiCheckLine, RiCloseLine, RiFilter2Fill, RiSettings6Line } from "react-icons/ri";
-import { ButtonAdd, ButtonEdit, ButtonView, ButtonDelete, ButtonCancelLeave, ButtonReqLeave, ButtonMarkPresent, ButtonMarkAbsent, ButtonMarkLate, ButtonMarkPermission } from "../button-permission";
+import { RiFilter2Fill, RiSettings6Line } from "react-icons/ri";
+import { ButtonAdd, ButtonEdit, ButtonView, ButtonDelete } from "../button-permission";
 import { cn } from "@/lib/utils";
-import { PiSealWarning } from "react-icons/pi";
 import { useRenderCount } from "@/hooks/testing-render/useRenderCount";
-import { useWhyDidYouUpdate } from "@/hooks/indext";
 
 export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
@@ -41,36 +39,20 @@ interface DataTableProps {
     column: string;
     direction: "ascending" | "descending";
   };
-  rowKey?: string; 
+  // Actions
   onCreate?: () => void;
   onView?: (data: object) => void;
   onEdit?: (data: object) => void;
   onDelete?: (id: number, loadData: () => void) => void;
-  onApprove?: (id: number) => void;
-  onReject?: (id: number) => void;
   onCreateSchedule?: (data: object) => void;
   loadData?: () => void;
   onPermission?: (id: number) => void;
   onOpenFilter?: () => void;
-  onReqLeave?: () => void;
-  onCancelLeave?: (id: number) => void;
-  onMarkPresent?: (data: object) => void;
-  onMarkPermission?: (data: object) => void;
-  onMarkLate?: (data: object) => void;
-  onMarkAbsent?: (data: object) => void;
   // Permissions
   permissionCreate?: string;
   permissionEdit?: string;
   permissionView?: string;
   permissionDelete?: string;
-  permissionRequest?: string;
-  permissionApprove?: string;
-  permissionReject?: string;
-  permissionCancel?: string;
-  permissionMarkPresent?: string;
-  permissionMarkPermission?: string;
-  permissionMarkLate?: string;
-  permissionMarkAbsent?: string;
   // Search
   searchKeyword?: string;
   onSearchInputChange?: React.ChangeEventHandler<HTMLInputElement>;
@@ -122,24 +104,12 @@ interface ActionButtonsProps {
   onView?: (data: object) => void;
   onEdit?: (data: object) => void;
   onDelete?: (id: number, loadData: () => void) => void;
-  onApprove?: (id: number) => void;
-  onReject?: (id: number) => void;
   onCreateSchedule?: (data: object) => void;
   onPermission?: (id: number) => void;
-  onCancelLeave?: (id: number) => void;
-  onMarkPresent?: (data: object) => void;
-  onMarkAbsent?: (data: object) => void;
-  onMarkLate?: (data: object) => void;
-  onMarkPermission?: (data: object) => void;
   loadData?: () => void;
   permissionView?: string;
   permissionEdit?: string;
   permissionDelete?: string;
-  permissionCancel?: string;
-  permissionMarkPresent?: string;
-  permissionMarkAbsent?: string;
-  permissionMarkLate?: string;
-  permissionMarkPermission?: string;
   loadingButton?: boolean;
   customAction?: React.ReactNode;
   t: any;
@@ -150,44 +120,15 @@ const ActionButtons = memo(({
   onView,
   onEdit,
   onDelete,
-  onApprove,
-  onReject,
   onCreateSchedule,
   onPermission,
-  onCancelLeave,
-  onMarkPresent,
-  onMarkAbsent,
-  onMarkLate,
-  onMarkPermission,
   loadData,
   permissionView,
   permissionEdit,
   permissionDelete,
-  permissionCancel,
-  permissionMarkPresent,
-  permissionMarkAbsent,
-  permissionMarkLate,
-  permissionMarkPermission,
-  loadingButton,
   customAction,
   t,
 }: ActionButtonsProps) => {
-  const handleApproveClick = useCallback(() => {
-    if (data.status === "Pending" && onApprove) {
-      onApprove(data.id);
-    } else {
-      ShowToast({ title: "Approved", description: "Cannot approve this leave request.", color: "warning", icon: <PiSealWarning size={20} /> });
-    }
-  }, [data.status, data.id, onApprove]);
-
-  const handleRejectClick = useCallback(() => {
-    if (data.status === "Pending" && onReject) {
-      onReject(data.id);
-    } else {
-      ShowToast({ title: "Rejected", description: "Cannot reject this leave request.", color: "warning", icon: <PiSealWarning size={20} /> });
-    }
-  }, [data.status, data.id, onReject]);
-
   return (
     <div className="relative flex items-center justify-center gap-1">
       {onView && (<ButtonView permissionType={permissionView} onPress={() => onView(data)} /> )}
@@ -205,31 +146,6 @@ const ActionButtons = memo(({
           </Button>
         </Tooltip>
       )}
-      {onApprove && loadData && (
-        <Tooltip showArrow content={t(data.status === "Pending" ? "approve" : "approved")} color="primary" placement="top" closeDelay={0} >
-          <Button variant="light" color="primary" radius="full" size="sm" onPress={handleApproveClick} isIconOnly className={data.status !== "Pending" ? "opacity-50" : ""} startContent={<RiCheckLine size={20} />} />
-        </Tooltip>
-      )}
-      {onReject && loadData && (
-        <Tooltip showArrow content={t(data.status === "Pending" ? "reject" : "rejected")} color="danger" placement="top" closeDelay={0} >
-          <Button variant="light" color="danger" radius="full" size="sm" onPress={handleRejectClick} isIconOnly className={data.status !== "Pending" ? "opacity-50" : ""} startContent={<RiCloseLine size={20} />}/>
-        </Tooltip>
-      )}
-      {permissionCancel && (
-        <ButtonCancelLeave permissionType={permissionCancel} onPress={() => onCancelLeave?.(data.id)} isDisabled={data.status !== "Pending" || loadingButton} isLoading={loadingButton} />
-      )}
-      {permissionMarkPresent && (
-        <ButtonMarkPresent permissionType={permissionMarkPresent} onPress={() => onMarkPresent?.(data)} isLoading={loadingButton}/>
-      )}
-      {permissionMarkAbsent && (
-        <ButtonMarkAbsent permissionType={permissionMarkAbsent} onPress={() => onMarkAbsent?.(data)} isLoading={loadingButton}/>
-      )}
-      {permissionMarkLate && (
-        <ButtonMarkLate permissionType={permissionMarkLate} onPress={() => onMarkLate?.(data)} isLoading={loadingButton}/>
-      )}
-      {permissionMarkPermission && (
-        <ButtonMarkPermission permissionType={permissionMarkPermission} onPress={() => onMarkPermission?.(data)} isLoading={loadingButton}/>
-      )}
       {customAction}
     </div>
   );
@@ -237,7 +153,7 @@ const ActionButtons = memo(({
 
 ActionButtons.displayName = 'ActionButtons';
 
-// OPTIMIZATION 4: Memoize TableControls component
+// Memoize TableControls component
 interface TableControlsProps {
   searchKeyword: string;
   onSearchInputChange?: React.ChangeEventHandler<HTMLInputElement>;
@@ -252,9 +168,7 @@ interface TableControlsProps {
   onOpenFilter?: () => void;
   isFiltered?: boolean;
   onCreate?: () => void;
-  onReqLeave?: () => void;
   permissionCreate?: string;
-  permissionRequest?: string;
   customHeader?: React.ReactNode;
   t: any;
 }
@@ -273,9 +187,7 @@ const TableControls = memo(({
   onOpenFilter,
   isFiltered,
   onCreate,
-  onReqLeave,
   permissionCreate,
-  permissionRequest,
   customHeader,
   t,
 }: TableControlsProps) => {
@@ -379,7 +291,6 @@ const TableControls = memo(({
           </Button>
         )}
         {onCreate && <ButtonAdd permissionType={permissionCreate} onPress={onCreate} />}
-        {onReqLeave && <ButtonReqLeave permissionType={permissionRequest} onPress={onReqLeave} />}
       </div>
     </div>
   );
@@ -403,29 +314,15 @@ const DataTable = memo(({
   onView,
   onEdit,
   onDelete,
-  onApprove,
-  onReject,
-  onCancelLeave,
   onCreateSchedule,
   onPermission,
   onOpenFilter,
-  onReqLeave,
-  onMarkPresent,
-  onMarkPermission,
-  onMarkLate,
-  onMarkAbsent,
   isFiltered = false,
   loadData,
   permissionCreate,
   permissionEdit,
   permissionView,
   permissionDelete,
-  permissionRequest,
-  permissionCancel,
-  permissionMarkPresent,
-  permissionMarkPermission,
-  permissionMarkLate,
-  permissionMarkAbsent,
   searchKeyword = "",
   onSearchInputChange,
   initialPage = 1,
@@ -438,7 +335,6 @@ const DataTable = memo(({
   customizes,
   loadingButton = false,
   isPending = false,
-  rowKey = "id",
 }: DataTableProps) => {
 
   useRenderCount("DataTable");
@@ -529,24 +425,12 @@ const DataTable = memo(({
               onView={onView}
               onEdit={onEdit}
               onDelete={onDelete}
-              onApprove={onApprove}
-              onReject={onReject}
               onCreateSchedule={onCreateSchedule}
               onPermission={onPermission}
-              onCancelLeave={onCancelLeave}
-              onMarkPresent={onMarkPresent}
-              onMarkAbsent={onMarkAbsent}
-              onMarkLate={onMarkLate}
-              onMarkPermission={onMarkPermission}
               loadData={loadData}
               permissionView={permissionView}
               permissionEdit={permissionEdit}
               permissionDelete={permissionDelete}
-              permissionCancel={permissionCancel}
-              permissionMarkPresent={permissionMarkPresent}
-              permissionMarkAbsent={permissionMarkAbsent}
-              permissionMarkLate={permissionMarkLate}
-              permissionMarkPermission={permissionMarkPermission}
               loadingButton={loadingButton}
               customAction={customizes?.action}
               t={t}
@@ -561,24 +445,12 @@ const DataTable = memo(({
       onView,
       onEdit,
       onDelete,
-      onApprove,
-      onReject,
       onCreateSchedule,
       onPermission,
-      onCancelLeave,
-      onMarkPresent,
-      onMarkAbsent,
-      onMarkLate,
-      onMarkPermission,
       loadData,
       permissionView,
       permissionEdit,
       permissionDelete,
-      permissionCancel,
-      permissionMarkPresent,
-      permissionMarkAbsent,
-      permissionMarkLate,
-      permissionMarkPermission,
       loadingButton,
       customizes?.action,
       t,
@@ -600,7 +472,7 @@ const DataTable = memo(({
 
   return (
     <div className="relative">
-      <div className={cn("flex flex-col gap-4", loading && "opacity-50")}>
+      <div className="flex flex-col gap-4">
         <TableControls
           searchKeyword={searchKeyword}
           onSearchInputChange={onSearchInputChange}
@@ -615,9 +487,7 @@ const DataTable = memo(({
           onOpenFilter={onOpenFilter}
           isFiltered={isFiltered}
           onCreate={onCreate}
-          onReqLeave={onReqLeave}
           permissionCreate={permissionCreate}
-          permissionRequest={permissionRequest}
           customHeader={customizes?.header}
           t={t}
         />
@@ -633,13 +503,11 @@ const DataTable = memo(({
         </div>
       </div>
       {loading && !isPending  && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center ">
-          {/* <div className="p-4 rounded-2xl bg-white/60 dark:bg-black/60 backdrop-blur-sm shadow-xl shadow-zinc-200/50 dark:shadow-black/20"> */}
-            <Spinner size="sm" variant="gradient" color="primary" label={t("loading")} classNames={{label: 'text-xs'}}/>
-          {/* </div> */}
+        <div className="absolute inset-0 z-40 flex items-center justify-center">
+          <Spinner size="sm" variant="spinner" color="primary" label={t("loading")}/>
         </div>
       )}
-      <div className={cn("has-scrollbar overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4", loading && "opacity-50")} style={{ minHeight: 'calc(100vh - 14rem)', maxHeight: 'calc(100vh - 14rem)' }}>
+      <div className="has-scrollbar overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4" style={{ minHeight: 'calc(100vh - 19rem)', maxHeight: 'calc(100vh - 19rem)' }}>
         <Table
           isCompact
           removeWrapper
@@ -670,7 +538,7 @@ const DataTable = memo(({
             items={sortedItems}
           >
             {(item) => (
-              <TableRow key={item[rowKey]} >
+              <TableRow key={item.id}>
                 {(columnKey) => (
                   <TableCell className="whitespace-nowrap">
                     {renderCell(item, columnKey)}
@@ -681,7 +549,7 @@ const DataTable = memo(({
           </TableBody>
         </Table>
       </div>
-      <div className={cn("flex items-center justify-between", loading && "opacity-50")}>
+      <div className="flex items-center justify-between">
         <Pagination
           initialPage={initialPage}
           variant="light"

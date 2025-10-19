@@ -14,6 +14,7 @@ export const InputNumber = extendVariants(NumberInput, {
   },
   defaultVariants: {
     size: "md",
+    labelPlacement: "outside",
   },
   // compoundVariants: [
   //   {

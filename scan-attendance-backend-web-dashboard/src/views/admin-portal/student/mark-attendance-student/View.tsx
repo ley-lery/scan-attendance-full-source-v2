@@ -2,19 +2,10 @@
 import { memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalView, ShowToast } from "@/components/hero-ui";
-import {
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
-} from "@heroui/react";
+import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import { cn } from "@/lib/utils";
 import { GoDotFill } from "react-icons/go";
 import { useMutation } from "@/hooks/useMutation";
-import { BsThreeDotsVertical } from "react-icons/bs";
 import { MetricCard } from "../../../../components/ui/card/MetricCard";
 import { FaRegCircle } from "react-icons/fa";
 
@@ -22,7 +13,7 @@ interface ViewProps {
   isOpen?: boolean;
   onClose: (isOpen: boolean) => void;
   row: {
-    id: number;
+    student_id: number;
     course_id: number;
   };
 }
@@ -38,9 +29,10 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
 
   const { mutate: fetchData, loading: fetchLoading } = useMutation({
     onSuccess: (response) => {
+      console.log(response.data, 'response');
       const rows = response?.data?.rows;
       setAttendanceData(rows);
-      const keys = Object.keys(rows).filter((key) => key.startsWith("s"));
+      const keys = Object.keys(rows.sessions).filter((key) => key.startsWith("s"));
       setSessionKeys(keys);
       console.log(rows, 'rows');
     },
@@ -54,12 +46,12 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
   });
 
   useEffect(() => {
-    if (isOpen && row?.id && row?.course_id) {
+    if (isOpen && row?.student_id && row?.course_id) {
       fetchData(
-        "/lecturer/markattstudent/studentsession",
+        "/admin/markattstudent/studentsession",
         {
           course: row.course_id,
-          student: row.id,
+          student: row.student_id,
         },
         "POST"
       );
@@ -118,25 +110,6 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
 
   
 
-  const states = (data: any, icon: any, label: string, color: string) => {
-    <div className="text-center p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="p-2 rounded-md bg-zinc-700">
-            {icon}
-          </span>
-          <span>{label}</span>
-        </div>
-        <Button isIconOnly startContent={<BsThreeDotsVertical />}/>
-      </div>
-      <div>
-        <span>{data}</span>
-        <div>
-
-        </div>
-      </div>
-    </div>
-  }
 
   return (
     <ModalView
@@ -149,30 +122,30 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
     >
       <div className="space-y-10 p-4">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <MetricCard title={t("present")} description="Total number of students marked as present." type="Presents" value={attendanceData.total_present} variant="success" icon={<FaRegCircle />} />
-          <MetricCard title={t("absent")} description="Total number of students who were absent." type="Absents" value={attendanceData.total_absent} variant="danger" icon={<FaRegCircle />} />
-          <MetricCard title={t("late")} description="Total number of students who arrived late." type="Late" value={attendanceData.total_late} variant="warning" icon={<FaRegCircle />} />
-          <MetricCard title={t("permission")} description="Total number of students with approved leave or permission." type="Permissions" value={attendanceData.total_permission} variant="secondary" icon={<FaRegCircle />} />
-          <MetricCard title={t("attendanceRate")} description="Overall attendance rate percentage for the class." type="%" value={attendanceData.attendance_percentage} variant="success" icon={<FaRegCircle />} />
+          <MetricCard title={t("present")} description="Total number of students marked as present." type="Presents" value={attendanceData?.total_present} variant="success" icon={<FaRegCircle />} />
+          <MetricCard title={t("absent")} description="Total number of students who were absent." type="Absents" value={attendanceData?.total_absent} variant="danger" icon={<FaRegCircle />} />
+          <MetricCard title={t("late")} description="Total number of students who arrived late." type="Late" value={attendanceData?.total_late} variant="warning" icon={<FaRegCircle />} />
+          <MetricCard title={t("permission")} description="Total number of students with approved leave or permission." type="Permissions" value={attendanceData?.total_permission} variant="secondary" icon={<FaRegCircle />} />
+          <MetricCard title={t("attendanceRate")} description="Overall attendance rate percentage for the class." type="%" value={attendanceData?.attendance_percentage} variant="success" icon={<FaRegCircle />} />
 
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-50 dark:bg-zinc-800 p-5 rounded-3xl">
           <div>
             <p className="text-sm text-gray-500">{t("studentCode")}</p>
-            <p className="font-medium">{attendanceData.student_code}</p>
+            <p className="font-medium">{attendanceData?.student_code}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">{t("studentNameKh")}</p>
-            <p className="font-medium">{attendanceData.student_name_kh}</p>
+            <p className="font-medium">{attendanceData?.student_name_kh}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">{t("studentNameEn")}</p>
-            <p className="font-medium">{attendanceData.student_name_en}</p>
+            <p className="font-medium">{attendanceData?.student_name_en}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">{t("status")}</p>
-            <p className="font-medium">{attendanceData.status}</p>
+            <p className="font-medium">{attendanceData?.status}</p>
           </div>
         </div>
 
@@ -198,7 +171,7 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
                 <TableRow key="1">
                   {sessionKeys.map((key) => (
                     <TableCell key={key}>
-                      {customizeCols(attendanceData[key])}
+                      {customizeCols(attendanceData.sessions[key])}
                     </TableCell>
                   ))}
                 </TableRow>

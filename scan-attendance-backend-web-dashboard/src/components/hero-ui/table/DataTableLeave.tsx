@@ -3,13 +3,12 @@ import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, 
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, ShowToast, Button } from "@/components/hero-ui";
 import { FiChevronDown } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
-import { CiCalendar, CiFilter, CiSearch } from "react-icons/ci";
-import { RiCheckLine, RiCloseLine, RiFilter2Fill, RiSettings6Line } from "react-icons/ri";
-import { ButtonAdd, ButtonEdit, ButtonView, ButtonDelete, ButtonCancelLeave, ButtonReqLeave, ButtonMarkPresent, ButtonMarkAbsent, ButtonMarkLate, ButtonMarkPermission } from "../button-permission";
+import { CiFilter, CiSearch } from "react-icons/ci";
+import { RiCheckLine, RiCloseLine, RiFilter2Fill } from "react-icons/ri";
+import { ButtonView, ButtonReqLeave, ButtonCancelLeave } from "../button-permission";
 import { cn } from "@/lib/utils";
 import { PiSealWarning } from "react-icons/pi";
 import { useRenderCount } from "@/hooks/testing-render/useRenderCount";
-import { useWhyDidYouUpdate } from "@/hooks/indext";
 
 export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
@@ -23,7 +22,7 @@ interface Columns {
   sortable?: boolean;
 }
 
-interface DataTableProps {
+interface DataTableLeaveProps {
   dataApi?: Data[];
   cols?: Columns[];
   visibleCols?: string[];
@@ -32,77 +31,58 @@ interface DataTableProps {
   selectedKeys?: Selection;
   onSelectionChange?: (keys: Selection) => void;
   statusColors?: Record<string, ChipProps["color"]>;
-  lenghtOf?: string;
+  lengthOf?: string;
   colKeys?: {
     key: string;
     value: React.ReactNode | ((data: Data) => React.ReactNode);
   }[];
-  short?: {
+  sort?: {
     column: string;
     direction: "ascending" | "descending";
   };
-  rowKey?: string; 
-  onCreate?: () => void;
+  // Leave Actions
   onView?: (data: object) => void;
-  onEdit?: (data: object) => void;
-  onDelete?: (id: number, loadData: () => void) => void;
-  onApprove?: (id: number) => void;
-  onReject?: (id: number) => void;
-  onCreateSchedule?: (data: object) => void;
-  loadData?: () => void;
-  onPermission?: (id: number) => void;
-  onOpenFilter?: () => void;
   onReqLeave?: () => void;
   onCancelLeave?: (id: number) => void;
-  onMarkPresent?: (data: object) => void;
-  onMarkPermission?: (data: object) => void;
-  onMarkLate?: (data: object) => void;
-  onMarkAbsent?: (data: object) => void;
+  onApprove?: (id: number) => void;
+  onReject?: (id: number) => void;
+  loadData?: () => void;
   // Permissions
-  permissionCreate?: string;
-  permissionEdit?: string;
   permissionView?: string;
-  permissionDelete?: string;
   permissionRequest?: string;
+  permissionCancel?: string;
   permissionApprove?: string;
   permissionReject?: string;
-  permissionCancel?: string;
-  permissionMarkPresent?: string;
-  permissionMarkPermission?: string;
-  permissionMarkLate?: string;
-  permissionMarkAbsent?: string;
-  // Search
+  // Search & Filter
   searchKeyword?: string;
   onSearchInputChange?: React.ChangeEventHandler<HTMLInputElement>;
   handleSearch?: () => void;
   handleClearSearch?: () => void;
+  onOpenFilter?: () => void;
+  isFiltered?: boolean;
   // Pagination
   initialPage?: number;
   totalPages?: number;
   page?: number;
   onChangePage?: (page: number) => void;
   loading?: boolean;
-  scrollable?: boolean;
   customizes?: {
     header?: React.ReactNode;
     action?: React.ReactNode;
   };
-  isFiltered?: boolean;
   loadingButton?: boolean;
   isPending?: boolean;
 }
 
-// Memoize status color map
+// Memoize status color map for leave requests
 const STATUS_COLOR_MAP: Record<string, ChipProps["color"]> = {
   Pending: "warning",
   Approved: "success",
   Rejected: "danger",
-  Active: "success",
-  Inactive: "danger",
   Cancelled: "secondary",
 };
 
-//  Memoize class names
+// Memoize class names
 const TABLE_CLASS_NAMES = {
   wrapper: ["max-h-[382px]", "max-w-3xl"],
   th: ["bg-transparent", "text-default-500", "border-b", "border-divider"],
@@ -116,67 +96,48 @@ const TABLE_CLASS_NAMES = {
   tr: ["p-0"],
 };
 
-// Separate ActionButtons component
-interface ActionButtonsProps {
+// Leave Action Buttons Component
+interface LeaveActionButtonsProps {
   data: Data;
   onView?: (data: object) => void;
-  onEdit?: (data: object) => void;
-  onDelete?: (id: number, loadData: () => void) => void;
+  onCancelLeave?: (id: number) => void;
   onApprove?: (id: number) => void;
   onReject?: (id: number) => void;
-  onCreateSchedule?: (data: object) => void;
-  onPermission?: (id: number) => void;
-  onCancelLeave?: (id: number) => void;
-  onMarkPresent?: (data: object) => void;
-  onMarkAbsent?: (data: object) => void;
-  onMarkLate?: (data: object) => void;
-  onMarkPermission?: (data: object) => void;
   loadData?: () => void;
   permissionView?: string;
-  permissionEdit?: string;
-  permissionDelete?: string;
   permissionCancel?: string;
-  permissionMarkPresent?: string;
-  permissionMarkAbsent?: string;
-  permissionMarkLate?: string;
-  permissionMarkPermission?: string;
+  permissionApprove?: string;
+  permissionReject?: string;
   loadingButton?: boolean;
   customAction?: React.ReactNode;
   t: any;
 }
 
-const ActionButtons = memo(({
+const LeaveActionButtons = memo(({
   data,
   onView,
-  onEdit,
-  onDelete,
+  onCancelLeave,
   onApprove,
   onReject,
-  onCreateSchedule,
-  onPermission,
-  onCancelLeave,
-  onMarkPresent,
-  onMarkAbsent,
-  onMarkLate,
-  onMarkPermission,
   loadData,
   permissionView,
-  permissionEdit,
-  permissionDelete,
   permissionCancel,
-  permissionMarkPresent,
-  permissionMarkAbsent,
-  permissionMarkLate,
-  permissionMarkPermission,
+  permissionApprove,
+  permissionReject,
   loadingButton,
   customAction,
   t,
-}: ActionButtonsProps) => {
+}: LeaveActionButtonsProps) => {
   const handleApproveClick = useCallback(() => {
     if (data.status === "Pending" && onApprove) {
       onApprove(data.id);
     } else {
-      ShowToast({ title: "Approved", description: "Cannot approve this leave request.", color: "warning", icon: <PiSealWarning size={20} /> });
+      ShowToast({ 
+        title: "Approved", 
+        description: "Cannot approve this leave request.", 
+        color: "warning", 
+        icon: <PiSealWarning size={20} /> 
+      });
     }
   }, [data.status, data.id, onApprove]);
 
@@ -184,60 +145,79 @@ const ActionButtons = memo(({
     if (data.status === "Pending" && onReject) {
       onReject(data.id);
     } else {
-      ShowToast({ title: "Rejected", description: "Cannot reject this leave request.", color: "warning", icon: <PiSealWarning size={20} /> });
+      ShowToast({ 
+        title: "Rejected", 
+        description: "Cannot reject this leave request.", 
+        color: "warning", 
+        icon: <PiSealWarning size={20} /> 
+      });
     }
   }, [data.status, data.id, onReject]);
 
   return (
     <div className="relative flex items-center justify-center gap-1">
-      {onView && (<ButtonView permissionType={permissionView} onPress={() => onView(data)} /> )}
-      {onEdit && (<ButtonEdit permissionType={permissionEdit} onPress={() => onEdit(data)} content="Edit" radius="full" variant="light" color="secondary" tooltipColor="secondary" /> )}
-      {onDelete && loadData && (<ButtonDelete confirmDelete={() => onDelete(data.id, loadData)} id={data.id} permissionType={permissionDelete} /> )}
-      {onCreateSchedule && (
-        <Tooltip showArrow content={t("shedule")} color="primary" placement="top" closeDelay={0} >
-          <Button onPress={() => onCreateSchedule(data)} startContent={<CiCalendar size={20} />} isIconOnly variant="light" color="primary" radius="full" />
+      {onView && (
+        <ButtonView 
+          permissionType={permissionView} 
+          onPress={() => onView(data)} 
+        />
+      )}
+      {permissionApprove && onApprove && loadData && (
+        <Tooltip 
+          showArrow 
+          content={t(data.status === "Pending" ? "approve" : "approved")} 
+          color="primary" 
+          placement="top" 
+          closeDelay={0}
+        >
+          <Button 
+            variant="light" 
+            color="primary" 
+            radius="full" 
+            size="sm" 
+            onPress={handleApproveClick} 
+            isIconOnly 
+            className={data.status !== "Pending" ? "opacity-50" : ""} 
+            startContent={<RiCheckLine size={20} />} 
+          />
         </Tooltip>
       )}
-      {onPermission && (
-        <Tooltip showArrow content={t("permission")} color="primary" placement="top" closeDelay={0} >
-          <Button variant="light" color="primary" radius="full" size="sm" onPress={() => onPermission(data.id)} isIconOnly>
-            <RiSettings6Line size={20} />
-          </Button>
+      {permissionReject && onReject && loadData && (
+        <Tooltip 
+          showArrow 
+          content={t(data.status === "Pending" ? "reject" : "rejected")} 
+          color="danger" 
+          placement="top" 
+          closeDelay={0}
+        >
+          <Button 
+            variant="light" 
+            color="danger" 
+            radius="full" 
+            size="sm" 
+            onPress={handleRejectClick} 
+            isIconOnly 
+            className={data.status !== "Pending" ? "opacity-50" : ""} 
+            startContent={<RiCloseLine size={20} />}
+          />
         </Tooltip>
       )}
-      {onApprove && loadData && (
-        <Tooltip showArrow content={t(data.status === "Pending" ? "approve" : "approved")} color="primary" placement="top" closeDelay={0} >
-          <Button variant="light" color="primary" radius="full" size="sm" onPress={handleApproveClick} isIconOnly className={data.status !== "Pending" ? "opacity-50" : ""} startContent={<RiCheckLine size={20} />} />
-        </Tooltip>
-      )}
-      {onReject && loadData && (
-        <Tooltip showArrow content={t(data.status === "Pending" ? "reject" : "rejected")} color="danger" placement="top" closeDelay={0} >
-          <Button variant="light" color="danger" radius="full" size="sm" onPress={handleRejectClick} isIconOnly className={data.status !== "Pending" ? "opacity-50" : ""} startContent={<RiCloseLine size={20} />}/>
-        </Tooltip>
-      )}
-      {permissionCancel && (
-        <ButtonCancelLeave permissionType={permissionCancel} onPress={() => onCancelLeave?.(data.id)} isDisabled={data.status !== "Pending" || loadingButton} isLoading={loadingButton} />
-      )}
-      {permissionMarkPresent && (
-        <ButtonMarkPresent permissionType={permissionMarkPresent} onPress={() => onMarkPresent?.(data)} isLoading={loadingButton}/>
-      )}
-      {permissionMarkAbsent && (
-        <ButtonMarkAbsent permissionType={permissionMarkAbsent} onPress={() => onMarkAbsent?.(data)} isLoading={loadingButton}/>
-      )}
-      {permissionMarkLate && (
-        <ButtonMarkLate permissionType={permissionMarkLate} onPress={() => onMarkLate?.(data)} isLoading={loadingButton}/>
-      )}
-      {permissionMarkPermission && (
-        <ButtonMarkPermission permissionType={permissionMarkPermission} onPress={() => onMarkPermission?.(data)} isLoading={loadingButton}/>
+      {permissionCancel && onCancelLeave && (
+        <ButtonCancelLeave 
+          permissionType={permissionCancel} 
+          onPress={() => onCancelLeave(data.id)} 
+          isDisabled={data.status !== "Pending" || loadingButton} 
+          isLoading={loadingButton} 
+        />
       )}
       {customAction}
     </div>
   );
 });
 
-ActionButtons.displayName = 'ActionButtons';
+LeaveActionButtons.displayName = 'LeaveActionButtons';
 
-// OPTIMIZATION 4: Memoize TableControls component
+// Table Controls Component
 interface TableControlsProps {
   searchKeyword: string;
   onSearchInputChange?: React.ChangeEventHandler<HTMLInputElement>;
@@ -251,9 +231,7 @@ interface TableControlsProps {
   setVisibleColumns: (keys: Selection) => void;
   onOpenFilter?: () => void;
   isFiltered?: boolean;
-  onCreate?: () => void;
   onReqLeave?: () => void;
-  permissionCreate?: string;
   permissionRequest?: string;
   customHeader?: React.ReactNode;
   t: any;
@@ -272,9 +250,7 @@ const TableControls = memo(({
   setVisibleColumns,
   onOpenFilter,
   isFiltered,
-  onCreate,
   onReqLeave,
-  permissionCreate,
   permissionRequest,
   customHeader,
   t,
@@ -378,7 +354,6 @@ const TableControls = memo(({
             {isFiltered ? "Filtered" : "Filters"}
           </Button>
         )}
-        {onCreate && <ButtonAdd permissionType={permissionCreate} onPress={onCreate} />}
         {onReqLeave && <ButtonReqLeave permissionType={permissionRequest} onPress={onReqLeave} />}
       </div>
     </div>
@@ -388,7 +363,7 @@ const TableControls = memo(({
 TableControls.displayName = 'TableControls';
 
 // MAIN COMPONENT
-const DataTable = memo(({
+const DataTableLeave = memo(({
   dataApi = [],
   cols = [],
   visibleCols = [],
@@ -396,38 +371,24 @@ const DataTable = memo(({
   selectRow = false,
   selectedKeys: controlledSelectedKeys,
   onSelectionChange: controlledOnSelectionChange,
-  lenghtOf = "items",
+  lengthOf = "leave requests",
   colKeys = [],
-  short,
-  onCreate,
+  sort,
   onView,
-  onEdit,
-  onDelete,
+  onReqLeave,
+  onCancelLeave,
   onApprove,
   onReject,
-  onCancelLeave,
-  onCreateSchedule,
-  onPermission,
-  onOpenFilter,
-  onReqLeave,
-  onMarkPresent,
-  onMarkPermission,
-  onMarkLate,
-  onMarkAbsent,
-  isFiltered = false,
   loadData,
-  permissionCreate,
-  permissionEdit,
   permissionView,
-  permissionDelete,
   permissionRequest,
   permissionCancel,
-  permissionMarkPresent,
-  permissionMarkPermission,
-  permissionMarkLate,
-  permissionMarkAbsent,
+  permissionApprove,
+  permissionReject,
   searchKeyword = "",
   onSearchInputChange,
+  onOpenFilter,
+  isFiltered = false,
   initialPage = 1,
   totalPages = 0,
   page = 1,
@@ -438,18 +399,17 @@ const DataTable = memo(({
   customizes,
   loadingButton = false,
   isPending = false,
-  rowKey = "id",
-}: DataTableProps) => {
+}: DataTableLeaveProps) => {
 
-  useRenderCount("DataTable");
+  useRenderCount("DataTableLeave");
 
   const { t } = useTranslation();
 
-  // Memoize initial states
+  // Internal state
   const [internalSelectedKeys, setInternalSelectedKeys] = useState<Selection>(new Set([]));
   const [statusFilter, setStatusFilter] = useState<Selection>("all");
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>(
-    short || { column: "", direction: "ascending" }
+    sort || { column: "", direction: "ascending" }
   );
   const [visibleColumns, setVisibleColumns] = useState<Selection>(new Set(visibleCols));
 
@@ -484,7 +444,7 @@ const DataTable = memo(({
     return filtered;
   }, [data, statusFilter, statusOptions.length]);
 
-  //  Memoize sorted items
+  // Memoize sorted items
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a: Data, b: Data) => {
       const first = a[sortDescriptor.column as keyof Data];
@@ -514,7 +474,7 @@ const DataTable = memo(({
               color={
                 data.status
                   ? (STATUS_COLOR_MAP[data.status as keyof typeof STATUS_COLOR_MAP] as any)
-                  : undefined
+                  : "default"
               }
               size="sm"
               variant="dot"
@@ -524,61 +484,41 @@ const DataTable = memo(({
           );
         case "actions":
           return (
-            <ActionButtons
+            <LeaveActionButtons
               data={data}
               onView={onView}
-              onEdit={onEdit}
-              onDelete={onDelete}
+              onCancelLeave={onCancelLeave}
               onApprove={onApprove}
               onReject={onReject}
-              onCreateSchedule={onCreateSchedule}
-              onPermission={onPermission}
-              onCancelLeave={onCancelLeave}
-              onMarkPresent={onMarkPresent}
-              onMarkAbsent={onMarkAbsent}
-              onMarkLate={onMarkLate}
-              onMarkPermission={onMarkPermission}
               loadData={loadData}
               permissionView={permissionView}
-              permissionEdit={permissionEdit}
-              permissionDelete={permissionDelete}
               permissionCancel={permissionCancel}
-              permissionMarkPresent={permissionMarkPresent}
-              permissionMarkAbsent={permissionMarkAbsent}
-              permissionMarkLate={permissionMarkLate}
-              permissionMarkPermission={permissionMarkPermission}
+              permissionApprove={permissionApprove}
+              permissionReject={permissionReject}
               loadingButton={loadingButton}
               customAction={customizes?.action}
               t={t}
             />
           );
         default:
-          return <span className="whitespace-nowrap text-zinc-600 dark:text-zinc-300 *:text-zinc-600 *:dark:text-zinc-300">{cellValue}</span>;
+          return (
+            <span className="whitespace-nowrap text-zinc-600 dark:text-zinc-300 *:text-zinc-600 *:dark:text-zinc-300">
+              {cellValue}
+            </span>
+          );
       }
     },
     [
       colKeys,
       onView,
-      onEdit,
-      onDelete,
+      onCancelLeave,
       onApprove,
       onReject,
-      onCreateSchedule,
-      onPermission,
-      onCancelLeave,
-      onMarkPresent,
-      onMarkAbsent,
-      onMarkLate,
-      onMarkPermission,
       loadData,
       permissionView,
-      permissionEdit,
-      permissionDelete,
       permissionCancel,
-      permissionMarkPresent,
-      permissionMarkAbsent,
-      permissionMarkLate,
-      permissionMarkPermission,
+      permissionApprove,
+      permissionReject,
       loadingButton,
       customizes?.action,
       t,
@@ -597,10 +537,9 @@ const DataTable = memo(({
     [isControlled, controlledOnSelectionChange]
   );
 
-
   return (
     <div className="relative">
-      <div className={cn("flex flex-col gap-4", loading && "opacity-50")}>
+      <div className="flex flex-col gap-4">
         <TableControls
           searchKeyword={searchKeyword}
           onSearchInputChange={onSearchInputChange}
@@ -614,16 +553,14 @@ const DataTable = memo(({
           setVisibleColumns={setVisibleColumns}
           onOpenFilter={onOpenFilter}
           isFiltered={isFiltered}
-          onCreate={onCreate}
           onReqLeave={onReqLeave}
-          permissionCreate={permissionCreate}
           permissionRequest={permissionRequest}
           customHeader={customizes?.header}
           t={t}
         />
         <div className="flex items-center justify-between">
           <span className="text-small text-default-400">
-            Total {sortedItems.length} {lenghtOf}
+            Total {sortedItems.length} {lengthOf}
           </span>
           {selectRow && selectedKeys !== "all" && selectedKeys.size > 0 && (
             <span className="text-small text-primary">
@@ -632,18 +569,19 @@ const DataTable = memo(({
           )}
         </div>
       </div>
-      {loading && !isPending  && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center ">
-          {/* <div className="p-4 rounded-2xl bg-white/60 dark:bg-black/60 backdrop-blur-sm shadow-xl shadow-zinc-200/50 dark:shadow-black/20"> */}
-            <Spinner size="sm" variant="gradient" color="primary" label={t("loading")} classNames={{label: 'text-xs'}}/>
-          {/* </div> */}
+      {loading && !isPending && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center">
+          <Spinner size="sm" variant="spinner" color="primary" label={t("loading")} />
         </div>
       )}
-      <div className={cn("has-scrollbar overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4", loading && "opacity-50")} style={{ minHeight: 'calc(100vh - 14rem)', maxHeight: 'calc(100vh - 14rem)' }}>
+      <div 
+        className="has-scrollbar overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4" 
+        style={{ minHeight: 'calc(100vh - 19rem)', maxHeight: 'calc(100vh - 19rem)' }}
+      >
         <Table
           isCompact
           removeWrapper
-          aria-label="Data Table"
+          aria-label="Leave Requests Table"
           checkboxesProps={{ color: "primary" }}
           classNames={TABLE_CLASS_NAMES}
           selectionMode={selectRow ? "multiple" : "none"}
@@ -670,7 +608,7 @@ const DataTable = memo(({
             items={sortedItems}
           >
             {(item) => (
-              <TableRow key={item[rowKey]} >
+              <TableRow key={item.id}>
                 {(columnKey) => (
                   <TableCell className="whitespace-nowrap">
                     {renderCell(item, columnKey)}
@@ -681,7 +619,7 @@ const DataTable = memo(({
           </TableBody>
         </Table>
       </div>
-      <div className={cn("flex items-center justify-between", loading && "opacity-50")}>
+      <div className="flex items-center justify-between">
         <Pagination
           initialPage={initialPage}
           variant="light"
@@ -697,6 +635,6 @@ const DataTable = memo(({
   );
 });
 
-DataTable.displayName = 'DataTable';
+DataTableLeave.displayName = 'DataTableLeave';
 
-export default DataTable;
+export default DataTableLeave;

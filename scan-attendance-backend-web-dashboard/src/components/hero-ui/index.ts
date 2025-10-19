@@ -6,6 +6,8 @@ export { default as Toast } from "./toast/Toast";
 export { default as ShowToast } from "./toast/ShowToast";
 export { default as Table } from "./table/Table";
 export { default as DataTable } from "./table/DataTable";
+export { default as DataTableAttendance } from "./table/DataTableAttendance";
+export { default as DataTableLeave } from "./table/DataTableLeave";
 export { default as Spinner } from "./spinner/Spinner";
 export { default as SelectMultiple } from "./select/MultipleSelect";
 export { default as Rating } from "./rating/Rating";

@@ -60,7 +60,7 @@ const adminMenus: MenuSection[] = [
         statusMsg: 'Not Ready',
         items: [
           { icon: VscSettings, title: "manageClass", to: "/admin/academic/class/manage-classes", status: 'Ready', statusMsg: 'Ready' },
-          { icon: BsFileEarmarkText, title: "classSchedule", to: "/admin/academic/class/class-schedule", status: 'Not Ready', statusMsg: 'Edit, Delete, View' },
+          { icon: BsFileEarmarkText, title: "classSchedule", to: "/admin/academic/class/class-schedule", status: 'Not Ready', statusMsg: 'Delete not ready' },
           { icon: PiStudentLight, title: "classStudent", to: "/admin/academic/class/class-students", status: 'Not Ready', statusMsg: 'Update single select to multi select student.' },
         ],
       },

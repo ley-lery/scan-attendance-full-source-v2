@@ -4,7 +4,7 @@ import { LecturerManageStudentLeaveController } from "./controller";
 const controller = LecturerManageStudentLeaveController;
 
 export const lecturerManageStudentLeaveRoutes = async (fastify: FastifyInstance)=>{
-    fastify.post('/list', controller.getAll);
+    fastify.get('/list', controller.getAll);
     fastify.get('/:id', controller.getById);
     fastify.put('/approve/:id', controller.approveLeave);
     fastify.put('/reject/:id', controller.rejectLeave);

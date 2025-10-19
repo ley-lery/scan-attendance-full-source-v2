@@ -7,6 +7,7 @@ interface ToastProps {
   description: string;
   icon?: React.ReactNode;
   color: string | "success" | "error" | "warning";
+  duration?: number;
   undo?: () => void;
 }
 const colorClassMap: Record<string, string> = {
@@ -48,7 +49,7 @@ const WarningIcon = ({ color }: { color: keyof typeof colorClassMap }) =>(
 </svg>
 )
 
-const ShowToast = ({ color, title, description, icon, undo }: ToastProps) => {
+const ShowToast = ({ color, title, description, icon, undo, duration = 5000 }: ToastProps) => {
   if (!icon) {
     icon = {
       success: <SuccesIcon color={color} />,
@@ -59,13 +60,12 @@ const ShowToast = ({ color, title, description, icon, undo }: ToastProps) => {
   return addToast({
     title: title,
     description: description,
-    timeout: 5000,
+    timeout: duration,
     icon: icon,
     classNames: {
       base: "max-w-full bg-zinc-50/80 border border-white rounded-2xl shadow-none dark:bg-black/60 backdrop-blur-sm dark:border-transparent py-3 ",
       closeButton: "opacity-100 absolute right-2 top-2 text-xl",
       icon: cn([`text-${color}-500`], 'size-6'),
-
     },
     endContent: undo ? (
       <button onClick={undo} className="mr-10 text-blue-500 text-sm">

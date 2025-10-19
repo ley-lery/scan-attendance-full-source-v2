@@ -30,14 +30,18 @@ type MarkMultiRecord = {
 
 export const MarkAttStudentModel = {
 
-    async getAll(lecturerId: number, data: Fields): Promise<any> {
-        const { course, session, page, limit } = data;
-        const [result] = await db.query(`Call sp_lecturer_student_list_by_course(?, ?, ?, ?, ?)`, [lecturerId, course, session, page, limit]);
+    async getAll(lecturerId: number, page: number, limit: number): Promise<any> {
+        const [result] = await db.query(`Call sp_lecturer_student_attendance_list_by_filters(?, ?, ?, ?, ?)`, [lecturerId, null, `s1`, page, limit]);
         return result;
     },
     async getStudentSessionDetail(lecturerId: number, data: {course: number, student: number}): Promise<any> {
         const { course, student } = data;
-        const [result] = await db.query(`Call sp_lecturer_student_sessions_get(?, ?, ?)`, [lecturerId, course, student]);
+        const [result] = await db.query(`Call sp_lecturer_student_attendance_session_detail_get(?, ?, ?)`, [lecturerId, course, student]);
+        return result;
+    },
+    async filter(lecturerId: number, data: Fields): Promise<any> {
+        const { course, session, page, limit } = data;
+        const [result] = await db.query(`Call sp_lecturer_student_attendance_list_by_filters(?, ?, ?, ?, ?)`, [lecturerId, course, session, page, limit]);
         return result;
     },
     async markSingleRecord(data: MarkSingleRecord): Promise<any> {

@@ -12,9 +12,8 @@ export const LecturerManageStudentLeaveController = {
     async getAll(req: RequestWithUser, res: FastifyReply): Promise<void> {
         const { page = 1, limit = 10 } = req.query as { page?: number; limit?: number };
         const { assign_to: lecturer } = req.user as AuthUserPayload;
-        const { course } = req.body as {course: number};
         try {
-            const [rows, [{ total } = { total: 0 }]] = await model.getAll(lecturer, { course }, page, limit);
+            const [rows, [{ total } = { total: 0 }]] = await model.getAll(lecturer, page, limit);
 
             if (!rows?.length) {
                 res.send({ message: "No students leave found" });

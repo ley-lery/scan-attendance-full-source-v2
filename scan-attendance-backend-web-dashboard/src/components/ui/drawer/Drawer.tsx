@@ -202,7 +202,7 @@ export const DrawerContent = ({ children }: { children: ReactNode }) => {
   export const DrawerBody = ({ children }: { children: ReactNode }) => {
     const {classNames} = useDrawerContext();
     return (
-    <div className={cn("mb-4 h-[90%] overflow-y-auto overflow-x-hidden has-scrollbar relative", classNames.drawerBody)}>{children}</div>
+    <div className={cn("mb-4 pr-1 h-[98%] overflow-y-auto overflow-x-hidden has-scrollbar relative", classNames.drawerBody)}>{children}</div>
   );
 };
   
