@@ -12,6 +12,7 @@ import ShowToast from "@/components/hero-ui/toast/ShowToast";
 import ThemeSwitcher from "@/components/ui/theme/ThemeSwitch";
 import { Eye, EyeOff, Facebook, LogIn, Mail, Phone } from "lucide-react";
 import SwitchTranslate from "@/components/ui/switch/SwitchTranslate";
+import Particles from "@/components/ui/configs/Particles";
 
 // Types
 interface LecturerData {
@@ -78,6 +79,7 @@ const CustomInput: React.FC<CustomInputProps> = ({ label, name, placeholder, typ
     endContent={endContent}
     color="primary"
     className="w-full"
+    radius="lg"
     classNames={{
       inputWrapper: "border-zinc-300 dark:border-zinc-600",
       label: "dark:text-zinc-300 text-zinc-600",
@@ -238,14 +240,16 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-[#fefcff] dark:bg-[#1e1e1e] relative flex items-center justify-center">
-      <TopBar 
+      {/* <TopBar 
         selectedBackground={selectedBackground}
         onBackgroundChange={handleBackgroundChange}
-      />
+      /> */}
       
-      <div className={`absolute inset-0 z-0 ${selectedBackground}`} />
+      {/* <div className={`absolute inset-0 z-0 ${selectedBackground}`} /> */}
+      {/* <div className="bg-black/10 backdrop-blur-sm absolute z-10 w-full h-full flex"/> */}
+        <Particles/>
 
-      <div className="relative grid grid-cols-1 lg:grid-cols-2 place-content-center gap-4">
+      <div className="relative z-50 grid grid-cols-1 lg:grid-cols-2 place-content-center gap-4">
         <WelcomeSection />
         
         <motion.div
@@ -254,7 +258,7 @@ const Login: React.FC = () => {
           transition={{ duration: 0.5 }}
           className="flex items-center justify-center"
         >
-          <div className="p-6 dark:bg-zinc-800/50 bg-white/50 backdrop-blur-sm rounded-2xl">
+          <div className="p-6 dark:bg-zinc-800/50 bg-white/50 backdrop-blur-sm rounded-3xl">
             <div className="flex items-start justify-between">
               <div>
                 <h1 className="text-lg font-semibold text-zinc-700 dark:text-white">
@@ -317,6 +321,7 @@ const Login: React.FC = () => {
                 className="w-full" 
                 type="submit"
                 isDisabled={isSubmitting}
+                radius="lg"
                 startContent={
                   isSubmitting ? (
                     <Spinner variant="spinner" size="sm" color="white" />

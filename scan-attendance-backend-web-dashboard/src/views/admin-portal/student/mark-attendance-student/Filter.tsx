@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AutocompleteUI, Input, InputNumber } from "@/components/hero-ui";
+import { AutocompleteUI } from "@/components/hero-ui";
 import { DrawerFilter } from "@/components/ui";
 import { useFetch } from "@/hooks/useFetch";
 import { Divider } from "@heroui/react";
@@ -21,34 +21,35 @@ type FormLoad = {
   studentStatus: any[];
 };
 
-type Filter = {
-  faculty: number | null,
-  field: number | null,
-  classId: number | null,
-  course: number | null,
-  student: number | null,
-  promotionNo: number | (readonly string[] & number) | undefined,
-  termNo: number | null,
-  programType: string | null,
-  gender: string | null,
-  studentStatus: string | null,
-  searchKeyword: string | null,
-  sessionNo: string | null,
-  page: number,
-  limit: number
+type DataFilter = {
+  faculty: number | null;
+  field: number | null;
+  classId: number | null;
+  course: number | null;
+  student: number | null;
+  promotionNo: number | null;
+  termNo: number | null;
+  programType: string | null;
+  gender: string | null;
+  studentStatus: string | null;
+  searchKeyword: string | null;
+  sessionNo?: string | null;
+  page: number;
+  limit: number;
 };
 
 
 interface FilterProps {
   isOpen: boolean;
   onClose: () => void;
-  filter: Filter;
-  setFilter: React.Dispatch<React.SetStateAction<Filter>>;
+  filter: DataFilter;
+  setFilter: React.Dispatch<React.SetStateAction<DataFilter>>;
   onApplyFilter: () => void;
   onResetFilter: () => void;
   filterLoading: boolean;
   errors: Record<string, string>;
   setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  isBulkFilter?: boolean;
 }
 
 const Filter = ({
@@ -61,6 +62,7 @@ const Filter = ({
   filterLoading,
   errors,
   setErrors,
+  isBulkFilter = false,
 }: FilterProps) => {
   const { t } = useTranslation();
 
@@ -100,7 +102,7 @@ const Filter = ({
     }
   }, [formLoad, isOpen]);
 
-  const handleSelectChange = (key: any, field: keyof Filter) => {
+  const handleSelectChange = (key: any, field: keyof DataFilter) => {
 
     // clear next-level selections when parent changes
     setFilter((prev) => {
@@ -141,7 +143,7 @@ const Filter = ({
     [list.courses, filter.classId]
   );
 
-  const filteredStudents = useMemo(() => list.students?.filter((s) => (!filter.classId || s.class_id === Number(filter.classId)) && (!filter.course || s.course_id === Number(filter.course))),
+  const filteredStudents = useMemo(() => list.students?.filter((s) => (s.class_id === Number(filter.classId)) && (!filter.course || s.course_id === Number(filter.course))),
     [list.students, filter.classId, filter.course]
   );
 
@@ -272,17 +274,20 @@ const Filter = ({
             <Divider />
           </div>
 
-          <AutocompleteUI
-            name="session"
-            label={t("session")}
-            placeholder={t("chooseSession")}
-            options={list.sessions}
-            optionLabel="label"
-            optionValue="value"
-            selectedKey={filter.sessionNo}
-            onSelectionChange={(key: any) => handleSelectChange(key, "sessionNo")}
-          />
-
+          {
+            !isBulkFilter && (
+              <AutocompleteUI
+                name="sessionNo"
+                label={t("session")}
+                placeholder={t("chooseSession")}
+                options={list.sessions}
+                optionLabel="label"
+                optionValue="value"
+                selectedKey={filter.sessionNo}
+                onSelectionChange={(key: any) => handleSelectChange(key, "sessionNo")}
+              />
+            )
+          }
           <AutocompleteUI
             name="programType"
             label={t("programType")}

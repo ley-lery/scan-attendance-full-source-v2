@@ -4,6 +4,7 @@ import { Spinner, Slider } from "@heroui/react";
 interface SpinnerUiProps {
   duration?: number; 
   onFinish?: () => void;
+  
 }
 
 const SpinnerUi = ({ duration = 3000, onFinish }: SpinnerUiProps) => {
@@ -28,7 +29,7 @@ const SpinnerUi = ({ duration = 3000, onFinish }: SpinnerUiProps) => {
 
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-8">
-      <Spinner variant="spinner" size="sm" />
+      <Spinner variant="gradient" size="sm" color="primary" />
       <Slider
         aria-label="Loading progress"
         className="w-40"

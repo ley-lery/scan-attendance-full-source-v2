@@ -8,4 +8,7 @@ export const adminMarkAttStudentRoutes = async (fastify: FastifyInstance)=>{
     fastify.get('/formload', MarkAttStudentController.formLoad);
     fastify.post('/filter', MarkAttStudentController.filter);
     fastify.post('/studentsession', MarkAttStudentController.getStudentSessionDetail);
+    fastify.post('/filterfullsessions', MarkAttStudentController.filterFullSessions);
+    fastify.get('/fullsessions', MarkAttStudentController.getFullSessions);
+    fastify.post('/markbulk', MarkAttStudentController.markBulkRecord);
 }

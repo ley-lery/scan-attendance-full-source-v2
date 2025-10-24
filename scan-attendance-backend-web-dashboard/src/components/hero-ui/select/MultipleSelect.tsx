@@ -1,113 +1,96 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Select, SelectItem, Chip } from "@heroui/react";
+import { Select, SelectItem } from "@heroui/react";
+import { useState } from "react";
 
-interface Branch {
-  branch_id: number;
-  branch_name_en: string;
-  branch_name_kh: string;
-  shortName: string;
+interface Option {
+  [key: string]: any; // Allow dynamic property access
 }
 
-interface SelectMultipleUiProps {
-  items: Branch[]; // already includes "All"
-  selectedItems: Branch[];
-  onChange: (selectedBranches: Branch[]) => void;
-  label?: string;
-  placeholder?: string;
+interface MultiSelectProps {
+  label: string;
+  placeholder: string;
+  options: Option[];
+  selectedKeys?: Set<string>;
+  onSelectionChange?: (keys: Set<string>) => void;
+  isDisabled?: boolean;
   isRequired?: boolean;
-  onBlur?: () => void; 
+  name?: string;
+  className?: string;
+  triggerClassName?: string;
+  optionLabel?: string;
+  secondaryOptionLabel?: string;
+  optionValue?: string;
 }
 
-const SelectMultipleUi: React.FC<SelectMultipleUiProps> = ({
-  items,
-  selectedItems,
-  onChange,
-  label = "Select",
-  placeholder = "Select items",
+export const MultiSelect = ({
+  label,
+  placeholder,
+  options,
+  selectedKeys: controlledSelectedKeys,
+  onSelectionChange: controlledOnSelectionChange,
+  isDisabled = false,
   isRequired = false,
-  onBlur, 
-}) => {
-  const allKey = "All";
+  name,
+  className = "max-w-xs",
+  triggerClassName = "select-md-ui",
+  optionLabel = "label",
+  secondaryOptionLabel = "",
+  optionValue = "id",
+}: MultiSelectProps) => {
+  const [internalSelectedKeys, setInternalSelectedKeys] = useState<Set<string>>(
+    new Set()
+  );
 
-  const handleSelectionChange = (keys: any) => {
-    const selectedShortNames: string[] = Array.from(keys || []);
-
-    const isAllSelected = selectedShortNames.includes(allKey);
-
-    if (isAllSelected) {
-      // Select all real branches (excluding All itself)
-      const nonAllBranches = items.filter((branch) => branch.shortName !== allKey);
-      onChange(nonAllBranches);
-    } else {
-      const selectedBranches = items.filter((branch) =>
-        selectedShortNames.includes(branch.shortName)
-      );
-      onChange(selectedBranches);
-    }
-  };
-
-  const handleRemove = (key: string) => {
-    if (key === allKey) {
-      onChange([]);
-      return;
-    }
-    const updated = selectedItems.filter((branch) => branch.shortName !== key);
-    onChange(updated);
-  };
-
-  // Check if all real branches (excluding "All") are selected
-  const selectedKeys = (() => {
-    const realBranchKeys = items.filter((b) => b.shortName !== allKey).map((b) => b.shortName);
-    const selectedKeys = selectedItems.map((b) => b.shortName);
-
-    const isAll =
-      realBranchKeys.length > 0 &&
-      realBranchKeys.every((key) => selectedKeys.includes(key));
-
-    return isAll ? [allKey, ...realBranchKeys] : selectedKeys;
-  })();
+  const selectedKeys = controlledSelectedKeys ?? internalSelectedKeys;
+  const onSelectionChange =
+    controlledOnSelectionChange ?? setInternalSelectedKeys;
 
   return (
     <Select
-      isMultiline
-      items={items}
+      className={className}
       label={label}
-      labelPlacement="inside"
+      labelPlacement="outside"
       placeholder={placeholder}
       selectedKeys={selectedKeys}
-      onSelectionChange={handleSelectionChange}
-      color="primary"
-      onBlur={onBlur}
-      renderValue={(items) => (
-        <div className="flex flex-wrap gap-2">
-          {items.map((item: any) => (
-            <Chip
-              size="sm"
-              color="primary"
-              variant="shadow"
-              key={item.key}
-              onClose={() => handleRemove(item.key)}
-            >
-              {item.data.branch_name_en}
-            </Chip>
-          ))}
-        </div>
-      )}
       selectionMode="multiple"
-      variant="bordered"
-      isRequired={isRequired}
-      classNames={{
-        label: "dark:text-zinc-300 text-zinc-600",
-        trigger: "dark:border-zinc-600 border-zinc-300",
+      onSelectionChange={onSelectionChange}
+      classNames={{ 
+        trigger: triggerClassName, 
+        base: 'select-md-ui'
       }}
+      listboxProps={{
+        itemClasses: {
+          base: [
+            "rounded-xl px-3",
+          ],
+        },
+      }}
+      popoverProps={{
+        classNames: {
+          content: "rounded-[20px]  bg-zinc-50 dark:bg-zinc-800 border-white dark:border-transparent border-2 px-1",
+        },
+      }}
+      isDisabled={isDisabled}
+      isRequired={isRequired}
+      name={name}
+
     >
-      {(branch) => (
-        <SelectItem key={branch.shortName} textValue={branch.shortName}>
-          {branch.branch_name_en} - {branch.branch_name_kh}
-        </SelectItem>
-      )}
+      {options.map((option, index) => {
+        const value = option[optionValue] ?? index;
+        const primaryLabel = option[optionLabel] || "";
+        const secondaryLabel = secondaryOptionLabel ? option[secondaryOptionLabel] : "";
+        const displayText = secondaryLabel 
+          ? `${primaryLabel} - ${secondaryLabel}` 
+          : primaryLabel;
+
+        return (
+          <SelectItem 
+            key={String(value)}
+            textValue={primaryLabel}
+          >          
+            <p className="truncate w-[95%]">{displayText}</p>
+          </SelectItem>
+        );
+      })}
     </Select>
   );
 };
-
-export default SelectMultipleUi;

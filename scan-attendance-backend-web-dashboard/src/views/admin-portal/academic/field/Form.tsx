@@ -46,11 +46,12 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
 
   // ====== get data when modal opens or row changes
   useEffect(() => {
+    console.log("row", row);
     if (isOpen) {
       if (isEdit && row) {
         setFormData({
           id: id,
-          faculty: String(row.faculty_id),
+          faculty: Number(row.faculty_id),
           fieldNameEn: String(row.field_name_en),
           fieldNameKh: String(row.field_name_kh),
           fieldCode: String(row.field_code),

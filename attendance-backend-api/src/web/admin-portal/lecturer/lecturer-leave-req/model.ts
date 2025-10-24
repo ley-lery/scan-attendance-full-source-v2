@@ -3,19 +3,22 @@ import { ApproveLeave, BatchLeave } from "../../../../types/interface";
 import { Message } from "../../../../utils/message";
 
 interface Filter {
-    course: number | null;
-    lecturer: number | null;
-    status: string;
+    lecturer: number | null; // lecturer_id
+    status: string; 
     startDate: string | null;
-    endDate: string | null;
+    endDate: string | null; 
+    requestDate: string | null; 
+    approvedByUser: number | null; // approved_by_user_id
+    deleted: boolean | null;
+    search: string | null;
     page: number;
     limit: number;
-}
+} // 11 parameters
 
 export const LecturerLeaveModel = {
 
     async getAll(page: number = 1, limit: number = 10): Promise<any> {
-        const [result] = await db.query(`Call sp_lecturer_leave_request_admin_filter(?, ?, ?, ?, ?, ?, ?)`, [null, null, null, null, null, page, limit]);
+        const [result] = await db.query(`Call sp_admin_lecturer_leave_request_filter_list(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [null, null, null, null, null, null, null, null, page, limit]);
         return result;
     },
 
@@ -44,8 +47,8 @@ export const LecturerLeaveModel = {
     },
     
     async filter(data: Filter): Promise<any> {
-        const { course, lecturer, status, startDate, endDate, page, limit } = data;
-        return await db.query(`Call sp_lecturer_leave_request_admin_filter(?, ?, ?, ?, ?, ?, ?)`, [ course, lecturer, status, startDate, endDate, page, limit]);
+        const { lecturer, status, startDate, endDate, requestDate, approvedByUser, deleted, search, page, limit } = data;
+        return await db.query(`Call sp_admin_lecturer_leave_request_filter_list(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [ lecturer, status, startDate, endDate, requestDate, approvedByUser, deleted, search, page, limit]);
     },
 
 }

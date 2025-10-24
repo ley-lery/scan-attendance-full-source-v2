@@ -39,6 +39,7 @@ declare global {
     id?: number | null;
     classId?: number | null | string;
     studentId?: number | null | string;
+    studentIds?: number[] | null | string;
     status?: "Active" | "Inactive";
   }
   interface ClassStudentList {
@@ -79,7 +80,7 @@ declare global {
   }
   interface Field {
     id?: number | null;
-    faculty?:  null | string;
+    faculty?: number| null | string;
     fieldCode: string;
     fieldNameEn: string;
     fieldNameKh: string;
@@ -374,5 +375,22 @@ declare global {
       rows: ClassData[];
     };
   }
-  
+  interface ColumnConfigExcel {
+    field: string;
+    header: string;
+    align: "left" | "center" | "right";
+    width?: string;
+    minWidth?: string;
+    maxWidth?: string;
+    whiteSpace?: "normal" | "nowrap" | "pre" | "pre-wrap" | "pre-line";
+    overflow?: "visible" | "hidden" | "scroll" | "auto";
+    textOverflow?: "clip" | "ellipsis";
+  }
+
+  interface ExcelCellData {
+    value: any;
+    align?: "left" | "center" | "right";
+  }
+
+  type ExcelRowData = Record<string, ExcelCellData>;
 }

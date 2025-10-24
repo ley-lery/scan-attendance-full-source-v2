@@ -16,6 +16,7 @@ import { useFetch } from "@/hooks/useFetch";
 type DataFilter = {
   course: string;
   session: string;
+  status?: null | number
   page: number;
   limit: number;
 };
@@ -89,6 +90,8 @@ const Index = () => {
     }
   );
   useEffect(() => {
+    console.log(fetchList, "fetchList");
+    
     if (fetchList?.data?.rows?.length > 0) {
       setMarkMultiAttendanceData({
         classId: fetchList.data.rows[0].class_id,
@@ -245,15 +248,15 @@ const Index = () => {
 
   const onMultiMarkAttendance = async (status: AttendanceStatus) => {
     
-    let studentIds: number[];
+    let ids: number[];
 
     if (selectedIds === "all") {
-      studentIds = rows.map((row) => Number(row.student_id));
+      ids = rows.map((row) => Number(row.id));
     } else {
-      studentIds = Array.from(selectedIds).map((id) => Number(id));
+      ids = Array.from(selectedIds).map((id) => Number(id));
     }
 
-    const attendanceData = studentIds.map((id) => ({
+    const attendanceData = ids.map((id) => ({
       student_id: Number(id),
       status: status,
     }));
@@ -337,6 +340,8 @@ const Index = () => {
       { name: t("session"), uid: "session_name", sortable: true },
       { name: t("attendanceStatus"), uid: "attendance_status", sortable: true },
       { name: t("status"), uid: "status", sortable: true },
+      { name: t("transferredClass"), uid: "transferred_class_name", sortable: true },
+      { name: t("transferredAt"), uid: "transferred_at", sortable: true },
       { name: t("action"), uid: "actions" },
     ],
     [t]
@@ -353,6 +358,7 @@ const Index = () => {
     "session_name",
     "attendance_status",
     "status",
+    "transferred_class_name",
     "actions",
   ];
 
@@ -420,10 +426,22 @@ const Index = () => {
       </span>
     );
   };
+  const customizeColTransferredClass = (data: any) => {
+    return (
+      <span
+        className={cn(
+          "px-3 py-1 rounded-full w-fit text-xs font-semibold inline-flex items-center gap-1 bg-black/10 dark:bg-white/10 text-zinc-600 dark:text-zinc-300 uppercase",
+        )}
+      >
+        {data.transferred_class_name || "-"}
+      </span>
+    );
+  };
 
   const colsKeys = [
     { key: "attendance_status", value: (data: any) => customizeCols(data) },
     { key: "session_name", value: (data: any) => customizeColSession(data) },
+    { key: "transferred_class_name", value: (data: any) => customizeColTransferredClass(data) },
   ];
 
   const selectedLength = Array.from(selectedIds).length;
@@ -542,7 +560,7 @@ const Index = () => {
 
       {/* Data Table */}
       <DataTable
-        rowKey="student_id"
+        rowKey="id"
         dataApi={rows}
         cols={cols}
         visibleCols={visibleCols}

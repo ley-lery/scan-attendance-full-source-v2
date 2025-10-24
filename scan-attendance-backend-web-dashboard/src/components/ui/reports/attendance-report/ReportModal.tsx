@@ -23,6 +23,7 @@ interface ReportModalProps {
   loadingBackdrop?: boolean
   onPrint?: () => void
   onExport?: () => void
+  scrollBehavior?: boolean;
 }
 
 const ReportModal = ({
@@ -39,7 +40,8 @@ const ReportModal = ({
   isLoading = false,
   loadingBackdrop = true,
   onPrint,
-  onExport
+  onExport,
+  scrollBehavior = false
 }: ReportModalProps) => {
   const { t } = useTranslation("common");
   if (!isOpen) return null;
@@ -54,6 +56,7 @@ const ReportModal = ({
         isDismissable={false}
         isDraggable={false}
         animation={animation}
+        scrollBehavior={scrollBehavior}
       >
         <ModalContent>
           {() => (

@@ -1,17 +1,20 @@
 import { useTranslation } from "react-i18next";
 import { AutocompleteUI, DatePicker } from "@/components/hero-ui";
-import { Divider } from "@heroui/react";
+import { Checkbox, Divider } from "@heroui/react";
 import { type DateValue } from "@internationalized/date";
 import { useFetch } from "@/hooks/useFetch";
 import { DrawerFilter } from "@/components/ui";
 import { useEffect, useState } from "react";
 
 interface Filter {
-  course?: number | null;
-  lecturer?: number | null;
-  status?: string;
+  lecturer?: number | null; // lecturer_id
+  status?: string | null; 
   startDate?: DateValue | null;
-  endDate?: DateValue | null;
+  endDate?: DateValue | null; 
+  requestDate?: DateValue | null; 
+  approvedByUser?: number | null; // approved_by_user_id
+  deleted?: boolean | number | null ;
+  search?: string | null;
   page?: number;
   limit?: number;
 }
@@ -40,7 +43,7 @@ const Filter = ({
   const { t } = useTranslation();
   const [list, setList] = useState<any>({
     lecturers: [],
-    courses: [],
+    users: [],
     statuses: [],
   });
 
@@ -54,7 +57,7 @@ const Filter = ({
     if (formLoad) {
       setList({
         lecturers: formLoad.data.lecturers,
-        courses: formLoad.data.courses,
+        users: formLoad.data.users,
         statuses: formLoad.data.status,
       });
     }
@@ -65,6 +68,10 @@ const Filter = ({
   // ==== Event Handler ==== 
   const handleSelectChange = (key: string, field: keyof Filter) => {
     setFilter((prev) => ({ ...prev, [field]: key }));
+  };
+
+  const handleCheckboxChange = (field: keyof Filter, value: boolean) => {
+    setFilter((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleDateChange = (field: keyof Filter, value: DateValue | null) => {
@@ -91,10 +98,18 @@ const Filter = ({
         {/* Date & Time */}
         <div>
           <h3 className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
-            {t("dateTimeRange")}
+            {t("date")}
           </h3>
           <Divider className="mb-2" />
           <div className="grid grid-cols-2 gap-4">
+            <DatePicker
+              label={t("date")}
+              value={filter.requestDate}
+              onChange={(val) => handleDateChange("requestDate", val)}
+              labelPlacement="outside"
+              className="col-span-2"
+              
+            />
             <DatePicker
               label={t("startDate")}
               value={filter.startDate}
@@ -131,17 +146,15 @@ const Filter = ({
               selectedKey={filter.lecturer}
               onSelectionChange={(key: any) => handleSelectChange(key, "lecturer")}
             />
-            
             <AutocompleteUI
-              name="course"
-              label={t("course")}
-              placeholder={t("chooseCourse")}
-              options={list.courses}
-              optionLabel="name_en"
-              secondaryOptionLabel="name_kh"
+              name="user"
+              label={t("approvedByUser")}
+              placeholder={t("chooseUser")}
+              options={list.users}
+              optionLabel="label"
               optionValue="id"
-              selectedKey={filter.course}
-              onSelectionChange={(key: any) => handleSelectChange(key, "course")}
+              selectedKey={filter.approvedByUser}
+              onSelectionChange={(key: any) => handleSelectChange(key, "approvedByUser")}
             />
             <AutocompleteUI
               name="status"
@@ -153,6 +166,12 @@ const Filter = ({
               selectedKey={filter.status}
               onSelectionChange={(key: any) => handleSelectChange(key, "status")}
             />
+            <Checkbox
+              isSelected={filter.deleted as boolean}
+              onValueChange={(val: any) => handleCheckboxChange("deleted", val)}
+            >
+              {t("deleted")}
+            </Checkbox>
           </div>
         </div>
       </form>

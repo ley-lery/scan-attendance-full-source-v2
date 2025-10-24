@@ -60,8 +60,8 @@ const adminMenus: MenuSection[] = [
         statusMsg: 'Not Ready',
         items: [
           { icon: VscSettings, title: "manageClass", to: "/admin/academic/class/manage-classes", status: 'Ready', statusMsg: 'Ready' },
-          { icon: BsFileEarmarkText, title: "classSchedule", to: "/admin/academic/class/class-schedule", status: 'Not Ready', statusMsg: 'Delete not ready' },
           { icon: PiStudentLight, title: "classStudent", to: "/admin/academic/class/class-students", status: 'Not Ready', statusMsg: 'Update single select to multi select student.' },
+          { icon: BsFileEarmarkText, title: "classSchedule", to: "/admin/academic/class/class-schedule", status: 'Not Ready', statusMsg: 'Delete not ready' },
         ],
       },
     ],
@@ -142,8 +142,6 @@ const lecturerMenus: MenuSection[] = [
     items: [
       { icon: Bolt, title: "myClasses", to: "/lecturer/classes/my-classes", items: [] },
       { icon: Bolt, title: "classSchedule", to: "/lecturer/classes/class-schedule", items: [] },
-      { icon: Bolt, title: "classAttendance", to: "/lecturer/classes/class-attendance", items: [] },
-      { icon: Bolt, title: "studentAttendanceReport", to: "/lecturer/classes/student-attendance-report", items: [] },
     ],
   },
   {
@@ -163,9 +161,8 @@ const lecturerMenus: MenuSection[] = [
   {
     group: "Reports",
     items: [
-      { icon: Bolt, title: "timeSheet", to: "/lecturer/reports/time-sheet", items: [] },
-      { icon: Bolt, title: "attendanceReport", to: "/lecturer/reports/attendance-report", items: [] },
-      { icon: Bolt, title: "studentLeaveHistory", to: "/lecturer/reports/student-leave-history", items: [] },
+      { icon: Bolt, title: "myClassAttendance", to: "lecturer/reports/class-attendance", items: [] },
+      { icon: Bolt, title: "teachingSummary", to: "/lecturer/reports/teaching-summary", items: [] },
     ],
   },
 ];

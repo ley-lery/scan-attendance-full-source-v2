@@ -1,20 +1,23 @@
+// Lecturer Leave History
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { type DateValue } from "@internationalized/date";
 import { useFetch } from "@/hooks/useFetch";
+import { useMutation } from "@/hooks/useMutation";
+import { useDisclosure } from "@/god-ui";
+import { useDebounce } from "@/hooks/useDebounce";
+import { DataTable, ShowToast } from "@/components/hero-ui";
+import { MetricCard } from "@/components/ui";
+import { cn } from "@/lib/utils";
+import { formatDateValue } from "@/helpers";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 import { PiWarningCircle } from "react-icons/pi";
 import { SlClose } from "react-icons/sl";
 import { FaRegCircle, FaUser } from "react-icons/fa";
-import { DataTable, ShowToast } from "@/components/hero-ui";
-import { useDisclosure } from "@/god-ui";
-import {  type DateValue } from "@internationalized/date";
-import { formatDateValue } from "@/helpers";
-import { useMutation } from "@/hooks/useMutation";
 import Filter from "./Filter";
-import { cn } from "@/lib/utils";
-import { MetricCard } from "@/components/ui";
 import View from "./View";
 
+// ==== Types ====
 interface FilterData {
   status: "Pending" | "Approved" | "Rejected" | "Cancelled" | "";
   reqDate: DateValue | null;
@@ -24,6 +27,7 @@ interface FilterData {
   limit: number;
 }
 
+// ==== Default Filter ====
 const defaultFilter: FilterData = {
   status: "",
   reqDate: null,
@@ -33,7 +37,7 @@ const defaultFilter: FilterData = {
   limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
 };
 
-// Custom hook for separate view dialog
+// ==== Custom Hooks for Modal Management ====
 const useViewClosure = () => {
   const { isOpen, onOpen, onClose, ...rest } = useDisclosure();
   return {
@@ -44,14 +48,16 @@ const useViewClosure = () => {
   };
 };
 
-
 const Index = () => {
   const { t } = useTranslation();
+
+  // ==== Modal State ====
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpenView, onOpenView, onCloseView } = useViewClosure();
 
   // ==== State Management ====
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const debouncedSearchKeyword = useDebounce(searchKeyword, 500);
   const [isFiltered, setIsFiltered] = useState<boolean>(false);
   const [filter, setFilter] = useState<FilterData>(defaultFilter);
   const [filteredData, setFilteredData] = useState<{ rows: any[]; total: number } | null>(null);
@@ -63,10 +69,9 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== Mutation ====
+  // ==== Filter Mutation ====
   const { mutate: filterAction, loading: filterLoading } = useMutation({
     onSuccess: (response) => {
-      console.log(response, "response");
       onClose();
       setFilteredData({
         rows: response?.data?.rows || [],
@@ -75,7 +80,6 @@ const Index = () => {
       setIsFiltered(true);
     },
     onError: (err) => {
-      console.log(err);
       ShowToast({
         color: "error",
         title: "Error",
@@ -84,32 +88,35 @@ const Index = () => {
     },
   });
 
-
- // ==== Fetch Data with useFetch ==== 
+  // ==== Data Fetching ====
   const { data: formLoad, loading: formLoadLoading } = useFetch<{ statuses: any[] }>(
     "/lecturer/leavehistory/formload"
   );
+
+  const endpoint = debouncedSearchKeyword.trim() === ""
+    ? "/lecturer/leavehistory/list"
+    : "/lecturer/leavehistory/search";
+
   const {
     data: dataList,
     loading: loadingList,
     refetch: refetchList,
-  } = useFetch<{ rows: any[]; total_count: number }>(
-    searchKeyword.trim() === "" ? "/lecturer/leavehistory/list" : "/lecturer/leavehistory/search",
-    {
-      params: {
-        page: pagination.page,
-        limit: pagination.limit,
-        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }),
-      },
-      deps: [pagination.page, pagination.limit, searchKeyword],
-      enabled: !isFiltered, // Don't fetch when filtered
-    }
-  );
+  } = useFetch<{ rows: any[]; total_count: number }>(endpoint, {
+    params: {
+      page: pagination.page,
+      limit: pagination.limit,
+      ...(debouncedSearchKeyword.trim() !== "" && { keyword: debouncedSearchKeyword }),
+    },
+    deps: [pagination.page, pagination.limit, debouncedSearchKeyword],
+    enabled: !isFiltered,
+  });
 
+  // Auto-trigger search when debounced keyword changes
   useEffect(() => {
-    console.log("Fetched data:", dataList);
-    console.log("Fetched formLoad:", formLoad);
-  }, [dataList, formLoad]);
+    if (debouncedSearchKeyword.trim() !== "" || isFiltered) {
+      refetchList();
+    }
+  }, [debouncedSearchKeyword]);
 
   // ==== Table Data & Total Pages ====
   const dataRows = isFiltered ? filteredData?.rows : dataList?.data?.rows;
@@ -117,7 +124,7 @@ const Index = () => {
   const totalCount = isFiltered ? filteredData?.total : dataList?.data?.total;
   const totalPage = Math.ceil((totalCount || 0) / pagination.limit) || 1;
 
-  // ==== Columns Definitions ====
+  // ==== Table Columns ====
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
@@ -150,9 +157,10 @@ const Index = () => {
     "approved_by_lecturer_en",
     "approved_by_username",
     "status",
-    "actions"
+    "actions",
   ];
 
+  // ==== Status Options ====
   const status = [
     { name: "Approved", uid: "Approved" },
     { name: "Pending", uid: "Pending" },
@@ -160,10 +168,12 @@ const Index = () => {
     { name: "Cancelled", uid: "Cancelled" },
   ];
 
-  // ==== Search Input Handlers ====
+  // ==== Event Handlers ====
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchKeyword(e.target.value);
+    const value = e.target.value;
+    setSearchKeyword(value);
     setPagination((prev) => ({ ...prev, page: 1 }));
+    
     // Clear filter when searching
     if (isFiltered) {
       setIsFiltered(false);
@@ -176,6 +186,10 @@ const Index = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
+  const handleSearch = async () => {
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
   const onView = (row: object) => {
     setViewRow(row);
     onOpenView();
@@ -184,17 +198,17 @@ const Index = () => {
   // ==== Filter Handlers ====
   const resetFilter = () => {
     setFilter(defaultFilter);
+    setSearchKeyword("");
     setIsFiltered(false);
     setFilteredData(null);
     setPagination((prev) => ({ ...prev, page: 1 }));
-    refetchList();
   };
 
   const onFilter = async () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
 
     const payload = {
-      status: filter.status ? filter.status : "",
+      status: filter.status || "",
       reqDate: filter.reqDate ? formatDateValue(filter.reqDate) : null,
       startDate: filter.startDate ? formatDateValue(filter.startDate) : null,
       endDate: filter.endDate ? formatDateValue(filter.endDate) : null,
@@ -202,23 +216,19 @@ const Index = () => {
       limit: pagination.limit,
     };
 
-    console.log(payload, "payload");
-
-
     await filterAction(`/lecturer/leavehistory/filter`, payload, "POST");
   };
 
-  // Handle pagination changes for filtered data
+  // ==== Pagination Handler ====
   const handlePageChange = async (newPage: number) => {
     setPagination((prev) => ({ ...prev, page: newPage }));
 
     if (isFiltered) {
-      // Re-apply filter with new page
       const payload = {
-        status: filter.status,
-        reqDate: formatDateValue(filter.reqDate),
-        startDate: formatDateValue(filter.startDate),
-        endDate: formatDateValue(filter.endDate),
+        status: filter.status || "",
+        reqDate: filter.reqDate ? formatDateValue(filter.reqDate) : null,
+        startDate: filter.startDate ? formatDateValue(filter.startDate) : null,
+        endDate: filter.endDate ? formatDateValue(filter.endDate) : null,
         page: newPage,
         limit: pagination.limit,
       };
@@ -227,6 +237,7 @@ const Index = () => {
     }
   };
 
+  // ==== Statistics Cards ====
   const cardStats = [
     {
       title: t("approved"),
@@ -265,13 +276,13 @@ const Index = () => {
     },
   ];
 
+  // ==== Column Customization ====
   const customizeColClosed = useCallback((data: any, key: string) => {
     const value = data[key];
     return (
       <span
         className={cn(
-          "flex items-center gap-2",
-          "px-3 py-1 rounded-full w-fit text-xs/tight font-medium inline-flex items-center gap-2",
+          "flex items-center gap-2 px-3 py-1 rounded-full w-fit text-xs/tight font-medium",
           value === "Unassigned" && "text-danger bg-danger/20",
           value !== "Unassigned" && "text-primary bg-primary/20"
         )}
@@ -280,36 +291,48 @@ const Index = () => {
       </span>
     );
   }, []);
+
   const customizeColTotalDays = useCallback((data: any, key: string) => {
     const value = data[key];
     return (
-      <span
-        className={cn(
-          "flex items-center gap-2",
-          "px-3 py-1 rounded-full w-fit text-xs/tight font-medium inline-flex items-center gap-2 bg-zinc-200 dark:bg-zinc-800",
-        )}
-      >
-        {value}
+      <span className="flex items-center gap-2 px-3 py-1 rounded-full w-fit text-xs/tight font-semibold bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+        {value} {value > 1 ? t("days") : t("day")}
       </span>
     );
-  }, []);
+  }, [t]);
 
   const colsKeys = useMemo(
     () => [
-      { key: "approved_by_lecturer_en", value: (data: any) => customizeColClosed(data, "approved_by_lecturer_en") },
-      { key: "approved_by_username", value: (data: any) => customizeColClosed(data, "approved_by_username") },
-      { key: "approved_by_user_email", value: (data: any) => customizeColClosed(data, "approved_by_user_email") },
-      { key: "approved_by_lecturer_kh", value: (data: any) => customizeColClosed(data, "approved_by_lecturer_kh") },
-      { key: "approved_by_lecturer_en", value: (data: any) => customizeColClosed(data, "approved_by_lecturer_en") },
-      { key: "deleted_date", value: (data: any) => customizeColClosed(data, "deleted_date") },
-      { key: "total_days", value: (data: any) => customizeColTotalDays(data, "total_days") },
+      {
+        key: "approved_by_lecturer_en",
+        value: (data: any) => customizeColClosed(data, "approved_by_lecturer_en"),
+      },
+      {
+        key: "approved_by_username",
+        value: (data: any) => customizeColClosed(data, "approved_by_username"),
+      },
+      {
+        key: "approved_by_user_email",
+        value: (data: any) => customizeColClosed(data, "approved_by_user_email"),
+      },
+      {
+        key: "approved_by_lecturer_kh",
+        value: (data: any) => customizeColClosed(data, "approved_by_lecturer_kh"),
+      },
+      {
+        key: "deleted_date",
+        value: (data: any) => customizeColClosed(data, "deleted_date"),
+      },
+      {
+        key: "total_days",
+        value: (data: any) => customizeColTotalDays(data, "total_days"),
+      },
     ],
-    [customizeColClosed]
+    [customizeColClosed, customizeColTotalDays]
   );
 
   return (
     <div className="p-4 space-y-4">
-      {/* === Filter Component === */}
       <Filter
         isOpen={isOpen}
         onClose={onClose}
@@ -319,32 +342,28 @@ const Index = () => {
         onResetFilter={resetFilter}
         filterLoading={filterLoading}
       />
-      <View
-        isOpen={isOpenView}
-        onClose={onCloseView}
-        row={viewRow}
-      />
+      <View isOpen={isOpenView} onClose={onCloseView} row={viewRow} />
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {cardStats.map((card, index) => (
-          <MetricCard 
-            key={index} 
-            title={card.title} 
-            description={card.subtitle} 
-            type="Presents" 
-            value={card.number} 
-            variant={card.color as "success" | "warning" | "danger" | "secondary" } 
-            icon={card.icon} 
-            showProgress={false} 
-            showChart={!loadingList} 
+          <MetricCard
+            key={index}
+            title={card.title}
+            description={card.subtitle}
+            type="Presents"
+            value={card.number}
+            variant={card.color as "success" | "warning" | "danger" | "secondary"}
+            icon={card.icon}
+            showProgress={false}
+            showChart={!loadingList}
             colorChart={card.color}
             classNames={{
-              base: "bg-white dark:bg-zinc-800 min-h-32 max-h-32"
+              base: "bg-white dark:bg-zinc-800 min-h-32 max-h-32",
             }}
           />
         ))}
       </div>
+
       <DataTable
         loading={loadingList || filterLoading}
         dataApi={rows}
@@ -360,7 +379,7 @@ const Index = () => {
         searchKeyword={searchKeyword}
         onSearchInputChange={onSearchInputChange}
         handleClearSearch={handleClearSearch}
-        handleSearch={refetchList}
+        handleSearch={handleSearch}
         initialPage={pagination.page}
         totalPages={totalPage}
         page={pagination.page}

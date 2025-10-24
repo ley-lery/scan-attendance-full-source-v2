@@ -18,6 +18,21 @@ interface ParameterData {
     page: number,
     limit: number
 }
+interface FullParameterData {
+    faculty: number | null,
+    field: number | null,
+    classId: number | null,
+    course: number | null,
+    student: number | null,
+    promotionNo: number | null,
+    termNo: number,
+    programType: string | null,
+    gender: string | null,
+    studentStatus: string | null,
+    searchKeyword: string | null,
+    page: number,
+    limit: number
+}
 
 const sessions: { value: string; label: string }[] = [];
 for (let i = 1; i <= 60; i++) {
@@ -48,15 +63,29 @@ const model = AdminMarkAttStudentModel;
 export const MarkAttStudentController = {
 
     async getAll(req: FastifyRequest, res: FastifyReply): Promise<void> {
+        const { page, limit } = req.query as { page: number, limit: number };
         try {
-            const result = await model.getAll();
+            const result = await model.getAll(page, limit);
             const rows = result[0];
 
-            const total = result[0][0].total;
+            const total = result[1][0].total;
 
-            sendSuccessResponse(res, true, "students list", { rows: rows, total:total }, 200);
+            sendSuccessResponse(res, true, "student attendance list", { rows: rows, total:total }, 200);
         } catch (e) {
-            handleError(res, e as Error, "Error fetching students", 500);
+            handleError(res, e as Error, "Error fetching student attendance list", 500);
+        }
+    },
+    async getFullSessions(req: FastifyRequest, res: FastifyReply): Promise<void> {
+        const { page, limit } = req.query as { page: number, limit: number };
+        try {
+            const result = await model.getFullSessions(page, limit);
+            const rows = result[0];
+
+            const total = result[1][0].total;
+
+            sendSuccessResponse(res, true, "full sessions list", { rows: rows, total: total }, 200);
+        } catch (e) {
+            handleError(res, e as Error, "Error fetching full sessions", 500);
         }
     },
     async getStudentSessionDetail(req: FastifyRequest, res: FastifyReply): Promise<void> {
@@ -64,7 +93,7 @@ export const MarkAttStudentController = {
         
         try {
             const [rows] = await model.getStudentSessionDetail(data);
-            console.log(rows, "rows")
+            
             if (!rows?.length) {
                 res.send({ message: "No student sessions found" });
                 return;
@@ -82,6 +111,27 @@ export const MarkAttStudentController = {
         }
         try {
             const result = await model.filter(data);
+
+            const rows = result[0];
+            const total = result[1][0].total;
+
+            if (!rows?.length) {
+                res.send({ message: "No student sessions found" });
+                return;
+            }
+
+            sendSuccessResponse(res, true, "student sessions", { rows: rows, total:total }, 200);
+        } catch (e) {
+            handleError(res, e as Error, "Error fetching student sessions", 500);
+        }
+    },
+    async filterFullSessions(req: FastifyRequest, res: FastifyReply): Promise<void> {
+        const { faculty, field, classId, course, student, promotionNo, termNo, programType, gender, studentStatus, searchKeyword, page, limit } = req.body as FullParameterData;
+        const data = {
+            faculty, field, classId, course, student, promotionNo, termNo, programType, gender, studentStatus, searchKeyword, page, limit
+        }
+        try {
+            const result = await model.getFullSessionsFilter(data);
             console.log(result[1][0].total, 'result')
 
             const rows = result[0];
@@ -97,7 +147,6 @@ export const MarkAttStudentController = {
             handleError(res, e as Error, "Error fetching student sessions", 500);
         }
     },
-
     async markSingleRecord(req: FastifyRequest, res: FastifyReply): Promise<void> {
         const data = req.body as any;
         try {
@@ -121,7 +170,6 @@ export const MarkAttStudentController = {
             
             const [result] = await model.markMultiRecord(data);
 
-            console.log(result)
             const messages = JSON.parse(result?.messages);
             if (messages && messages.length > 0 && messages[0].code === 0) {
                 sendSuccessResponse(res, true, messages, null, 200);
@@ -132,6 +180,27 @@ export const MarkAttStudentController = {
             handleError(res, e as Error, "Error marking multi records", 500);
         }
     },
+    async markBulkRecord(req: FastifyRequest, res: FastifyReply): Promise<void> {
+        const data = req.body as any;
+        try {
+            const [result] = await model.markBulkRecord(data);
+
+            console.log(result, 'result');
+
+            const parsed = JSON.parse(result?.messages);
+
+            const messages = Array.isArray(parsed) ? parsed : [parsed];
+
+            if (messages.length > 0 && messages[0].code === 1) {
+                sendSuccessResponse(res, true, messages[0], null, 200);
+            } else {
+                res.status(400).send({ message: messages[0]?.message || "Error marking attendance to student" });
+            }
+        } catch (e: any) {
+            handleError(res, e as Error, "Error marking bulk records", 500);
+        }
+    },
+
     async formLoad(req: FastifyRequest, res: FastifyReply): Promise<void> {
         try {
             const [faculyties] = await FacultyListModel.getAll();

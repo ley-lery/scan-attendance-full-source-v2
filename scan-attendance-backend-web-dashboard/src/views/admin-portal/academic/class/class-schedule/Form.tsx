@@ -13,7 +13,7 @@ import { ScheduleHeader } from "./ScheduleHeader";
 import AddClass from "./AddClass";
 import ScheduleFooter from "./ScheduleFooter";
 
-// ======== types & interfaces ========
+// ================= Start Type Definitions Block =================
 
 interface FormProps {
   isOpen?: boolean;
@@ -67,7 +67,12 @@ type SelectedSlot = {
   order: number;
 }
 
-// ======== constants ========
+// ================= End Type Definitions Block =================
+
+
+
+// ================= Start Constants Block =================
+
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 
 const TIME_SLOTS = [
@@ -104,8 +109,12 @@ const INITIAL_TEMP_SESSION: TempSessionData = {
   credits: null,
 };
 
+// ================= End Constants Block =================
 
-// ======== utility functions ========
+
+
+// ================= Start Utility Functions Block =================
+
 const validateForm = (formData: ScheduleFormData, t: (key: string) => string): Record<string, string> => {
   const errors: Record<string, string> = {};
 
@@ -113,15 +122,6 @@ const validateForm = (formData: ScheduleFormData, t: (key: string) => string): R
   if (!formData.startDate) errors.startDate = t("validation.required");
   if (!formData.endDate) errors.endDate = t("validation.required");
   if (formData.sessions.length === 0) errors.sessions = "At least one session is required";
-
-  // // Validate date range
-  // if (formData.startDate && formData.endDate) {
-  //   const start = new Date(formatDateValue(formData.startDate));
-  //   const end = new Date(formatDateValue(formData.endDate));
-  //   if (start > end) {
-  //     errors.endDate = "End date must be after start date";
-  //   }
-  // }
 
   return errors;
 };
@@ -145,8 +145,12 @@ const normalizeSessionData = (session: any): SessionWithDetails => ({
   credits: session.credits ? Number(session.credits) : undefined,
 });
 
+// ================= End Utility Functions Block =================
 
-// ======== break time component ========
+
+
+// ================= Start Component Definitions Block =================
+
 const BreakTime = memo(() => (
   <tr>
     <td colSpan={8} className="text-center py-2 bg-zinc-100 dark:bg-zinc-800 font-semibold border border-blue-950 dark:border-zinc-700">
@@ -157,34 +161,48 @@ const BreakTime = memo(() => (
 
 BreakTime.displayName = "BreakTime";
 
+// ================= End Component Definitions Block =================
+
+
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
 
-
   const { t } = useTranslation();
+
+  // ================= Start State Management Block =================
+
   const { isOpen: isOpenModal, onOpen, onClose: onCloseModal } = useDisclosure();
   
-  // State - Unified form data
   const [formData, setFormData] = useState<ScheduleFormData>(INITIAL_FORM_DATA);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [tempSessionData, setTempSessionData] = useState<TempSessionData>(INITIAL_TEMP_SESSION);
   const [dataClassInfo, setDataClassInfo] = useState<ClassInfo>(INITIAL_CLASS_INFO);
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
+  const [selectedDay, setSelectedDay] = useState<string>("");
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
 
-  // Hooks
+  // ================= End State Management Block =================
+
+
+
+  // ================= Start API Block =================
+
   const { mutate: createSchedule, loading: creating } = useMutation();
   const { mutate: updateSchedule, loading: updating } = useMutation();
   const { data: formLoad } = useFetch<{ classes: any[], courses: any[], lecturers: any[] }>("/schedule/formload");
 
-  // ======== effects ========
+  // ================= End API Block =================
 
-  // Initialize form data when modal opens
+
+
+  // ================= Start Effects Block =================
+
   useEffect(() => {
     console.log("formLoad", formLoad);
     if (isOpen) {
       if (isEdit && row) {
-        // Edit mode: populate form with existing data
         setFormData({
           id: row.id,
           classId: row.class_id,
@@ -208,7 +226,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
           room_name: row.room_name || "",
         });
       } else {
-        // Create mode: reset form
         resetForm();
       }
       setErrors({});
@@ -216,7 +233,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     }
   }, [isOpen, row, isEdit]);
 
-  // Update class info when classId changes
   useEffect(() => {
     if (formData.classId && formLoad?.data?.classes) {
       const classDetail = formLoad.data.classes.find((c: any) => c.id === Number(formData.classId));
@@ -235,15 +251,21 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     }
   }, [formData.classId, formLoad?.data?.classes]);
 
-  // ====================
-  // Callbacks
-  // ====================
+  // ================= End Effects Block =================
 
+
+
+  // ================= Start Event Handlers Block =================
+
+  // Update handleSlotClick to work with add mode
   const handleSlotClick = useCallback((time: string, day: string) => {
     const timeSlot = TIME_SLOTS.find(ts => ts.value === time);
     const order = timeSlot?.order || 1;
 
+    setIsEditMode(false);
     setSelectedSlot({ time, day, order });
+    setSelectedDay(day);
+    setSelectedTimeSlots([time]);
     
     const existingSession = formData.sessions.find(
       s => s.day === day && s.time_slot === time
@@ -262,11 +284,149 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     onOpen();
   }, [formData.sessions, onOpen]);
 
+  // Update handleEditSlot for edit mode
+  const handleEditSlot = useCallback((time: string, day: string) => {
+    const timeSlot = TIME_SLOTS.find(ts => ts.value === time);
+    const order = timeSlot?.order || 1;
+
+    setIsEditMode(true);
+    setSelectedSlot({ time, day, order });
+    setSelectedDay(day);
+    setSelectedTimeSlots([time]);
+    
+    const existingSession = formData.sessions.find(
+      s => s.day === day && s.time_slot === time
+    );
+    
+    if (existingSession) {
+      setTempSessionData({
+        course: existingSession.course ?? null,
+        lecturer: existingSession.lecturer ?? null,
+        credits: existingSession.credits ?? null,
+      });
+    }
+    
+    onOpen();
+  }, [formData.sessions, onOpen]);
+
+  // New handler for time slot selection changes
+  const handleTimeSlotsChange = useCallback((slots: string[]) => {
+    setSelectedTimeSlots(slots);
+    
+    if (errors.timeSlots) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.timeSlots;
+        return newErrors;
+      });
+    }
+  }, [errors]);
+
+  // New handler for day selection changes
+  const handleDayChange = useCallback((day: string) => {
+    setSelectedDay(day);
+    
+    if (errors.day) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.day;
+        return newErrors;
+      });
+    }
+  }, [errors]);
+
+  // Update onApply to handle multiple time slots and day/time changes in edit mode
+  const onApply = useCallback(async (): Promise<boolean> => {
+    const validationErrors = validateTempSession(tempSessionData, t);
+
+    // Add validation for day and time slots (required for both add and edit)
+    if (!selectedDay) {
+      validationErrors.day = "Please select a day";
+    }
+    if (selectedTimeSlots.length === 0) {
+      validationErrors.timeSlots = "Please select at least one time slot";
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return false;
+    }
+
+    if (!selectedDay || selectedTimeSlots.length === 0) return false;
+
+    setFormData(prev => {
+      let filteredSessions = prev.sessions;
+
+      // If editing, remove the original session
+      if (isEditMode && selectedSlot) {
+        filteredSessions = filteredSessions.filter(
+          s => !(s.day === selectedSlot.day && s.time_slot === selectedSlot.time)
+        );
+      }
+
+      // Remove any existing sessions that would conflict with new selections
+      filteredSessions = filteredSessions.filter(
+        s => !(s.day === selectedDay && selectedTimeSlots.includes(s.time_slot))
+      );
+
+      // Add new sessions for all selected time slots
+      const newSessions = selectedTimeSlots.map(timeSlot => {
+        const slot = TIME_SLOTS.find(ts => ts.value === timeSlot);
+        return {
+          day: selectedDay,
+          time_slot: timeSlot,
+          order: slot?.order || 1,
+          course: tempSessionData.course!,
+          lecturer: tempSessionData.lecturer!,
+          credits: tempSessionData.credits!,
+        };
+      });
+
+      return {
+        ...prev,
+        sessions: [...filteredSessions, ...newSessions]
+      };
+    });
+
+    const message = isEditMode 
+      ? selectedTimeSlots.length > 1
+        ? `Session moved and duplicated to ${selectedTimeSlots.length} slots!`
+        : "Session moved successfully!"
+      : selectedTimeSlots.length > 1 
+        ? `${selectedTimeSlots.length} sessions added to schedule!`
+        : "Session added to schedule!";
+
+    ShowToast({ color: "success", description: message, delay: 0 });
+    resetTempForm();
+    onCloseModal();
+    return true;
+  }, [tempSessionData, selectedDay, selectedTimeSlots, isEditMode, selectedSlot, t, onCloseModal]);
+
+  // Update resetTempForm
+  const resetTempForm = useCallback(() => {
+    setTempSessionData(INITIAL_TEMP_SESSION);
+    setSelectedSlot(null);
+    setSelectedTimeSlots([]);
+    setSelectedDay("");
+    setIsEditMode(false);
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors.course;
+      delete newErrors.lecturer;
+      delete newErrors.credits;
+      delete newErrors.day;
+      delete newErrors.timeSlots;
+      return newErrors;
+    });
+  }, []);
+
+
+ 
+
   const handleTempInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement> | { target: { name: string; value: Key } }) => {
     const { name, value } = e.target;
     setTempSessionData((prev) => ({ ...prev, [name]: value }));
     
-    // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -279,7 +439,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   const handleDateChange = useCallback((field: "startDate" | "endDate", value: DateValue | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     
-    // Update class info start date if applicable
     if (field === "startDate" && value) {
       setDataClassInfo((prev: any) => ({ 
         ...prev, 
@@ -287,7 +446,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
       }));
     }
     
-    // Clear error for this field
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -301,7 +459,6 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     
-    // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -311,57 +468,16 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     }
   }, [errors]);
 
-  const onApply = useCallback(async (): Promise<boolean> => {
-    const validationErrors = validateTempSession(tempSessionData, t);
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return false;
-    }
-
-    if (!selectedSlot) return false;
-
-    setFormData(prev => {
-      // Remove existing session at this slot (if any)
-      const filteredSessions = prev.sessions.filter(
-        s => !(s.day === selectedSlot.day && s.time_slot === selectedSlot.time)
-      );
-
-      // Add new session
-      return {
-        ...prev,
-        sessions: [
-          ...filteredSessions,
-          {
-            day: selectedSlot.day,
-            time_slot: selectedSlot.time,
-            order: selectedSlot.order,
-            course: tempSessionData.course!,
-            lecturer: tempSessionData.lecturer!,
-            credits: tempSessionData.credits!,
-          }
-        ]
-      };
-    });
-
-    ShowToast({ color: "success", description: "Session added to schedule!" });
-    resetTempForm();
-    onCloseModal();
-    return true;
-  }, [tempSessionData, selectedSlot, t, onCloseModal]);
-
-  const resetTempForm = useCallback(() => {
-    setTempSessionData(INITIAL_TEMP_SESSION);
-    setSelectedSlot(null);
-    // Only clear temp session errors
-    setErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors.course;
-      delete newErrors.lecturer;
-      delete newErrors.credits;
-      return newErrors;
-    });
+  const handleRemoveSession = useCallback((day: string, timeSlot: string) => {
+    setFormData(prev => ({
+      ...prev,
+      sessions: prev.sessions.filter(
+        s => !(s.day === day && s.time_slot === timeSlot)
+      )
+    }));
+    ShowToast({ color: "warning", description: "Session removed from schedule", delay: 0 });
   }, []);
+
 
   const resetForm = useCallback(() => {
     setFormData(INITIAL_FORM_DATA);
@@ -386,13 +502,11 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     };
 
     if (isEdit) {
-      // For update, include id but not classId (can't change class)
       return {
         id: Number(formData.id),
         ...basePayload
       };
     } else {
-      // For create, include classId
       return {
         classId: Number(formData.classId),
         ...basePayload
@@ -401,14 +515,10 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   }, [formData, isEdit]);
 
   const onSubmit = useCallback(async (): Promise<boolean> => {
-    // Validate form
     const validationErrors = validateForm(formData, t);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      ShowToast({ 
-        color: "danger", 
-        description: validationErrors.sessions || "Please fix the form errors" 
-      });
+      ShowToast({ color: "danger", description: validationErrors.sessions || "Please fix the form errors", delay: 0 });
       return false;
     }
 
@@ -426,14 +536,13 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
         ShowToast({ color: "success", description: t("createdSuccess") });
       }
 
-      // Reload list
       if (loadList) await loadList();
       
       return true;
     } catch (error: any) {
       console.error("Error saving schedule:", error);
       const errorMessage = error.response?.data?.message || error.message || t("error.generic");
-      ShowToast({ color: "danger", description: errorMessage });
+      ShowToast({ color: "danger", description: errorMessage, delay: 0 });
       setErrors({ general: errorMessage });
       return false;
     } finally {
@@ -477,19 +586,11 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     }
   }, [isEdit, isFormDirty, onClose, resetForm]);
 
-  const handleRemoveSession = useCallback((day: string, timeSlot: string) => {
-    setFormData(prev => ({
-      ...prev,
-      sessions: prev.sessions.filter(
-        s => !(s.day === day && s.time_slot === timeSlot)
-      )
-    }));
-    ShowToast({ color: "warning", description: "Session removed from schedule" });
-  }, []);
+  // ================= End Event Handlers Block =================
 
-  // ====================
-  // Memoized Values
-  // ====================
+
+
+  // ================= Start Computed Values Block =================
 
   const scheduleData = useMemo(() => {
     const display: any = {};
@@ -518,11 +619,14 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
     return loading || creating || updating;
   }, [loading, creating, updating]);
 
+  // ================= End Computed Values Block =================
+
+
+
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Main Modal - Schedule Table View */}
       <Modal
         isOpen={isOpen}
         onClose={onClose}
@@ -538,10 +642,8 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
         scrollBehavior={true}
       >
         <div className="mx-auto px-20">
-          {/* Header info */}
           <ScheduleHeader data={dataClassInfo} />
           
-          {/* General error message */}
           {errors.general && (
             <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded">
               {errors.general}
@@ -589,14 +691,12 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
             />
           </div>
 
-          {/* Sessions error */}
           {errors.sessions && (
             <div className="mt-2 text-sm text-red-600 dark:text-red-400">
               {errors.sessions}
             </div>
           )}
 
-          {/* Schedule Table */}
           <div className="bg-white dark:bg-zinc-800 shadow-lg overflow-hidden mt-6 w-full">
             <table className="w-full border-collapse">
               <thead>
@@ -632,6 +732,7 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
                               day={day}
                               course={course}
                               onSlotClick={handleSlotClick}
+                              onEdit={handleEditSlot}
                               onRemove={handleRemoveSession}
                               isEmpty={true}
                             />
@@ -646,12 +747,10 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
             </table>
           </div>
 
-          {/* Footer info */}
           <ScheduleFooter />
         </div>
       </Modal>
 
-      {/* AddClass Modal Component */}
       <AddClass
         isOpen={isOpenModal}
         onClose={onCloseModal}
@@ -659,11 +758,16 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
         isLoading={loading}
         selectedSlot={selectedSlot}
         tempSessionData={tempSessionData}
+        selectedTimeSlots={selectedTimeSlots}
+        selectedDay={selectedDay}
         errors={errors}
         formLoad={formLoad}
         handleInputChange={handleInputChange}
         handleTempInputChange={handleTempInputChange}
+        handleTimeSlotsChange={handleTimeSlotsChange}
+        handleDayChange={handleDayChange}
         resetTempForm={resetTempForm}
+        isEditMode={isEditMode}
       />
     </>
   );

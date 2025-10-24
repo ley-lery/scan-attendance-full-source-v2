@@ -19,6 +19,7 @@ interface Props {
   isRequired?: boolean;
   size?: "sm" | "md" | "lg";
   textValue?: any;
+  isMultiline?: boolean;
 }
 
 export const SelectUI = ({
@@ -35,6 +36,7 @@ export const SelectUI = ({
   isRequired = false,
   size = "md",
   textValue,
+  isMultiline,
 }: Props) => {
   return (
     <Select
@@ -50,7 +52,9 @@ export const SelectUI = ({
       onChange={onChange}
       classNames={{
         trigger: `select-${size}-ui`,
+        label: 'translate-y-7'
       }}
+      isMultiline={isMultiline}
     >
       {options.map((item, index) => (
         <SelectItem

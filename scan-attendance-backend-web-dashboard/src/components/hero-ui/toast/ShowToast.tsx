@@ -8,13 +8,16 @@ interface ToastProps {
   icon?: React.ReactNode;
   color: string | "success" | "error" | "warning";
   duration?: number;
+  delay?: number;
   undo?: () => void;
 }
+
 const colorClassMap: Record<string, string> = {
   success: "text-success",
   error: "text-danger",
   warning: "text-warning",
 };
+
 const SuccesIcon = ({ color }: { color: keyof typeof colorClassMap }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -38,18 +41,50 @@ const SuccesIcon = ({ color }: { color: keyof typeof colorClassMap }) => (
     />
   </svg>
 );
-const ErrorIcon = ({ color }: { color: keyof typeof colorClassMap }) =>(
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className={cn(colorClassMap[color], 'size-6')}>
-  <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-</svg>
-)
-const WarningIcon = ({ color }: { color: keyof typeof colorClassMap }) =>(
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className={cn(colorClassMap[color], 'size-6')}>
-  <path stroke-linecap="round" stroke-linejoin="round" d="m12 8.25-4.5 4.5m0-4.5 4.5 4.5M12 15v4.5m-6-4.5H18" />
-</svg>
-)
 
-const ShowToast = ({ color, title, description, icon, undo, duration = 5000 }: ToastProps) => {
+const ErrorIcon = ({ color }: { color: keyof typeof colorClassMap }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    fill="none" 
+    viewBox="0 0 24 24" 
+    strokeWidth="1.5" 
+    stroke="currentColor" 
+    className={cn(colorClassMap[color], 'size-6')}
+  >
+    <path 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" 
+    />
+  </svg>
+);
+
+const WarningIcon = ({ color }: { color: keyof typeof colorClassMap }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    fill="none" 
+    viewBox="0 0 24 24" 
+    strokeWidth="1.5" 
+    stroke="currentColor" 
+    className={cn(colorClassMap[color], 'size-6')}
+  >
+    <path 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      d="m12 8.25-4.5 4.5m0-4.5 4.5 4.5M12 15v4.5m-6-4.5H18" 
+    />
+  </svg>
+);
+
+const ShowToast = ({ 
+  color, 
+  title, 
+  description, 
+  icon, 
+  undo, 
+  duration = 5000,
+  delay = 300 
+}: ToastProps) => {
   if (!icon) {
     icon = {
       success: <SuccesIcon color={color} />,
@@ -57,23 +92,32 @@ const ShowToast = ({ color, title, description, icon, undo, duration = 5000 }: T
       warning: <WarningIcon color={color} />,
     }[color];
   }
-  return addToast({
-    title: title,
-    description: description,
-    timeout: duration,
-    icon: icon,
-    classNames: {
-      base: "max-w-full bg-zinc-50/80 border border-white rounded-2xl shadow-none dark:bg-black/60 backdrop-blur-sm dark:border-transparent py-3 ",
-      closeButton: "opacity-100 absolute right-2 top-2 text-xl",
-      icon: cn([`text-${color}-500`], 'size-6'),
-    },
-    endContent: undo ? (
-      <button onClick={undo} className="mr-10 text-blue-500 text-sm">
-        Undo
-      </button>
-    ) : null,
-    closeIcon: <IoClose />,
-  });
+
+  const showToast = () => {
+    return addToast({
+      title: title,
+      description: description,
+      timeout: duration,
+      icon: icon,
+      classNames: {
+        base: "max-w-full bg-zinc-50/80 border border-white rounded-2xl shadow-none dark:bg-black/60 backdrop-blur-sm dark:border-transparent py-3 ",
+        closeButton: "opacity-100 absolute right-2 top-2 text-xl",
+        icon: cn([`text-${color}-500`], 'size-6'),
+      },
+      endContent: undo ? (
+        <button onClick={undo} className="mr-10 text-blue-500 text-sm">
+          Undo
+        </button>
+      ) : null,
+      closeIcon: <IoClose />,
+    });
+  };
+
+  if (delay > 0) {
+    setTimeout(showToast, delay);
+  } else {
+    return showToast();
+  }
 };
 
 export default ShowToast;

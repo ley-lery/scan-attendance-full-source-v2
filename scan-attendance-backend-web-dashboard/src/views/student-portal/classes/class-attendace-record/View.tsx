@@ -124,7 +124,7 @@ const View = ({ isOpen = false, onClose, row }: ViewProps) => {
       size="full"
       animation="scale"
       isLoading={fetchLoading}
-      loadingBackdrop={true}
+      loadingBackdrop={false}
     >
       <div className="space-y-10 p-4">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

@@ -5,25 +5,28 @@ import View from "./View";
 import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
+import { useDebounce } from "@/hooks/useDebounce";
 
-// Custom hook for separate view dialog
+// Custom hook modal
 const useViewClosure = () => {
-  const { isOpen, onOpen, onClose, ...rest } = useDisclosure();
+  const { isOpen, onOpen, onClose } = useDisclosure();
   return {
     isOpenView: isOpen,
     onOpenView: onOpen,
     onCloseView: onClose,
-    ...rest,
   };
 };
 
 const Index = () => {
+  
   const { t } = useTranslation();
+
   // ==== State Modal Management ====
   const { isOpenView, onOpenView, onCloseView } = useViewClosure();
 
   // ==== State Management ====
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const debouncedSearchKeyword = useDebounce(searchKeyword, 500);
   const [viewRow, setViewRow] = useState<any>(null);
 
   // ==== Pagination State ====
@@ -32,16 +35,17 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== Fetch Data with useFetch ====
+  // ================= Start Data Fetching Block =================
+
   const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(
-    searchKeyword.trim() === "" ? "/user/list" : "/user/search", 
+    debouncedSearchKeyword.trim() === "" ? "/user/list" : "/user/search", 
     {
       params: {
         page: pagination.page,
         limit: pagination.limit,
-        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }), // add keyword only for search
+        ...(debouncedSearchKeyword.trim() !== "" && { keyword: debouncedSearchKeyword }), 
       },
-      deps: [pagination.page, pagination.limit, searchKeyword], // trigger when keyword changes
+      deps: [pagination.page, pagination.limit, debouncedSearchKeyword],
     }
   );
   
@@ -54,7 +58,12 @@ const Index = () => {
   const rows = dataRows || [];
   const totalPage = Math.ceil((data?.data?.total || 0) / pagination.limit) || 1;
 
-  // ==== Columns Definitions ====
+  // ================= End Data Fetching Block =================
+
+
+
+  // ================= Start Table Configuration Block =================
+
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
@@ -66,9 +75,21 @@ const Index = () => {
     [t],
   );
 
-  const visibleCols = [ "id",  "username", "email", "role", "actions"];
+  const visibleCols = [
+    "id",
+    "username",
+    "email",
+    "role",
+    "actions"
+  ];
 
-  // ==== Search Input Handlers ====
+  // ================= End Table Configuration Block =================
+
+
+  // ================= Start Event Handlers Block =================
+
+  const { mutate: deleteUser } = useMutation();
+
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchKeyword(e.target.value);
     setPagination((prev) => ({ ...prev, page: 1 }));
@@ -79,18 +100,6 @@ const Index = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  // ==== Handle Create/Edit/View/Delete ====
-
-  const { mutate: deleteFaculty } = useMutation({
-    onSuccess: () => {
-      refetch();
-      ShowToast({ color: "success", title: "Success", description: "Faculty deleted successfully" });
-    },
-    onError: (err) => {
-      ShowToast({ color: "error", title: "Error", description: err.message || "Failed to delete faculty" });
-    },
-  });
-  
 
   const onView = (row: object) => {
     setViewRow(row);
@@ -98,20 +107,26 @@ const Index = () => {
   };
 
   const onDelete = async (id: number) => {
-    await deleteFaculty(`/user/${id}`, id, "DELETE");
-  };
-  
+    try {
 
+      await deleteUser(`/user/${id}`, id, "DELETE");
+      await refetch();
+      ShowToast({ color: "success", title: "Success", description: "User deleted successfully" });
 
-  const viewProps = {
-    isOpen: isOpenView,
-    onClose: onCloseView,
-    row: viewRow,
+    } catch (error) {
+
+      console.error(error);
+      ShowToast({ color: "error", title: "Error", description: "Failed to delete user" });
+
+    }
   };
+
+  // ================= End Event Handlers Block =================
+
 
   return (
     <div className="p-4">
-      <View {...viewProps} />
+      <View isOpen={isOpenView} onClose={onCloseView} row={viewRow} />
 
       <DataTable
         loading={loading}
@@ -120,7 +135,7 @@ const Index = () => {
         visibleCols={visibleCols}
         onView={onView}
         onDelete={(id: number) => onDelete(id)}
-        loadData={refetch} 
+        loadData={refetch}
         selectRow={false}
         permissionCreate="create:user"
         permissionDelete="delete:user"
@@ -129,7 +144,7 @@ const Index = () => {
         searchKeyword={searchKeyword}
         onSearchInputChange={onSearchInputChange}
         handleClearSearch={handleClearSearch}
-        handleSearch={refetch} 
+        handleSearch={refetch}
         initialPage={pagination.page}
         totalPages={totalPage}
         page={pagination.page}

@@ -5,16 +5,19 @@ import Form from "./Form";
 import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
-
+import { useDebounce } from "@/hooks/useDebounce";
 
 const Index = () => {
+  
   const { t } = useTranslation();
+
   // ==== State Modal Management ====
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   // ==== State Management ====
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const debouncedSearchKeyword = useDebounce(searchKeyword, 500);
   const [editRow, setEditRow] = useState<any>(null);
 
   // ==== Pagination State ====
@@ -23,21 +26,22 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== Fetch Data with useFetch ====
+  // ================= Start Data Fetching Block =================
+
   const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(
-    searchKeyword.trim() === "" ? "/schedule/list" : "/schedule/search", 
+    debouncedSearchKeyword.trim() === "" ? "/schedule/list" : "/schedule/search", 
     {
       params: {
         page: pagination.page,
         limit: pagination.limit,
-        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }), 
+        ...(debouncedSearchKeyword.trim() !== "" && { keyword: debouncedSearchKeyword }), 
       },
-      deps: [pagination.page, pagination.limit, searchKeyword], 
+      deps: [pagination.page, pagination.limit, debouncedSearchKeyword],
     }
   );
   
   useEffect(() => {
-    console.log("Fetched data:", data);
+    console.log("Fetched data:", data?.data);
   }, [data]);
   
   // ==== Table Data & Total Pages ====
@@ -45,7 +49,12 @@ const Index = () => {
   const rows = dataRows || [];
   const totalPage = Math.ceil((data?.data?.total || 0) / pagination.limit) || 1;
 
-  // ==== Columns Definitions ====
+  // ================= End Data Fetching Block =================
+
+
+
+  // ================= Start Table Configuration Block =================
+
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
@@ -66,17 +75,16 @@ const Index = () => {
     [t],
   );
 
-  
   const visibleCols = [
-    "class_name", 
-    "room_name", 
-    "faculty_name_en", 
-    "field_name_en", 
-    "program_type", 
-    "term_relative", 
-    "study_year", 
-    "total_students", 
-    "class_status", 
+    "class_name",
+    "room_name",
+    "faculty_name_en",
+    "field_name_en",
+    "program_type",
+    "term_relative",
+    "study_year",
+    "total_students",
+    "class_status",
     "actions"
   ];
 
@@ -85,7 +93,13 @@ const Index = () => {
     { name: "Inactive", uid: "Inactive" },
   ];
 
-  // ==== Search Input Handlers ====
+  // ================= End Table Configuration Block =================
+
+
+  // ================= Start Event Handlers Block =================
+
+  const { mutate: deleteSchedule } = useMutation();
+
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchKeyword(e.target.value);
     setPagination((prev) => ({ ...prev, page: 1 }));
@@ -96,9 +110,6 @@ const Index = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  // ==== Handle Create/Edit/View/Delete ====
-
-  const { mutate: deleteCourse } = useMutation();
 
   const onCreate = () => {
     setIsEdit(false);
@@ -114,29 +125,24 @@ const Index = () => {
   const onDelete = async (id: number) => {
     try {
 
-      await deleteCourse(`/course/${id}`, id, "DELETE");
+      await deleteSchedule(`/course/${id}`, id, "DELETE");
       await refetch();
-      ShowToast({ color: "success", title: "Success", description: "Course deleted successfully" });
+      ShowToast({ color: "success", title: "Success", description: "Schedule deleted successfully" });
 
     } catch (error) {
 
       console.error(error);
-      ShowToast({ color: "error", title: "Error", description: "Failed to delete course" });
+      ShowToast({ color: "error", title: "Error", description: "Failed to delete schedule" });
 
     }
   };
 
-  const formProps = {
-    isOpen,
-    onClose,
-    isEdit,
-    row: editRow,
-    loadList: refetch,
-  };
+  // ================= End Event Handlers Block =================
+
 
   return (
     <div className="p-4">
-      <Form {...formProps} />
+      <Form isOpen={isOpen} onClose={onClose} isEdit={isEdit} row={editRow} loadList={refetch} />
 
       <DataTable
         loading={loading}
@@ -146,16 +152,16 @@ const Index = () => {
         onCreate={onCreate}
         onEdit={onEdit}
         onDelete={(id: number) => onDelete(id)}
-        loadData={refetch} 
+        loadData={refetch}
         selectRow={false}
-        permissionCreate="create:course"
-        permissionDelete="delete:course"
-        permissionEdit="update:course"
-        permissionView="view:course"
+        permissionCreate="create:classschedule"
+        permissionDelete="delete:classschedule"
+        permissionEdit="update:classschedule"
+        permissionView="view:classschedule"
         searchKeyword={searchKeyword}
         onSearchInputChange={onSearchInputChange}
         handleClearSearch={handleClearSearch}
-        handleSearch={refetch} 
+        handleSearch={refetch}
         initialPage={pagination.page}
         totalPages={totalPage}
         page={pagination.page}

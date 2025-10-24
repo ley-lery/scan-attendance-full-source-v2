@@ -19,21 +19,21 @@ const Index = () => {
       <aside
         className={`${
           isSidebarOpen ? "w-20" : "w-64"
-        } transition-all duration-300 ease-in-out flex-shrink-0`}
+        } transition-all duration-300 ease-in-out flex-shrink-0 h-full`}
       >
         <Sidebar toggle={isSidebarOpen} />
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1 min-w-0">
-        {/* Navbar */}
+      <div className="flex flex-col flex-1 min-w-0 h-full">
+        {/* Navbar - Fixed height */}
         <nav className="h-16 w-full flex-shrink-0 z-10">
           <Navbar toggle={handleSidebarToggle} />
         </nav>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-hidden rounded-tl-3xl border-l border-t border-zinc-200 dark:border-zinc-700">
-          <div className="overflow-y-auto has-scrollbar max-h-[calc(100%-0px)]">
+        {/* Main Content - Takes remaining height */}
+        <main className="flex-1 overflow-hidden rounded-tl-3xl border-l border-t border-zinc-200 dark:border-zinc-700 h-[calc(100vh-4rem)]">
+          <div className="h-full overflow-y-auto has-scrollbar *:h-full">
             <Outlet />
           </div>
         </main>

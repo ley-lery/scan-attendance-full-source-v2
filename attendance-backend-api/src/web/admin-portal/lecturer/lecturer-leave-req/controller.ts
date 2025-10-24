@@ -10,6 +10,7 @@ import { ClassModel } from "../../academic/classes/manage-class/model";
 import { UserModel } from "../../manage-user/user/model";
 import { CourseModel } from "../../academic/course/model";
 import { LecturerModel } from "../manage-lecturer/model";
+import { UserListModel } from "../../../form-load";
 
 const model = LecturerLeaveModel;
 
@@ -143,8 +144,8 @@ export const LecturerLeaveController = {
     
     async formLoad(req: FastifyRequest, res: FastifyReply): Promise<void> {
         try {
-            const [courses] = await CourseModel.getAll();
             const [lecturers] = await LecturerModel.getAll();
+            const [users] = await UserListModel.getAll();
             const status = [
                 { value: "Approved", label : "Approved" },
                 { value: "Rejected", label : "Rejected" },
@@ -152,7 +153,7 @@ export const LecturerLeaveController = {
                 { value: "Cancelled", label : "Cancelled" }
             ]
 
-            sendSuccessResponse(res, true, "Form load", { courses: courses, lecturers: lecturers, status: status }, 200);
+            sendSuccessResponse(res, true, "Form load", { lecturers: lecturers, users: users, status: status }, 200);
         } catch (e) {
             handleError(res, e as Error, "Error loading form", 500);
         }

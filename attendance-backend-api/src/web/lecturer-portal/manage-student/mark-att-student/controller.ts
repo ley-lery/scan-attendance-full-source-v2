@@ -86,7 +86,6 @@ export const MarkAttStudentController = {
             
             const [result] = await MarkAttStudentModel.markMultiRecord(data);
 
-            console.log(result)
             const messages = JSON.parse(result?.messages);
             if (messages && messages.length > 0 && messages[0].code === 0) {
                 sendSuccessResponse(res, true, messages, null, 200);
@@ -94,6 +93,7 @@ export const MarkAttStudentController = {
                 res.send({ message: messages[0].message || "Error mark attendance to student" });
             }
         } catch (e: any) {
+            console.log(e)
             handleError(res, e as Error, "Error marking multi records", 500);
         }
     },

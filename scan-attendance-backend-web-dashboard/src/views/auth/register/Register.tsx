@@ -13,6 +13,7 @@ import ThemeSwitcher from "@/components/ui/theme/ThemeSwitch";
 import SwitchTranslate from "@/components/ui/switch/SwitchTranslate";
 import { useMutation } from "@/hooks/useMutation";
 import { Validation } from "@/validations";
+import Particles from "@/components/ui/configs/Particles";
 
 // Types
 type FormType = "Lecturer" | "Student";
@@ -341,12 +342,13 @@ const Register: React.FC = () => {
 
   return (
     <div className="flex min-h-screen justify-center bg-[#fefcff] dark:bg-[#1e1e1e] bg-cover">
-      <TopBar 
+      {/* <TopBar 
         selectedBackground={selectedBackground}
         onBackgroundChange={handleBackgroundChange}
-      />
+      /> */}
       
-      <div className={`absolute inset-0 z-0 ${selectedBackground}`} />
+      {/* <div className={`absolute inset-0 z-0 ${selectedBackground}`} /> */}
+      <Particles/>
       
       <div className="relative grid grid-cols-1 lg:grid-cols-2 place-content-center gap-4 p-4">
         <WelcomeSection />
@@ -357,10 +359,10 @@ const Register: React.FC = () => {
           transition={{ duration: 0.5 }}
           className="flex items-center justify-center"
         >
-          <div className="p-6 dark:bg-zinc-800/50 bg-white/50 backdrop-blur-sm rounded-2xl min-h-[550px] shadow-lg shadow-zinc-200/30 dark:shadow-black/10 max-w-md w-full">
+          <div className="p-6 dark:bg-zinc-800/50 bg-white/50 backdrop-blur-sm rounded-3xl  shadow-lg shadow-zinc-200/30 dark:shadow-black/10 max-w-96">
             <div className="flex items-start justify-between mb-4 gap-10">
               <div>
-                <h1 className="text-lg font-semibold text-zinc-700 dark:text-white">
+                <h1 className="text-lg leading-5 font-semibold text-zinc-700 dark:text-white">
                   {t("createUniversityAccount") || "Create Your University Account"}
                 </h1>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-60">

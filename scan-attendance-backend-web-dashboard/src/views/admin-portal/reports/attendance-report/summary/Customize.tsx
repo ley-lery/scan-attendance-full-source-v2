@@ -757,6 +757,7 @@ const Customize = ({ isOpenReportModal, onCloseReportModal, data, loading }: Cus
       onExport={() => {
         console.log("Export clicked");
       }}
+      scrollBehavior={true}
     >
       <PopoverEdit
         isOpen={isOpenPopover}

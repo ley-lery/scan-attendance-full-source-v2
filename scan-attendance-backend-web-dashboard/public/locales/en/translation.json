@@ -478,6 +478,12 @@
       "lecturerPhone":"Lecturer Phone",
       "approvedInfo":"Approved Information",
       "fullDate":"Full Date",
+      "totalPresent":"Total Present",
+      "totalPermission":"Total Permission",
+      "totalAbsent":"Total Absent",
+      "totalLate":"Total Late",
+      "filterToSeedata":"Filter to see data",
+      "classStatus":"Class Status",
     "validation": {
         "required": "This field is required",
         "mustBePositive": "Value must be positive.",

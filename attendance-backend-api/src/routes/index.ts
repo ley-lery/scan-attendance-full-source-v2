@@ -3,7 +3,7 @@ import { authRoutes } from "../web/auth/user/route";
 import { authenticateToken } from "../middlewares/auth.middleware";
 import { facultyRoutes, fieldRoutes, courseRoutes, programRoutes, lecturerRoutes, lecturerCourseRoutes, studentRoutes, studentClassRoutes, classRoutes, roleRoutes, rolePermissionRoutes, userRoleRoutes, permissionRoutes, userPermissionRoutes, auditLogRoutes, userRoutes, studentLeaveReqRoutes, scheduleRoutes, rptAttSummaryRoutes, aLecturerLeaveReqRoutes, adminMarkAttStudentRoutes } from "../web/admin-portal";
 import { sStudentLeaveReqRoutes, sStudentLeaveHistoryRoutes, studentScheduleRoutes, classAttendanceRecordRoutes, sClassStudentRoutes } from "../web/student-portal";
-import { markAttStudentRoutes, lLecturerCourseRoutes, lecturerManageStudentLeaveRoutes, lLecturerLeaveReqRoutes, lLecturerLeaveHistoryRoutes } from "../web/lecturer-portal/indext";
+import { markAttStudentRoutes, lLecturerCourseRoutes, lecturerManageStudentLeaveRoutes, lLecturerLeaveReqRoutes, lLecturerLeaveHistoryRoutes, lLecturerScheduleRoutes, lLecturerMyClassesRoutes, lStudentAttendanceReportRoutes, lMyClassAttendanceReportRoutes, lStudentLeaveReqReportRoutes, lLecturerTeachingSummaryReportRoutes } from "../web/lecturer-portal/indext";
 
 export default async function (fastify: FastifyInstance) {
 
@@ -29,7 +29,7 @@ export default async function (fastify: FastifyInstance) {
     fastify.register(lecturerCourseRoutes, { prefix: "v1/api/attendance/lecturercourse" });
     fastify.register(studentRoutes, { prefix: "v1/api/attendance/student" });
     fastify.register(classRoutes, { prefix: "v1/api/attendance/class" });
-    fastify.register(studentClassRoutes, { prefix: "v1/api/attendance/studentclass" });
+    fastify.register(studentClassRoutes, { preix: "v1/api/attendance/studentclass" });
     fastify.register(roleRoutes, { prefix: "v1/api/attendance/role" });
     fastify.register(rolePermissionRoutes, { prefix: "v1/api/attendance/rolepermission" });
     fastify.register(userRoleRoutes, { prefix: "v1/api/attendance/userrole" });
@@ -51,6 +51,12 @@ export default async function (fastify: FastifyInstance) {
     fastify.register(lecturerManageStudentLeaveRoutes, { prefix: "v1/api/attendance/lecturer/student/leavereq" });
     fastify.register(lLecturerLeaveReqRoutes, { prefix: "v1/api/attendance/lecturer/leavereq" });
     fastify.register(lLecturerLeaveHistoryRoutes, { prefix: "v1/api/attendance/lecturer/leavehistory" });
+    fastify.register(lLecturerScheduleRoutes, { prefix: "v1/api/attendance/lecturer/schedule" });
+    fastify.register(lLecturerMyClassesRoutes, { prefix: "v1/api/attendance/lecturer/myclasses" });
+    fastify.register(lStudentAttendanceReportRoutes, { prefix: "v1/api/attendance/lecturer/report/studentatt" });
+    fastify.register(lMyClassAttendanceReportRoutes, { prefix: "v1/api/attendance/lecturer/report/myclassatt" });
+    fastify.register(lStudentLeaveReqReportRoutes, { prefix: "v1/api/attendance/lecturer/report/studentleavereq" });
+    fastify.register(lLecturerTeachingSummaryReportRoutes, { prefix: "v1/api/attendance/lecturer/report/teachingsummary" });
 
     // ====== Student Portal Routes =====   
     fastify.register(sStudentLeaveReqRoutes, { prefix: "v1/api/attendance/student/leave" });

@@ -1,19 +1,16 @@
 import { useTranslation } from "react-i18next";
-import { AutocompleteUI, DatePicker } from "@/components/hero-ui";
+import { AutocompleteUI } from "@/components/hero-ui";
 import { DrawerFilter } from "@/components/ui";
-import { type DateValue } from "@internationalized/date";
-import { Divider } from "@heroui/react";
+import { Divider, Radio, RadioGroup } from "@heroui/react";
 import { useFetch } from "@/hooks/useFetch";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface FilterData {
-  class: number | null;
-  status: "Pending" | "Approved" | "Rejected" | "Cancelled" | "";
-  date: DateValue | null;
-  startDate: DateValue | null;
-  endDate: DateValue | null;
-  page: number;
-  limit: number;
+  classId: number | null,
+  course: number | null,
+  status: string | null,
+  page: number,
+  limit: number
 }
 
 interface FilterProps {
@@ -40,74 +37,52 @@ const Filter = ({
   const { t } = useTranslation();
   const [list, setList] = useState<any>({
     classes: [],
-    statuses: [],
+    courses: [],
   });
 
   // ==== Fetch Data with useFetch ====
   const { data: formLoad, loading: formLoadLoading } = useFetch<any>(
-    "/student/leavehistory/formload"
+    "/student/classattendance/formload"
   );
 
   // ==== Get list from form load ====
   useEffect(() => {
-    console.log(formLoad);
+    console.log(formLoad, "formLoad");
     if (formLoad) {
       setList({
         classes: formLoad.data.classes,
-        statuses: formLoad.data.status,
+        courses: formLoad.data.courses,
       });
     }
   }, [formLoad]);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement> ) => {
+      const { name, value } = e.target;
+      setFilter((prev) => ({ ...prev, [name]: value }));
+  };
+
   // ==== Event Handlers ====
   const handleSelectChange = (key: any, field: keyof FilterData) => {
-    setFilter((prev: any) => ({ ...prev, [field]: key }));
+    setFilter((prev) => {
+      const updated = { ...prev, [field]: key };
+
+      if (field === "classId") {
+        updated.course = null;
+      }
+      return updated;
+    });
   };
 
-  const handleDateChange = (field: keyof FilterData, value: DateValue | null) => {
-    setFilter((prev) => ({ ...prev, [field]: value }));
-  };
+  
+  const filteredCourses = useMemo(() => list.courses?.filter((co: any) =>  co.class_id === Number(filter.classId)),
+    [list.courses, filter.classId]
+  );
 
-  // if (!isOpen) return null;
+
 
   return (
     <DrawerFilter isOpen={isOpen} onClose={onClose} title="filter" onApplyFilter={onApplyFilter} onResetFilter={onResetFilter} filterLoading={filterLoading} isLoading={filterLoading || formLoadLoading} loadingType="regular" hideIconLoading={false} isAutoFilter={true}>
       <form className="space-y-4">
-        {/* Date & Time */}
-        <div>
-          <h3 className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
-            {t("dateTimeRange")}
-          </h3>
-          <Divider className="mb-2" />
-          <div className="grid grid-cols-2 gap-4">
-            <DatePicker
-              label={t("startDate")}
-              value={filter.startDate}
-              onChange={(val) => handleDateChange("startDate", val)}
-              maxValue={filter.endDate}
-              labelPlacement="outside"
-              showMonthAndYearPickers
-              size="md"
-              radius="md"
-              classNames={{
-                selectorButton: "p-0",
-              }}
-            />
-            <DatePicker
-              label={t("endDate")}
-              value={filter.endDate}
-              onChange={(val) => handleDateChange("endDate", val)}
-              minValue={filter.startDate}
-              labelPlacement="outside"
-              showMonthAndYearPickers
-              size="md"
-              radius="md"
-              classNames={{
-                selectorButton: "p-0",
-              }}
-            />
-          </div>
-        </div>
         {/* General */}
         <div>
           <h3 className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
@@ -116,26 +91,43 @@ const Filter = ({
           <Divider className="mb-4" />
           <div className="grid grid-cols-1 gap-2">
             <AutocompleteUI
-              name="class"
+              name="classId"
               label={t("class")}
               placeholder={t("chooseClass")}
               options={list.classes}
-              optionLabel="class_name"
-              secondaryOptionLabel="name_kh"
+              optionLabel="label_1"
+              secondaryOptionLabel="label_2"
               optionValue="id"
-              selectedKey={filter.class}
-              onSelectionChange={(key: any) => handleSelectChange(key, "class")}
+              selectedKey={filter.classId}
+              onSelectionChange={(key: any) => handleSelectChange(key, "classId")}
             />
             <AutocompleteUI
-              name="status"
-              label={t("status")}
-              placeholder={t("chooseStatus")}
-              options={list.statuses}
-              optionLabel="label"
-              optionValue="value"
-              selectedKey={filter.status}
-              onSelectionChange={(key: any) => handleSelectChange(key, "status")}
+              name="course"
+              label={t("course")}
+              placeholder={t("chooseCourse")}
+              options={filteredCourses}
+              optionLabel="label_1"
+              secondaryOptionLabel="label_2"
+              optionValue="id"
+              selectedKey={filter.course}
+              onSelectionChange={(key: any) => handleSelectChange(key, "course")}
             />
+            <RadioGroup 
+              className="flex" 
+              classNames={{ label: "text-sm translate-y-2" }} 
+              orientation="horizontal" 
+              label={t("classStatus")}
+              name="status"
+              value={filter.status}
+              onChange={handleInputChange}
+
+            >
+            {["Active", "Inactive"].map((status) => (
+              <div key={status} className="flex items-center gap-2">
+                <Radio value={status} color={status === "Active" ? "primary" : "danger"}>{status}</Radio>
+              </div>
+            ))}
+          </RadioGroup>
           </div>
         </div>
       </form>

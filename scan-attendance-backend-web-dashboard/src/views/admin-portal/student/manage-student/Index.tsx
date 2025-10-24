@@ -6,8 +6,9 @@ import View from "./View";
 import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
+import { useDebounce } from "@/hooks/useDebounce";
 
-// Custom hook for separate view dialog
+// Custom hook modal
 const useViewClosure = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   return {
@@ -18,7 +19,9 @@ const useViewClosure = () => {
 };
 
 const Index = () => {
+  
   const { t } = useTranslation();
+
   // ==== State Modal Management ====
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpenView, onOpenView, onCloseView } = useViewClosure();
@@ -26,6 +29,7 @@ const Index = () => {
   // ==== State Management ====
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const debouncedSearchKeyword = useDebounce(searchKeyword, 500);
   const [editRow, setEditRow] = useState<any>(null);
   const [viewRow, setViewRow] = useState<any>(null);
 
@@ -35,16 +39,17 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== Fetch Data with useFetch ====
+  // ================= Start Data Fetching Block =================
+
   const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(
-    searchKeyword.trim() === "" ? "/student/list" : "/student/search", 
+    debouncedSearchKeyword.trim() === "" ? "/student/list" : "/student/search", 
     {
       params: {
         page: pagination.page,
         limit: pagination.limit,
-        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }), // add keyword only for search
+        ...(debouncedSearchKeyword.trim() !== "" && { keyword: debouncedSearchKeyword }), 
       },
-      deps: [pagination.page, pagination.limit, searchKeyword], // trigger when keyword changes
+      deps: [pagination.page, pagination.limit, debouncedSearchKeyword],
     }
   );
   
@@ -57,7 +62,12 @@ const Index = () => {
   const rows = dataRows || [];
   const totalPage = Math.ceil((data?.data?.total || 0) / pagination.limit) || 1;
 
-  // ==== Columns Definitions ====
+  // ================= End Data Fetching Block =================
+
+
+
+  // ================= Start Table Configuration Block =================
+
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
@@ -74,7 +84,6 @@ const Index = () => {
     [t],
   );
 
-  // ==== Default Visible Columns ====
   const visibleCols = [ "code", "name_en", "name_kh", "email", "phone_number", "dob", "gender", "status", "actions"];
 
   const status = [
@@ -82,7 +91,13 @@ const Index = () => {
     { name: "Inactive", uid: "Inactive" },
   ];
 
-  // ==== Search Input Handlers ====
+  // ================= End Table Configuration Block =================
+
+
+  // ================= Start Event Handlers Block =================
+
+  const { mutate: deleteStudent } = useMutation();
+
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchKeyword(e.target.value);
     setPagination((prev) => ({ ...prev, page: 1 }));
@@ -93,9 +108,6 @@ const Index = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  // ==== Handle Create/Edit/View/Delete ====
-
-  const { mutate: deleteStudent } = useMutation();
 
   const onCreate = () => {
     setIsEdit(false);
@@ -129,23 +141,13 @@ const Index = () => {
     }
   };
 
-  const formProps = {
-    isOpen,
-    onClose,
-    isEdit,
-    row: editRow,
-    loadList: refetch, // call refetch after CRUD
-  };
-  const viewProps = {
-    isOpen: isOpenView,
-    onClose: onCloseView,
-    row: viewRow,
-  };
+  // ================= End Event Handlers Block =================
+
 
   return (
     <div className="p-4">
-      <Form {...formProps} />
-      <View {...viewProps} />
+      <Form isOpen={isOpen} onClose={onClose} isEdit={isEdit} row={editRow} loadList={refetch} />
+      <View isOpen={isOpenView} onClose={onCloseView} row={viewRow} />
 
       <DataTable
         loading={loading}

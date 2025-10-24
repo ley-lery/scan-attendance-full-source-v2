@@ -1,22 +1,22 @@
+// Student Leave Request
 import { useEffect, useMemo, useState, useCallback, type Key } from "react";
 import { useTranslation } from "react-i18next";
-import { DataTable, ShowToast } from "@/components/hero-ui";
-import { getLocalTimeZone, today, type DateValue } from "@internationalized/date";
+import { type DateValue } from "@internationalized/date";
+import { DataTable, ShowToast, Button } from "@/components/hero-ui";
+import { Spinner, type Selection } from "@heroui/react";
 import { useFetch } from "@/hooks/useFetch";
-import { useDisclosure } from "@/god-ui";
-import { Button, Spinner, type Selection } from "@heroui/react";
-import View from "./View";
 import { useMutation } from "@/hooks/useMutation";
-import { IoMdAdd } from "react-icons/io";
-import { IoTrashOutline } from "react-icons/io5";
-import { RxUpdate } from "react-icons/rx";
-import { MdFilterTiltShift } from "react-icons/md";
-import Form from "./Form";
+import { useDisclosure } from "@/god-ui";
+import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
-import Filter from "./Filter";
+import { formatDateValue } from "@/helpers";
+import { MdFilterTiltShift } from "react-icons/md";
 import { FaRegCircle } from "react-icons/fa";
+import View from "./View";
+import Form from "./Form";
+import Filter from "./Filter";
 
-// === Types ===
+// ==== Types ====
 type StudentLeaveFilter = {
   faculty: string | null;
   field: string | null;
@@ -30,10 +30,7 @@ type StudentLeaveFilter = {
   limit: number;
 };
 
-// === Helpers ===
-const formatDateValue = (date: DateValue | null) => (date ? date.toString() : null);
-
-// Custom hooks for modals
+// ==== Custom Hooks for Modal Management ====
 const useViewClosure = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   return { isOpenView: isOpen, onOpenView: onOpen, onCloseView: onClose };
@@ -47,23 +44,23 @@ const useModalClosure = () => {
 const Index = () => {
   const { t } = useTranslation();
 
-  // ==== State Modal Management ====
+  // ==== Modal State ====
   const { isOpenView, onOpenView, onCloseView } = useViewClosure();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpenModal, onOpenModal, onCloseModal } = useModalClosure();
 
   // ==== State Management ====
   const [searchKeyword, setSearchKeyword] = useState("");
+  const debouncedSearchKeyword = useDebounce(searchKeyword, 500);
   const [viewRow, setViewRow] = useState<any>(null);
   const [rows, setRows] = useState<any[]>([]);
   const [isFiltered, setIsFiltered] = useState(false);
   const [isApprove, setIsApprove] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [totalPage, setTotalPage] = useState(1);
-
-  // Row selection state for multiple approve/reject
   const [selectedIds, setSelectedIds] = useState<Selection>(new Set([]));
 
+  // ==== Default Filter ====
   const defaultFilter: StudentLeaveFilter = useMemo(
     () => ({
       faculty: null,
@@ -71,15 +68,14 @@ const Index = () => {
       classId: null,
       student: null,
       status: "",
-      startDate: today(getLocalTimeZone()),
-      endDate: today(getLocalTimeZone()),
+      startDate: null,
+      endDate: null,
       search: null,
       page: 1,
       limit: 10,
     }),
     []
   );
-
   const [filter, setFilter] = useState<StudentLeaveFilter>(defaultFilter);
 
   // ==== Pagination ====
@@ -88,30 +84,37 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
+  // ================= Start Data Fetching Block =================
 
-  // ==== Fetch Data ====
-  const endpoint =
-    searchKeyword.trim() === "" ? "/student/leavereq/list" : "/student/leavereq/search";
-
-  const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(endpoint, {
+  const { data, loading } = useFetch<{ rows: any[]; total_count: number }>("/student/leavereq/list" , {
     params: {
       page: pagination.page,
       limit: pagination.limit,
-      ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }),
     },
-    deps: [pagination.page, pagination.limit, searchKeyword],
-    enabled: !isFiltered, 
+    deps: [pagination.page, pagination.limit],
+    enabled: !isFiltered && debouncedSearchKeyword.trim() === "",
   });
 
   useEffect(() => {
-    console.log("data", data);
-    if (!isFiltered && data?.data) {
+    if (!isFiltered && data?.data && debouncedSearchKeyword.trim() === "") {
       setRows(data.data.rows || []);
       setTotalPage(Math.ceil((data.data.total || 0) / pagination.limit) || 1);
     }
-  }, [data, isFiltered, pagination.limit]);
+  }, [data, isFiltered, pagination.limit, debouncedSearchKeyword]);
 
-  // ==== Table Columns ====
+  // Auto-trigger search when debounced keyword changes
+  useEffect(() => {
+    if (debouncedSearchKeyword.trim() !== "" || isFiltered) {
+      refetch();
+    }
+  }, [debouncedSearchKeyword]);
+
+  // ================= End Data Fetching Block =================
+
+
+
+  // ================= Start Table Configuration Block =================
+  
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
@@ -142,7 +145,6 @@ const Index = () => {
     [t]
   );
 
-  // ==== Default Visible Columns ====
   const visibleCols = [
     "id",
     "student_code",
@@ -164,18 +166,27 @@ const Index = () => {
     { name: "Cancelled", uid: "Cancelled" },
   ];
 
-  // ==== Event Handlers ====
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchKeyword(e.target.value);
-    setIsFiltered(false);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  }, []);
+  // ================= End Table Configuration Block =================
 
-  const handleClearSearch = useCallback(() => {
+
+
+  // ================= Start Event Handlers Block =================
+  
+  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchKeyword(value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleClearSearch = () => {
     setSearchKeyword("");
     setIsFiltered(false);
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, []);
+  };
+
+  const handleSearch = async () => {
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
 
   const handleView = useCallback(
     (row: any) => {
@@ -205,10 +216,14 @@ const Index = () => {
 
   const handleSelectionChange = useCallback((keys: Selection) => {
     setSelectedIds(keys);
-    console.log("Selected IDs:", Array.from(keys).map(Number));
   }, []);
 
-  // ==== Filter Mutations ====
+  // ================= End Event Handlers Block =================
+
+
+
+  // ================= Start Filter Block =================
+
   const { mutate: filterStudentLeave, loading: filterLoading } = useMutation({
     onSuccess: (response) => {
       setRows(response?.data?.rows || []);
@@ -217,10 +232,10 @@ const Index = () => {
       onClose();
     },
     onError: (err) => {
-      ShowToast({
-        color: "error",
-        title: "Error",
-        description: err.message || "Failed to apply filter",
+      ShowToast({ 
+        color: "error", 
+        title: "Error", 
+        description: err.message || "Failed to apply filter" 
       });
     },
   });
@@ -235,133 +250,130 @@ const Index = () => {
         status: filter.status,
         startDate: formatDateValue(filter.startDate),
         endDate: formatDateValue(filter.endDate),
-        search: filter.search,
-        page: page,
+        search: debouncedSearchKeyword?.trim() || null,
+        page,
         limit: pagination.limit,
       };
       await filterStudentLeave(`/student/leavereq/filter`, payload, "POST");
     },
-    [filter, pagination.limit, filterStudentLeave]
+    [filter, pagination.limit, filterStudentLeave, debouncedSearchKeyword]
   );
+
+  const refetch = async () => {
+    const payload = {
+      faculty: filter.faculty ? Number(filter.faculty) : null,
+      field: filter.field ? Number(filter.field) : null,
+      classId: filter.classId ? Number(filter.classId) : null,
+      student: filter.student ? Number(filter.student) : null,
+      status: filter.status,
+      startDate: formatDateValue(filter.startDate),
+      endDate: formatDateValue(filter.endDate),
+      search: debouncedSearchKeyword?.trim() || null,
+      page: pagination.page,
+      limit: pagination.limit,
+    };
+    await filterStudentLeave(`/student/leavereq/filter`, payload, "POST");
+  };
 
   const resetFilter = useCallback(() => {
     setFilter(defaultFilter);
     setIsFiltered(false);
     setPagination((prev) => ({ ...prev, page: 1 }));
     refetch();
-  }, [defaultFilter, refetch]);
+  }, [defaultFilter]);
 
   const applyFilter = useCallback(async () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
     await applyFilterWithPagination(1);
   }, [applyFilterWithPagination]);
 
-  // Handle page changes
   const handlePageChange = useCallback(
     async (newPage: number) => {
       setPagination((prev) => ({ ...prev, page: newPage }));
-
-      if (isFiltered) {
+      if (isFiltered || debouncedSearchKeyword.trim() !== "") {
         await applyFilterWithPagination(newPage);
       }
     },
-    [isFiltered, applyFilterWithPagination]
+    [isFiltered, debouncedSearchKeyword, applyFilterWithPagination]
   );
 
-  // ====== Batch Approve & Reject ======
+  // ================= End Filter Block =================
+
+
+
+  // ================= Start Batch Approve/Reject Block =================
+
   const { mutate: batchAction, loading: batchActionLoading } = useMutation({
     onSuccess: async (res) => {
       await refetch();
       onClose();
       setSelectedIds(new Set([]));
-      ShowToast({
-        color: "success",
-        title: "Success",
-        description:
-          res.response?.data?.message || "Leave request approved successfully",
+      ShowToast({ 
+        color: "success", 
+        title: "Success", 
+        description: res.response?.data?.message || "Leave request approved successfully" 
       });
     },
     onError: (err) => {
-      console.log("Approve error : ", err);
-      ShowToast({
-        color: "error",
-        title: "Error",
-        description:
-          err.response?.data?.message || "Failed to approve leave request",
+      ShowToast({ 
+        color: "error", 
+        title: "Error", 
+        description: err.response?.data?.message || "Failed to approve leave request" 
       });
     },
   });
 
   const batchActionHandler = async (action: string) => {
     const convertSelectedIds = (ids: Key[]) => ids.map(String).join(",");
-    const payload = {
-      leaveIds: convertSelectedIds(Array.from(selectedIds)),
-      action,
-      adminNote: action,
+    const payload = { 
+      leaveIds: convertSelectedIds(Array.from(selectedIds)), 
+      action, 
+      adminNote: action 
     };
-    console.log(payload, "payload");
     await batchAction(`/student/leavereq/batch`, payload, "POST");
   };
 
-  // ==== Column Customize ====
-  const actionIcon = (action: string) => {
-    switch (action) {
-      case "INSERT":
-        return <IoMdAdd />;
-      case "UPDATE":
-        return <RxUpdate />;
-      case "DELETE":
-        return <IoTrashOutline />;
-      default:
-        return <IoMdAdd />;
-    }
-  };
+  // ================= End Batch Approve/Reject Block =================
 
-  const customizeColAction = useCallback((data: any) => {
-    return (
-      <span
-        className={cn(
-          "px-3 py-1 rounded-full w-fit text-xs/tight font-medium inline-flex items-center gap-2",
-          data.action === "INSERT" && "text-success bg-success/20",
-          data.action === "UPDATE" && "text-warning bg-warning/20",
-          data.action === "DELETE" && "text-danger bg-danger/20"
-        )}
-      >
-        {actionIcon(data.action)} {data.action}
-      </span>
-    );
-  }, []);
+
+
+  // ================= Start Column Customization Block =================
 
   const customizeColClosed = useCallback((data: any, key: string) => {
     const value = data[key];
     return (
       <span
         className={cn(
-          "flex items-center gap-2",
-          "px-3 py-1 rounded-full w-fit font-medium inline-flex items-center gap-2",
+          "flex items-center gap-2 px-3 py-1 rounded-full w-fit font-medium",
           value === "Closed" && "text-danger bg-danger/20"
         )}
       >
-        {value === "Closed" && <FaRegCircle />}
-        {value}
+        {value === "Closed" && <FaRegCircle />} {value}
       </span>
     );
   }, []);
-  
+
   const colsKeys = useMemo(
     () => [
-      { key: "action", value: customizeColAction },
       { key: "faculty_name_en", value: (data: any) => customizeColClosed(data, "faculty_name_en") },
       { key: "field_name_en", value: (data: any) => customizeColClosed(data, "field_name_en") },
       { key: "class_name", value: (data: any) => customizeColClosed(data, "class_name") },
     ],
-    [customizeColAction, customizeColClosed]
+    [customizeColClosed]
   );
-  
+
+  // ================= End Column Customization Block =================
+
+
+  // ================= Start Table Header Action Block =================
+
   const selectedLength = Array.from(selectedIds).length;
+  const startContent = batchActionLoading ? (<Spinner variant="spinner" color="white" size="sm" />) : (<MdFilterTiltShift size={16} />);
+  const notSeleted = () => ShowToast({ color: "warning", title: "Warning", description: "Please select at least one leave request" });
+  const isDisabled = selectedLength === 0 || batchActionLoading;
 
   const headerAction = (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       {selectedLength > 0 ? (
         <>
           <Button
@@ -369,15 +381,8 @@ const Index = () => {
             size="sm"
             variant="solid"
             color="primary"
-            radius="lg"
-            startContent={
-              batchActionLoading ? (
-                <Spinner variant="spinner" color="white" size="sm" />
-              ) : (
-                <MdFilterTiltShift size={16} />
-              )
-            }
-            isDisabled={Array.from(selectedIds).length === 0 || batchActionLoading}
+            startContent={startContent}
+            isDisabled={isDisabled}
           >
             {t("approve")}
           </Button>
@@ -386,15 +391,8 @@ const Index = () => {
             size="sm"
             variant="solid"
             color="danger"
-            radius="lg"
-            startContent={
-              batchActionLoading ? (
-                <Spinner variant="spinner" color="white" size="sm" />
-              ) : (
-                <MdFilterTiltShift size={16} />
-              )
-            }
-            isDisabled={Array.from(selectedIds).length === 0 || batchActionLoading}
+            startContent={startContent}
+            isDisabled={isDisabled}
           >
             {t("reject")}
           </Button>
@@ -402,35 +400,21 @@ const Index = () => {
       ) : (
         <>
           <Button
-            onPress={() =>
-              ShowToast({
-                color: "warning",
-                title: "Warning",
-                description: "Please select at least one leave request",
-              })
-            }
+            onPress={notSeleted}
             size="sm"
             variant="solid"
             color="primary"
-            radius="lg"
-            startContent={<MdFilterTiltShift size={16} />}
+            startContent={startContent}
             className="opacity-50 hover:opacity-50"
           >
             {t("approve")}
           </Button>
           <Button
-            onPress={() =>
-              ShowToast({
-                color: "warning",
-                title: "Warning",
-                description: "Please select at least one leave request",
-              })
-            }
+            onPress={notSeleted}
             size="sm"
             variant="solid"
             color="danger"
-            radius="lg"
-            startContent={<MdFilterTiltShift size={16} />}
+            startContent={startContent}
             className="opacity-50 hover:opacity-50"
           >
             {t("reject")}
@@ -439,6 +423,9 @@ const Index = () => {
       )}
     </div>
   );
+
+  // ================= End Table Header Action Block =================
+
 
   return (
     <div className="p-4">
@@ -450,8 +437,6 @@ const Index = () => {
         isApprove={isApprove}
         leaveId={selectedId}
       />
-
-      {/* === Filter Component === */}
       <Filter
         isOpen={isOpen}
         onClose={onClose}
@@ -461,8 +446,6 @@ const Index = () => {
         onResetFilter={resetFilter}
         filterLoading={filterLoading}
       />
-
-      {/* === Table === */}
       <DataTable
         loading={loading || filterLoading}
         dataApi={rows}
@@ -472,28 +455,22 @@ const Index = () => {
         onApprove={handleApprove}
         onReject={handleReject}
         loadData={refetch}
-        selectRow={true}
+        selectRow
         selectedKeys={selectedIds}
         onSelectionChange={handleSelectionChange}
         onOpenFilter={onOpen}
         isFiltered={isFiltered}
         colKeys={colsKeys}
         status={status}
-        permissionCreate="create:auditlog"
-        permissionDelete="delete:auditlog"
-        permissionEdit="update:auditlog"
-        permissionView="view:auditlog"
         searchKeyword={searchKeyword}
-        onSearchInputChange={handleSearchChange}
+        onSearchInputChange={onSearchInputChange}
         handleClearSearch={handleClearSearch}
-        handleSearch={refetch}
+        handleSearch={handleSearch}
         initialPage={pagination.page}
         totalPages={totalPage}
         page={pagination.page}
         onChangePage={handlePageChange}
-        customizes={{
-          header: headerAction,
-        }}
+        customizes={{ header: headerAction }}
       />
     </div>
   );

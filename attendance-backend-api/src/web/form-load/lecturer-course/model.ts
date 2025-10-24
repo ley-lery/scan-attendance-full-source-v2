@@ -3,8 +3,12 @@ import { db } from "../../../index";
 
 export const LecturerCourseListModel = {
 
-    async getAll(): Promise<any> {
-        const [result] = await db.query(`Call sp_course_of_lecturer_list()`);
+    async getAll(lecturer: number, page: number, limit: number): Promise<any> {
+        const [result] = await db.query(`Call sp_lecturer_courses_get(?, ?, ?)`, [lecturer, page, limit]);
+        return result;
+    },
+    async fullList(lecturer: number): Promise<any> {
+        const [result] = await db.query(`Call sp_lecturer_courses_full_list(?)`, [lecturer]);
         return result;
     },
 

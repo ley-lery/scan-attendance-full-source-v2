@@ -11,3 +11,4 @@ export { default as DrawerFilter } from "./drawer/DrawerFilter";
 export { default as ReportHeader } from "./reports/attendance-report/ReportHeader";
 export { default as ReportTable } from "./reports/attendance-report/ReportTable";
 export { default as ReportModal } from "./reports/attendance-report/ReportModal";
+export { Popover, PopoverTrigger, PopoverContent, PopoverCloseWrapper } from "./popover/Popover";

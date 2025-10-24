@@ -1,32 +1,36 @@
+// Lecturer Leave Request
 import { useEffect, useMemo, useState, useCallback, type Key } from "react";
 import { useTranslation } from "react-i18next";
-import { DataTable, ShowToast } from "@/components/hero-ui";
-import { getLocalTimeZone, today, type DateValue } from "@internationalized/date";
+import { type DateValue } from "@internationalized/date";
+import { DataTable, ShowToast, Button } from "@/components/hero-ui";
+import { Spinner, Tooltip, type Selection } from "@heroui/react";
 import { useFetch } from "@/hooks/useFetch";
-import { useDisclosure } from "@/god-ui";
-import { Button, Spinner, Tooltip, type Selection } from "@heroui/react";
-import View from "./View";
 import { useMutation } from "@/hooks/useMutation";
-import { MdFilterTiltShift } from "react-icons/md";
-import Form from "./Form";
+import { useDisclosure } from "@/god-ui";
+import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
-import Filter from "./Filter";
+import { formatDateValue, KhmerDate } from "@/helpers";
+import { MdFilterTiltShift } from "react-icons/md";
 import { FaUser } from "react-icons/fa";
-import { formatDateValue } from "@/helpers";
-import { KhmerDate } from "@/helpers";
+import View from "./View";
+import Form from "./Form";
+import Filter from "./Filter";
 
-// === Types ===
-
+// ==== Types ====
 interface LecturerLeaveFilter {
-  course?: number | null;
   lecturer?: number | null;
-  status?: string;
+  status?: string | null;
   startDate?: DateValue | null;
   endDate?: DateValue | null;
+  requestDate?: DateValue | null;
+  approvedByUser?: number | null;
+  deleted?: boolean | number | null;
+  search?: string | null;
   page?: number;
   limit?: number;
 }
-// Custom hooks for modals
+
+// ==== Custom Hooks for Modal Management ====
 const useViewClosure = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   return { isOpenView: isOpen, onOpenView: onOpen, onCloseView: onClose };
@@ -40,36 +44,38 @@ const useModalClosure = () => {
 const Index = () => {
   const { t } = useTranslation();
 
-  // ==== State Modal Management ====
+  // ==== Modal State ====
   const { isOpenView, onOpenView, onCloseView } = useViewClosure();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpenModal, onOpenModal, onCloseModal } = useModalClosure();
 
   // ==== State Management ====
   const [searchKeyword, setSearchKeyword] = useState("");
+  const debouncedSearchKeyword = useDebounce(searchKeyword, 500);
   const [viewRow, setViewRow] = useState<any>(null);
   const [rows, setRows] = useState<any[]>([]);
   const [isFiltered, setIsFiltered] = useState(false);
   const [isApprove, setIsApprove] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [totalPage, setTotalPage] = useState(1);
-
-  // Row selection state for multiple approve/reject
   const [selectedIds, setSelectedIds] = useState<Selection>(new Set([]));
 
+  // ==== Default Filter ====
   const defaultFilter: LecturerLeaveFilter = useMemo(
     () => ({
-      course: null,
       lecturer: null,
-      status: "",
-      startDate: today(getLocalTimeZone()),
-      endDate: today(getLocalTimeZone()),
+      status: null,
+      startDate: null,
+      endDate: null,
+      requestDate: null,
+      approvedByUser: null,
+      deleted: false,
+      search: "",
       page: 1,
       limit: 10,
     }),
     []
   );
-
   const [filter, setFilter] = useState<LecturerLeaveFilter>(defaultFilter);
 
   // ==== Pagination ====
@@ -78,30 +84,38 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
- 
-  // ==== Fetch Data ====
-  const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(
-    searchKeyword.trim() === "" ? "/admin/lecturer/leavereq/list" : "/admin/lecturer/leavereq/search", 
+
+  // ================= Start Data Fetching Block =================
+
+  const { data, loading } = useFetch<{ rows: any[]; total_count: number }>(
+    "/admin/lecturer/leavereq/list",
     {
-      params: {
-        page: pagination.page,
-        limit: pagination.limit,
-        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }),
-      },
-      deps: [pagination.page, pagination.limit, searchKeyword], 
-      enabled: !isFiltered,
+      params: { page: pagination.page, limit: pagination.limit },
+      deps: [pagination.page, pagination.limit],
+      enabled: !isFiltered && debouncedSearchKeyword.trim() === "",
     }
   );
 
   useEffect(() => {
-    console.log("data", data);
-    if (!isFiltered && data?.data) {
+    if (!isFiltered && data?.data && debouncedSearchKeyword.trim() === "") {
       setRows(data.data.rows || []);
       setTotalPage(Math.ceil((data.data.total || 0) / pagination.limit) || 1);
     }
-  }, [data, isFiltered, pagination.limit]);
+  }, [data, isFiltered, pagination.limit, debouncedSearchKeyword]);
 
-  // ==== Table Columns ====
+  // Auto-trigger search when debounced keyword changes
+  useEffect(() => {
+    if (debouncedSearchKeyword.trim() !== "" || isFiltered) {
+      refetch();
+    }
+  }, [debouncedSearchKeyword]);
+
+  // ================= End Data Fetching Block =================
+
+
+
+  // ================= Start Table Configuration Block =================
+
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
@@ -123,7 +137,6 @@ const Index = () => {
     [t]
   );
 
-  // ==== Default Visible Columns ====
   const visibleCols = [
     "id",
     "lecturer_code",
@@ -145,18 +158,26 @@ const Index = () => {
     { name: "Cancelled", uid: "Cancelled" },
   ];
 
-  // ==== Event Handlers ====
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchKeyword(e.target.value);
-    setIsFiltered(false);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  }, []);
+  // ================= End Table Configuration Block =================
 
-  const handleClearSearch = useCallback(() => {
+
+  // ================= Start Event Handlers Block =================
+
+  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchKeyword(value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleClearSearch = () => {
     setSearchKeyword("");
     setIsFiltered(false);
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, []);
+  };
+
+  const handleSearch = async () => {
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
 
   const handleView = useCallback(
     (row: any) => {
@@ -186,17 +207,20 @@ const Index = () => {
 
   const handleSelectionChange = useCallback((keys: Selection) => {
     setSelectedIds(keys);
-    console.log("Selected IDs:", Array.from(keys).map(Number));
   }, []);
 
-  // ==== Filter Mutations ====
-  const { mutate: filterStudentLeave, loading: filterLoading } = useMutation({
+  // ================= End Event Handlers Block =================
+
+
+
+  // ================= Start Filter Block =================
+
+  const { mutate: filterLecturerLeave, loading: filterLoading } = useMutation({
     onSuccess: (response) => {
       setRows(response?.data?.rows || []);
       setTotalPage(Math.ceil((response?.data?.total || 0) / pagination.limit) || 1);
       setIsFiltered(true);
       onClose();
-      console.log("response", response);
     },
     onError: (err) => {
       ShowToast({
@@ -210,45 +234,69 @@ const Index = () => {
   const applyFilterWithPagination = useCallback(
     async (page: number) => {
       const payload = {
-        course: filter.course ? Number(filter.course) : null,
         lecturer: filter.lecturer ? Number(filter.lecturer) : null,
         status: filter.status,
         startDate: filter.startDate ? formatDateValue(filter.startDate) : null,
         endDate: filter.endDate ? formatDateValue(filter.endDate) : null,
-        page: page,
+        requestDate: filter.requestDate ? formatDateValue(filter.requestDate) : null,
+        approvedByUser: filter.approvedByUser ? Number(filter.approvedByUser) : null,
+        deleted: filter.deleted ? 1 : 0 ? null : null,
+        search: debouncedSearchKeyword?.trim() || null,
+        page,
         limit: pagination.limit,
       };
-      console.log("payload", payload);
-      await filterStudentLeave(`/admin/lecturer/leavereq/filter`, payload, "POST");
+      await filterLecturerLeave(`/admin/lecturer/leavereq/filter`, payload, "POST");
     },
-    [filter, pagination.limit, filterStudentLeave]
+    [filter, pagination.limit, filterLecturerLeave, debouncedSearchKeyword]
   );
+
+  const refetch = async () => {
+    const payload = {
+      lecturer: filter.lecturer ? Number(filter.lecturer) : null,
+      status: filter.status,
+      startDate: filter.startDate ? formatDateValue(filter.startDate) : null,
+      endDate: filter.endDate ? formatDateValue(filter.endDate) : null,
+      requestDate: filter.requestDate ? formatDateValue(filter.requestDate) : null,
+      approvedByUser: filter.approvedByUser ? Number(filter.approvedByUser) : null,
+      deleted: filter.deleted ? 1 : 0 ? null : null,
+      search: debouncedSearchKeyword?.trim() || null,
+      page: pagination.page,
+      limit: pagination.limit,
+    };
+    await filterLecturerLeave(`/admin/lecturer/leavereq/filter`, payload, "POST");
+  };
 
   const resetFilter = useCallback(() => {
     setFilter(defaultFilter);
+    setSearchKeyword("");
     setIsFiltered(false);
     setPagination((prev) => ({ ...prev, page: 1 }));
-    refetch();
-  }, [defaultFilter, refetch]);
+  }, [defaultFilter]);
 
   const applyFilter = useCallback(async () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
     await applyFilterWithPagination(1);
   }, [applyFilterWithPagination]);
 
-  // Handle page changes
+
+  // ==== Pagination Handler ====
   const handlePageChange = useCallback(
     async (newPage: number) => {
       setPagination((prev) => ({ ...prev, page: newPage }));
-
-      if (isFiltered) {
+      if (isFiltered || debouncedSearchKeyword.trim() !== "") {
         await applyFilterWithPagination(newPage);
       }
     },
-    [isFiltered, applyFilterWithPagination]
+    [isFiltered, debouncedSearchKeyword, applyFilterWithPagination]
   );
 
-  // ====== Batch Approve & Reject ======
+  // ================= End Filter Block =================
+
+
+
+  // ================= Start Batch Approve/Reject Block =================
+
+  // ==== Batch Approve/Reject ====
   const { mutate: batchAction, loading: batchActionLoading } = useMutation({
     onSuccess: async (res) => {
       await refetch();
@@ -257,17 +305,14 @@ const Index = () => {
       ShowToast({
         color: "success",
         title: "Success",
-        description:
-          res.response?.data?.message || "Leave request approved successfully",
+        description: res.response?.data?.message || "Leave request updated successfully",
       });
     },
     onError: (err) => {
-      console.log("Approve error : ", err);
       ShowToast({
         color: "error",
         title: "Error",
-        description:
-          err.response?.data?.message || "Failed to approve leave request",
+        description: err.response?.data?.message || "Failed to update leave request",
       });
     },
   });
@@ -279,54 +324,60 @@ const Index = () => {
       action,
       adminNote: action,
     };
-    console.log(payload, "payload");
     await batchAction(`/admin/lecturer/leavereq/batch`, payload, "POST");
   };
 
-  // ==== Column Customize ====
+  // ================= End Batch Approve/Reject Block =================
+
+
+
+  // ================= Start Column Customization Block =================
+
   const customizeCols = useCallback((data: any, key: string) => {
     const value = data[key];
     return (
       <span
         className={cn(
-          "flex items-center gap-2",
-          "px-3 py-1 rounded-full w-fit text-xs/tight font-medium inline-flex items-center gap-2",
-          value === "Unassigned" && "text-danger bg-danger/20",
-          value !== "Unassigned" && "text-primary bg-primary/20"
+          "flex items-center gap-2 px-3 py-1 rounded-full w-fit text-xs/tight font-medium",
+          value === "Unassigned" ? "text-danger bg-danger/20" : "text-primary bg-primary/20"
         )}
       >
         <FaUser /> {value}
       </span>
     );
   }, []);
-  const customizeColTotalDays = useCallback((data: any, key: string) => {
-    const value = data[key];
-    return (
-      <span
-        className={cn(
-          "flex items-center gap-2",
-          "px-3 py-1 rounded-full w-fit text-xs/tight font-semibold inline-flex items-center gap-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400",
-        )}
-      >
-        {value} {value > 1 ? t("days") : t("day")}
-      </span>
-    );
-  }, []);
+
+  const customizeColTotalDays = useCallback(
+    (data: any, key: string) => {
+      const value = data[key];
+      return (
+        <span className="flex items-center gap-2 px-3 py-1 rounded-full w-fit text-xs/tight font-semibold bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+          {value} {value > 1 ? t("days") : t("day")}
+        </span>
+      );
+    },
+    [t]
+  );
+
   const customizeColDate = useCallback((data: any, key: string) => {
     const value = data[key];
     return (
-      <Tooltip content={<KhmerDate date={value} withDayName /> } placement="top" closeDelay={0} delay={0} color="primary" classNames={{base: "pointer-events-none"}}>
+      <Tooltip
+        content={<KhmerDate date={value} withDayName />}
+        placement="top"
+        closeDelay={0}
+        delay={0}
+        color="primary"
+        classNames={{ base: "pointer-events-none" }}
+      >
         {value}
       </Tooltip>
     );
   }, []);
+
   const customizeColNull = useCallback((data: any, key: string) => {
     const value = data[key];
-    return (
-      <span>
-        {value || "N/A"}
-      </span>
-    );
+    return <span>{value || "N/A"}</span>;
   }, []);
 
   const colsKeys = useMemo(
@@ -339,13 +390,23 @@ const Index = () => {
       { key: "approval_date", value: (data: any) => customizeColNull(data, "approval_date") },
       { key: "reason_preview", value: (data: any) => customizeColNull(data, "reason_preview") },
     ],
-    [customizeCols]
+    [customizeCols, customizeColDate, customizeColTotalDays, customizeColNull]
   );
-  
+
+  // ================= End Column Customization Block =================
+
+
+
+  // ================= Start Table Header Action Block =================
+
   const selectedLength = Array.from(selectedIds).length;
 
+  const startContent = batchActionLoading ? (<Spinner variant="spinner" color="white" size="sm" />) : (<MdFilterTiltShift size={16} />);
+  const notSeleted = () => ShowToast({ color: "warning", title: "Warning", description: "Please select at least one leave request" });
+  const isDisabled = selectedLength === 0 || batchActionLoading;
+
   const headerAction = (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       {selectedLength > 0 ? (
         <>
           <Button
@@ -353,15 +414,8 @@ const Index = () => {
             size="sm"
             variant="solid"
             color="primary"
-            radius="lg"
-            startContent={
-              batchActionLoading ? (
-                <Spinner variant="spinner" color="white" size="sm" />
-              ) : (
-                <MdFilterTiltShift size={16} />
-              )
-            }
-            isDisabled={Array.from(selectedIds).length === 0 || batchActionLoading}
+            startContent={ startContent }
+            isDisabled={isDisabled}
           >
             {t("approve")}
           </Button>
@@ -370,15 +424,8 @@ const Index = () => {
             size="sm"
             variant="solid"
             color="danger"
-            radius="lg"
-            startContent={
-              batchActionLoading ? (
-                <Spinner variant="spinner" color="white" size="sm" />
-              ) : (
-                <MdFilterTiltShift size={16} />
-              )
-            }
-            isDisabled={Array.from(selectedIds).length === 0 || batchActionLoading}
+            startContent={ startContent }
+            isDisabled={isDisabled}
           >
             {t("reject")}
           </Button>
@@ -386,34 +433,20 @@ const Index = () => {
       ) : (
         <>
           <Button
-            onPress={() =>
-              ShowToast({
-                color: "warning",
-                title: "Warning",
-                description: "Please select at least one leave request",
-              })
-            }
+            onPress={notSeleted}
             size="sm"
             variant="solid"
             color="primary"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             className="opacity-50 hover:opacity-50"
           >
             {t("approve")}
           </Button>
           <Button
-            onPress={() =>
-              ShowToast({
-                color: "warning",
-                title: "Warning",
-                description: "Please select at least one leave request",
-              })
-            }
+            onPress={notSeleted}
             size="sm"
             variant="solid"
             color="danger"
-            radius="lg"
             startContent={<MdFilterTiltShift size={16} />}
             className="opacity-50 hover:opacity-50"
           >
@@ -423,6 +456,8 @@ const Index = () => {
       )}
     </div>
   );
+
+  // ================= End Table Header Action Block =================
 
   return (
     <div className="p-4">
@@ -434,8 +469,6 @@ const Index = () => {
         isApprove={isApprove}
         leaveId={selectedId}
       />
-
-      {/* === Filter Component === */}
       <Filter
         isOpen={isOpen}
         onClose={onClose}
@@ -445,8 +478,6 @@ const Index = () => {
         onResetFilter={resetFilter}
         filterLoading={filterLoading}
       />
-
-      {/* === Table === */}
       <DataTable
         loading={loading || filterLoading}
         dataApi={rows}
@@ -468,16 +499,14 @@ const Index = () => {
         permissionEdit="update:auditlog"
         permissionView="view:auditlog"
         searchKeyword={searchKeyword}
-        onSearchInputChange={handleSearchChange}
+        onSearchInputChange={onSearchInputChange}
         handleClearSearch={handleClearSearch}
-        handleSearch={refetch}
+        handleSearch={handleSearch}
         initialPage={pagination.page}
         totalPages={totalPage}
         page={pagination.page}
         onChangePage={handlePageChange}
-        customizes={{
-          header: headerAction,
-        }}
+        customizes={{ header: headerAction }}
       />
     </div>
   );

@@ -6,20 +6,20 @@ import View from "./View";
 import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
+import { useDebounce } from "@/hooks/useDebounce";
 
-// Custom hook for separate view dialog
+// Custom hook modal
 const useViewClosure = () => {
-  const { isOpen, onOpen, onClose, ...rest } = useDisclosure();
+  const { isOpen, onOpen, onClose } = useDisclosure();
   return {
     isOpenView: isOpen,
     onOpenView: onOpen,
     onCloseView: onClose,
-    ...rest,
   };
 };
 
 const Index = () => {
-
+  
   const { t } = useTranslation();
 
   // ==== State Modal Management ====
@@ -29,6 +29,7 @@ const Index = () => {
   // ==== State Management ====
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const debouncedSearchKeyword = useDebounce(searchKeyword, 500);
   const [editRow, setEditRow] = useState<any>(null);
   const [viewRow, setViewRow] = useState<any>(null);
 
@@ -38,16 +39,17 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== Fetch Data with useFetch ====
+  // ================= Start Data Fetching Block =================
+
   const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(
-    searchKeyword.trim() === "" ? "/program/list" : "/program/search", 
+    debouncedSearchKeyword.trim() === "" ? "/program/list" : "/program/search", 
     {
       params: {
         page: pagination.page,
         limit: pagination.limit,
-        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }), // add keyword only for search
+        ...(debouncedSearchKeyword.trim() !== "" && { keyword: debouncedSearchKeyword }), 
       },
-      deps: [pagination.page, pagination.limit, searchKeyword], // trigger when keyword changes
+      deps: [pagination.page, pagination.limit, debouncedSearchKeyword],
     }
   );
   
@@ -60,45 +62,49 @@ const Index = () => {
   const rows = dataRows || [];
   const totalPage = Math.ceil((data?.data?.total || 0) / pagination.limit) || 1;
 
-  // ==== Columns Definitions ====
+  // ================= End Data Fetching Block =================
+
+
+
+  // ================= Start Table Configuration Block =================
+
   const cols = useMemo(
     () => [
-      { name: "1", uid: "id", sortable: true },
-      { name: "programType", uid: "program_type", sortable: true },
-      { name: "facultyCode", uid: "faculty_code", sortable: true },
-      { name: "facultyNameKh", uid: "faculty_name_kh" },
-      { name: "facultyNameEn", uid: "faculty_name_en", sortable: true },
-      { name: "fieldId", uid: "field_id", sortable: true },
-      { name: "fieldCode", uid: "field_code", sortable: true },
-      { name: "fieldNameKh", uid: "field_name_kh" },
-      { name: "fieldNameEn", uid: "field_name_en", sortable: true },
-      { name: "courseId", uid: "course_id", sortable: true },
-      { name: "courseCode", uid: "course_code", sortable: true },
-      { name: "courseNameKh", uid: "course_name_kh" },
-      { name: "courseNameEn", uid: "course_name_en", sortable: true },
-      { name: "promotionNo", uid: "promotion_no", sortable: true },
-      { name: "termNo", uid: "term_no", sortable: true },
-      { name: "credits", uid: "credits", sortable: true },
-      { name: "status", uid: "status", sortable: true },
-      { name: "deletedDate", uid: "deleted_date" },
+      { name: t("id"), uid: "id", sortable: true },
+      { name: t("programType"), uid: "program_type", sortable: true },
+      { name: t("facultyCode"), uid: "faculty_code", sortable: true },
+      { name: t("facultyNameKh"), uid: "faculty_name_kh" },
+      { name: t("facultyNameEn"), uid: "faculty_name_en", sortable: true },
+      { name: t("fieldId"), uid: "field_id", sortable: true },
+      { name: t("fieldCode"), uid: "field_code", sortable: true },
+      { name: t("fieldNameKh"), uid: "field_name_kh" },
+      { name: t("fieldNameEn"), uid: "field_name_en", sortable: true },
+      { name: t("courseId"), uid: "course_id", sortable: true },
+      { name: t("courseCode"), uid: "course_code", sortable: true },
+      { name: t("courseNameKh"), uid: "course_name_kh" },
+      { name: t("courseNameEn"), uid: "course_name_en", sortable: true },
+      { name: t("promotionNo"), uid: "promotion_no", sortable: true },
+      { name: t("termNo"), uid: "term_no", sortable: true },
+      { name: t("credits"), uid: "credits", sortable: true },
+      { name: t("status"), uid: "status", sortable: true },
+      { name: t("deletedDate"), uid: "deleted_date" },
       { name: t("action"), uid: "actions" },
     ],
     [t],
   );
 
-  // ==== Default Visible Columns ====
-  const visibleCols = [ 
-    "program_type",  
-    "faculty_name_en", 
-    "faculty_name_kh", 
-    "field_name_en",  
-    "field_name_kh", 
-    "course_name_en", 
-    "course_name_kh", 
-    "promotion_no", 
-    "term_no", 
-    "credits", 
-    "status", 
+  const visibleCols = [
+    "program_type",
+    "faculty_name_en",
+    "faculty_name_kh",
+    "field_name_en",
+    "field_name_kh",
+    "course_name_en",
+    "course_name_kh",
+    "promotion_no",
+    "term_no",
+    "credits",
+    "status",
     "actions"
   ];
 
@@ -107,7 +113,13 @@ const Index = () => {
     { name: "Inactive", uid: "Inactive" },
   ];
 
-  // ==== Search Input Handlers ====
+  // ================= End Table Configuration Block =================
+
+
+  // ================= Start Event Handlers Block =================
+
+  const { mutate: deleteProgram } = useMutation();
+
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchKeyword(e.target.value);
     setPagination((prev) => ({ ...prev, page: 1 }));
@@ -118,9 +130,6 @@ const Index = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  // ==== Handle Create/Edit/View/Delete ====
-
-  const { mutate: deleteProgram } = useMutation();
 
   const onCreate = () => {
     setIsEdit(false);
@@ -154,23 +163,13 @@ const Index = () => {
     }
   };
 
-  const formProps = {
-    isOpen,
-    onClose,
-    isEdit,
-    row: editRow,
-    loadList: refetch, // call refetch after CRUD
-  };
-  const viewProps = {
-    isOpen: isOpenView,
-    onClose: onCloseView,
-    row: viewRow,
-  };
+  // ================= End Event Handlers Block =================
+
 
   return (
     <div className="p-4">
-      <Form {...formProps} />
-      <View {...viewProps} />
+      <Form isOpen={isOpen} onClose={onClose} isEdit={isEdit} row={editRow} loadList={refetch} />
+      <View isOpen={isOpenView} onClose={onCloseView} row={viewRow} />
 
       <DataTable
         loading={loading}
@@ -190,7 +189,7 @@ const Index = () => {
         searchKeyword={searchKeyword}
         onSearchInputChange={onSearchInputChange}
         handleClearSearch={handleClearSearch}
-        handleSearch={refetch} 
+        handleSearch={refetch}
         initialPage={pagination.page}
         totalPages={totalPage}
         page={pagination.page}

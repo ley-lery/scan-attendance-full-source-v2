@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable, ShowToast } from "@/components/hero-ui";
 import View from "./View";
+import Permission from "./Permission";
 import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
-import Permission from "./Permission";
+import { useDebounce } from "@/hooks/useDebounce";
 
-// Custom hook for separate view dialog
+// Custom hook modal
 const useViewClosure = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   return {
@@ -27,13 +28,16 @@ const usePermissionClosure = () => {
 };
 
 const Index = () => {
+  
   const { t } = useTranslation();
+
   // ==== State Modal Management ====
   const { isOpenView, onOpenView, onCloseView } = useViewClosure();
   const { isOpenPermission, onOpenPermission, onClosePermission } = usePermissionClosure();
 
   // ==== State Management ====
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const debouncedSearchKeyword = useDebounce(searchKeyword, 500);
   const [viewRow, setViewRow] = useState<any>(null);
   const [roleId, setRoleId] = useState<number | null>(null);
 
@@ -43,16 +47,17 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== Fetch Data with useFetch ====
+  // ================= Start Data Fetching Block =================
+
   const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(
-    searchKeyword.trim() === "" ? "/role/list" : "/role/search", 
+    debouncedSearchKeyword.trim() === "" ? "/role/list" : "/role/search", 
     {
       params: {
         page: pagination.page,
         limit: pagination.limit,
-        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }), // add keyword only for search
+        ...(debouncedSearchKeyword.trim() !== "" && { keyword: debouncedSearchKeyword }), 
       },
-      deps: [pagination.page, pagination.limit, searchKeyword], // trigger when keyword changes
+      deps: [pagination.page, pagination.limit, debouncedSearchKeyword],
     }
   );
   
@@ -65,7 +70,12 @@ const Index = () => {
   const rows = dataRows || [];
   const totalPage = Math.ceil((data?.data?.total || 0) / pagination.limit) || 1;
 
-  // ==== Columns Definitions ====
+  // ================= End Data Fetching Block =================
+
+
+
+  // ================= Start Table Configuration Block =================
+
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
@@ -76,9 +86,19 @@ const Index = () => {
     [t],
   );
 
-  const visibleCols = ["name", "description", "actions"];
+  const visibleCols = [
+    "name",
+    "description",
+    "actions"
+  ];
 
-  // ==== Search Input Handlers ====
+  // ================= End Table Configuration Block =================
+
+
+  // ================= Start Event Handlers Block =================
+
+  const { mutate: deletePermission } = useMutation();
+
   const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchKeyword(e.target.value);
     setPagination((prev) => ({ ...prev, page: 1 }));
@@ -89,12 +109,15 @@ const Index = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  // ==== Handle Create/Edit/View/Delete ====
-  const { mutate: deletePermission } = useMutation();
 
   const onView = (row: object) => {
     setViewRow(row);
     onOpenView();
+  };
+
+  const onPermission = (id: number) => {
+    setRoleId(id);
+    onOpenPermission();
   };
 
   const onDelete = async (id: number) => {
@@ -112,23 +135,13 @@ const Index = () => {
     }
   };
 
-  const onPermission = (id: number) => {
-    onOpenPermission();
-    setRoleId(id);
-  };
+  // ================= End Event Handlers Block =================
 
-  const viewProps = {
-    isOpen: isOpenView,
-    onClose: onCloseView,
-    row: viewRow,
-  };
 
- 
   return (
     <div className="p-4">
-
-      <View {...viewProps} />
-      <Permission isOpen={isOpenPermission} onClose={onClosePermission} roleId={roleId}/>
+      <View isOpen={isOpenView} onClose={onCloseView} row={viewRow} />
+      <Permission isOpen={isOpenPermission} onClose={onClosePermission} roleId={roleId} />
 
       <DataTable
         loading={loading}

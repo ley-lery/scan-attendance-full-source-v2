@@ -20,6 +20,7 @@ interface Props {
   textValue?: any;
   itemStartContent?: React.ReactNode;
   itemEndContent?: React.ReactNode;
+  isDisabled?: boolean;
 }
 
 export const AutocompleteUI = ({
@@ -38,6 +39,7 @@ export const AutocompleteUI = ({
   textValue,
   itemStartContent,
   itemEndContent,
+  isDisabled = false,
   ...props
 }: Props ) => {
   return (
@@ -53,6 +55,7 @@ export const AutocompleteUI = ({
       defaultItems={options}
       isRequired={isRequired}
       onSelectionChange={onSelectionChange}
+      isDisabled={isDisabled}
       inputProps={{
         classNames: {
           inputWrapper: `autocomplete-${size}-ui`,

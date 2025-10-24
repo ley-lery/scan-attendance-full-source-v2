@@ -3,32 +3,19 @@ import { useTranslation } from "react-i18next";
 import { useFetch } from "@/hooks/useFetch";
 import { DataTable, ShowToast } from "@/components/hero-ui";
 import { useDisclosure } from "@/god-ui";
-import { getLocalTimeZone, today, type DateValue } from "@internationalized/date";
-import { formatDateValue } from "@/helpers";
 import { useMutation } from "@/hooks/useMutation";
 import Filter from "./Filter";
 import { cn } from "@/lib/utils";
 import View from "./View";
 
 interface FilterData {
-  class: number | null;
-  status: "Pending" | "Approved" | "Rejected" | "Cancelled" | "";
-  date: DateValue | null;
-  startDate: DateValue | null;
-  endDate: DateValue | null;
-  page: number;
-  limit: number;
+  classId: number | null,
+  course: number | null,
+  status: string | null,
+  page: number,
+  limit: number
 }
 
-const defaultFilter: FilterData = {
-  class: null,
-  status: "",
-  date: today(getLocalTimeZone()),
-  startDate: today(getLocalTimeZone()),
-  endDate: today(getLocalTimeZone()),
-  page: 1,
-  limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
-};
 
 // Custom hook for separate view dialog
 const useViewClosure = () => {
@@ -49,27 +36,30 @@ const Index = () => {
   // ==== State Management ====
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [isFiltered, setIsFiltered] = useState<boolean>(false);
-  const [filter, setFilter] = useState<FilterData>(defaultFilter);
   const [filteredData, setFilteredData] = useState<{ rows: any[]; total: number } | null>(null);
   const [viewRow, setViewRow] = useState<any>(null);
-
+  
   // ==== Pagination State ====
   const [pagination, setPagination] = useState({
     page: 1,
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
+  
+  const defaultFilter: FilterData = {
+    classId: null,
+    course: null,
+    status: null,
+    page: 1,
+    limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
+  };
+
+  const [filter, setFilter] = useState<FilterData>(defaultFilter);
 
   // ==== Mutation ====
   const { mutate: filterAction, loading: filterLoading } = useMutation({
     onSuccess: (response) => {
       console.log(response, "response");
       onClose();
-      ShowToast({
-        color: "success",
-        title: "Success",
-        description: response?.message || "Filter applied successfully",
-      });
-
       // Store filtered data
       setFilteredData({
         rows: response?.data?.rows || [],
@@ -79,21 +69,13 @@ const Index = () => {
     },
     onError: (err) => {
       console.log(err);
-      ShowToast({
-        color: "error",
-        title: "Error",
-        description: err?.message || "Failed to apply filter",
-      });
+      ShowToast({ color: "error", title: "Error", description: err?.message || "Failed to apply filter" });
     },
   });
 
 
 
-  const {
-    data: dataList,
-    loading: loadingList,
-    refetch: refetchList,
-  } = useFetch<{ rows: any[]; total_count: number }>(
+  const { data: dataList, loading: loadingList, refetch: refetchList } = useFetch<{ rows: any[]; total_count: number }>(
     searchKeyword.trim() === "" ? "/student/classattendance/list" : "/student/classattendance/search",
     {
       params: {
@@ -177,19 +159,17 @@ const Index = () => {
   const onFilter = async () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
 
-    const payload = {
-      classId: filter.class,
-      status: filter.status,
-      date: formatDateValue(filter.date),
-      startDate: formatDateValue(filter.startDate),
-      endDate: formatDateValue(filter.endDate),
+    const payload: FilterData = {
+      classId: filter.classId ? Number(filter.classId) : null,
+      course: filter.course ? Number(filter.course) : null,
+      status: filter.status || null,
       page: 1,
       limit: pagination.limit,
     };
 
     console.log(payload, "payload");
 
-    await filterAction(`/student/leavehistory/filter`, payload, "POST");
+    await filterAction(`/student/classattendance/filter`, payload, "POST");
   };
 
   // Handle pagination changes for filtered data
@@ -197,17 +177,15 @@ const Index = () => {
     setPagination((prev) => ({ ...prev, page: newPage }));
 
     if (isFiltered) {
-      const payload = {
-        classId: filter.class,
-        status: filter.status,
-        date: formatDateValue(filter.date),
-        startDate: formatDateValue(filter.startDate),
-        endDate: formatDateValue(filter.endDate),
+      const payload: FilterData = {
+        classId: filter.classId ? Number(filter.classId) : null,
+        course: filter.course ? Number(filter.course) : null,
+        status: filter.status || null,
         page: newPage,
         limit: pagination.limit,
       };
 
-      await filterAction(`/student/leavehistory/filter`, payload, "POST");
+      await filterAction(`/student/classattendance/filter`, payload, "POST");
     }
   };
 

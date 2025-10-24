@@ -100,6 +100,7 @@ const STATUS_COLOR_MAP: Record<string, ChipProps["color"]> = {
   Active: "success",
   Inactive: "danger",
   Cancelled: "secondary",
+  Transferred: "warning",
 };
 
 //  Memoize class names
@@ -256,6 +257,7 @@ interface TableControlsProps {
   permissionCreate?: string;
   permissionRequest?: string;
   customHeader?: React.ReactNode;
+  isLoading?: boolean;
   t: any;
 }
 
@@ -277,6 +279,7 @@ const TableControls = memo(({
   permissionCreate,
   permissionRequest,
   customHeader,
+  isLoading,
   t,
 }: TableControlsProps) => {
   const capitalize = useCallback(
@@ -304,7 +307,7 @@ const TableControls = memo(({
             input: "px-2 font-normal",
           }}
           radius="md"
-          startContent={<CiSearch className="text-lg text-default-500" />}
+          startContent={isLoading ? <Spinner size="sm" variant="default" color="warning"/> : <CiSearch className="text-lg text-default-500" />}
         />
       </div>
       <div className="flex gap-1">
@@ -599,8 +602,8 @@ const DataTable = memo(({
 
 
   return (
-    <div className="relative">
-      <div className={cn("flex flex-col gap-4", loading && "opacity-50")}>
+    <div className="relative flex flex-col h-full">
+      <div className={cn("flex flex-col gap-4 flex-shrink-0", loading && "opacity-50")}>
         <TableControls
           searchKeyword={searchKeyword}
           onSearchInputChange={onSearchInputChange}
@@ -619,6 +622,7 @@ const DataTable = memo(({
           permissionCreate={permissionCreate}
           permissionRequest={permissionRequest}
           customHeader={customizes?.header}
+          isLoading={loading}
           t={t}
         />
         <div className="flex items-center justify-between">
@@ -639,7 +643,10 @@ const DataTable = memo(({
           {/* </div> */}
         </div>
       )}
-      <div className={cn("has-scrollbar overflow-hidden overflow-x-auto transition-all duration-300 pb-4 mb-4", loading && "opacity-50")} style={{ minHeight: 'calc(100vh - 14rem)', maxHeight: 'calc(100vh - 14rem)' }}>
+      <div className={cn(
+        "flex-1 has-scrollbar overflow-hidden overflow-x-auto transition-all duration-300 my-4",
+        loading && "opacity-50"
+      )}>        
         <Table
           isCompact
           removeWrapper
@@ -681,7 +688,10 @@ const DataTable = memo(({
           </TableBody>
         </Table>
       </div>
-      <div className={cn("flex items-center justify-between", loading && "opacity-50")}>
+      <div className={cn(
+        "flex items-center justify-between flex-shrink-0 pt-4 ",
+        loading && "opacity-50",
+      )}>        
         <Pagination
           initialPage={initialPage}
           variant="light"

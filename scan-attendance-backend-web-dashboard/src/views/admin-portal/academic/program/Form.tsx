@@ -75,11 +75,11 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
         setFormData({
           id: id,
           type: String(row.program_type),
-          faculty: String(row.faculty_id),
-          field: String(row.field_id),
+          faculty: Number(row.faculty_id),
+          field: Number(row.field_id),
           promotionNo: Number(row.promotion_no),
           termNo: Number(row.term_no),
-          course: String(row.course_id),
+          course: Number(row.course_id),
           credits: Number(row.credits),
           status: String(row.status),
         });

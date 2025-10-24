@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Modal, ShowToast,AutocompleteUI } from "@/components/hero-ui";
+import { Modal, ShowToast, AutocompleteUI, MultiSelect } from "@/components/hero-ui";
 import { type FormEvent, type Key, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Validation } from "@/validations/index";
 import { Radio, RadioGroup } from "@heroui/react";
 import { useMutation } from "@/hooks/useMutation";
 import { useFetch } from "@/hooks/useFetch";
@@ -18,26 +17,49 @@ interface FormProps {
 const initialFormData: ClassStudent = {
   id: null,
   classId: null,
-  studentId: null,
+  studentIds: [],
   status: "Active",
 };
 
 const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => {
-
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState<ClassStudent>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const [students, setStudents] = useState<Set<string>>(new Set());
 
   const id = row?.id ?? null;
 
-  const { mutate: createClassStudent, loading: creating } = useMutation();
-  const { mutate: updateClassStudent, loading: updating } = useMutation();
+  const { mutate: createClassStudent, loading: creating } = useMutation({
+    onSuccess(res) {
+      console.log(res, "create");
+      onClose(false);
+      resetForm();
+      loadList?.();
+      ShowToast({ color: "success", description: res?.message[0]?.message });
+    },
+    onError(err) {
+      console.log(err, "create");
+      ShowToast({ color: "error", description: err?.response?.data?.message });
+    },
+  });
 
+  const { mutate: updateClassStudent, loading: updating } = useMutation({
+    onSuccess(res) {
+      console.log(res, "update");
+      onClose(false);
+      resetForm();
+      loadList?.();
+      ShowToast({ color: "success", description: res?.message[0]?.message });
+    },
+    onError(err) {
+      console.log(err, "update");
+      ShowToast({ color: "error", description: err?.response?.data?.message });
+    },
+  });
 
   const { data: formLoad } = useFetch<{ rows: any[]; total_count: number }>("/studentclass/formload");
-
 
   // Load form data when modal opens or row changes
   useEffect(() => {
@@ -46,11 +68,13 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
         setFormData({
           id: id,
           classId: String(row.class_id),
-          studentId: String(row.student_id),
+          studentIds: Array.isArray(row.student_id) ? row.student_id : [String(row.student_id)],
           status: row.status,
         });
+        setStudents(new Set(Array.isArray(row.student_id) ? row.student_id.map(String) : [String(row.student_id)]));
       } else {
         setFormData(initialFormData);
+        setStudents(new Set());
       }
       setErrors({});
       setLoading(false);
@@ -64,44 +88,33 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   };
 
   const onSubmit = async (): Promise<boolean> => {
-    const validationErrors = Validation.ClassStudent(formData, t);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return false;
-    }
-
-    const payload = {
+    const payloadCreate = {
       classId: Number(formData.classId),
-      studentId: Number(formData.studentId),
+      studentIds: Array.from(students).map(String), // convert Set to array of numbers
       status: formData.status,
     };
-    console.log(payload, "payload");
+    
+    const payloadUpdate = {
+      classId: Number(formData.classId),
+      studentId: Number(formData.studentId), // convert Set to array of numbers
+      status: formData.status,
+    };
+    
+
+    setLoading(true);
 
     try {
-
-      setLoading(true);
-
       if (isEdit) {
-        await updateClassStudent(`/studentclass/${id}`, payload, "PUT");
-        ShowToast({ color: "success", description: t("updatedSuccess") });
+        await updateClassStudent(`/studentclass/${id}`, payloadUpdate, "PUT");
       } else {
-        await createClassStudent(`/studentclass`, payload, "POST");
-        ShowToast({ color: "success", description: t("createdSuccess") });
+        await createClassStudent(`/studentclass`, payloadCreate, "POST");
       }
-
-      if (loadList) await loadList();
       resetForm();
-      return true;
-
-    } catch (error: any) {
-
-      console.error("Error saving faculty:", error);
-      ShowToast({ color: "danger", description: error.response.data.message });
-      setErrors({ general: t("error.generic") });
-      return false;
-
-    } finally {
       setLoading(false);
+      return true;
+    } catch {
+      setLoading(false);
+      return false;
     }
   };
 
@@ -124,86 +137,78 @@ const Form = ({ isOpen = false, onClose, loadList, isEdit, row }: FormProps) => 
   const resetForm = () => {
     setFormData(initialFormData);
     setErrors({});
+    setStudents(new Set());
   };
-
-  const isFormDirty = (): boolean =>
-    Object.entries(formData).some(([key, value]) => value !== (initialFormData as any)[key]);
-
-  const closeForm = () => (isEdit || !isFormDirty() ? onClose(false) : onClose(false));
 
   if (!isOpen) return null;
 
   return (
-    <>
-      
+    <Modal
+      onSubmit={onSubmit}
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("create")}
+      titleTwo={t("edit")}
+      isEdit={isEdit}
+      onSaveNew={onSaveNew}
+      onSaveClose={onSaveClose}
+      resetForm={resetForm}
+      size="xl"
+      disabledBtn={loading || creating || updating}
+    >
+      <div className="grid grid-cols-2 gap-4">
+        <AutocompleteUI
+          name="classId"
+          label={t("class")}
+          placeholder={t("chooseClass")}
+          options={formLoad?.data?.classList}
+          optionLabel="class_name"
+          optionValue="id"
+          selectedKey={formData.classId?.toString()}
+          onSelectionChange={(key) =>
+            handleInputChange({ target: { name: "classId", value: key ?? "" } })
+          }
+          error={errors.classId}
+          isRequired
+        />
 
-      <Modal
-        onSubmit={onSubmit}
-        isOpen={isOpen}
-        onClose={onClose}
-        title={t("create")}
-        titleTwo={t("edit")}
-        isEdit={isEdit}
-        onSaveNew={onSaveNew}
-        onSaveClose={onSaveClose}
-        resetForm={resetForm}
-        size="xl"
-        closeForm={closeForm}
-        disabledBtn={loading || creating || updating}
-      >
-        
-        <div className="grid grid-cols-2 gap-4">
-          <AutocompleteUI
-            name="classId"
-            label={t("class")}
-            placeholder={t("chooseClass")}
-            options={formLoad?.data?.classList}
-            optionLabel="class_name"
-            optionValue="id"
-            selectedKey={formData.classId?.toString()}
-            onSelectionChange={(key) =>
-              handleInputChange({
-                target: { name: "classId", value: key ?? "" },
-              })
-            }
-            error={errors.classId}
-            isRequired
-          />
-          <AutocompleteUI
-            name="studentId"
-            label={t("student")}
-            placeholder={t("chooseStudent")}
-            options={formLoad?.data?.studentList}
-            optionLabel="name_en"
-            optionValue="id"
-            selectedKey={formData.studentId?.toString()}
-            onSelectionChange={(key) =>
-              handleInputChange({
-                target: { name: "studentId", value: key ?? "" },
-              })
-            }
-            error={errors.studentId}
-            isRequired
-          />
-          <RadioGroup 
-            className="flex gap-4" 
-            classNames={{ label: "text-sm" }} 
-            orientation="horizontal" 
-            label={t("status")}
-            name="status"
-            value={formData.status}
-            onChange={handleInputChange}
-            size="sm"
-          >
-            {["Active", "Inactive"].map((status) => (
-              <div key={status} className="flex items-center gap-2">
-                <Radio value={status} color={status === "Active" ? "primary" : "danger"}>{status}</Radio>
-              </div>
-            ))}
-          </RadioGroup>
+        <MultiSelect
+          label={t("student")}
+          placeholder={t("chooseStudent")}
+          options={formLoad?.data?.studentList}
+          selectedKeys={students}
+          onSelectionChange={setStudents}
+          isDisabled={isEdit}
+          isRequired
+          name="studentIds"
+          optionLabel="name_kh"
+          optionValue="id"
+        />
+
+        <div className="col-span-2">
+          <p className="text-small text-default-500">Selected: {Array.from(students).join(", ")}</p>
         </div>
-      </Modal>
-    </>
+
+        <RadioGroup
+          className="flex gap-4"
+          classNames={{ label: "text-sm" }}
+          orientation="horizontal"
+          label={t("status")}
+          name="status"
+          value={formData.status}
+          onChange={handleInputChange}
+          size="sm"
+        >
+          {["Active", "Inactive"].map((status) => (
+            <div key={status} className="flex items-center gap-2">
+              <Radio value={status} color={status === "Active" ? "primary" : "danger"}>
+                {status}
+              </Radio>
+            </div>
+          ))}
+        </RadioGroup>
+      </div>
+    </Modal>
   );
 };
 

@@ -3,4 +3,9 @@ export { lecturerCourseRoutes as lLecturerCourseRoutes } from "./my-course/route
 export { lecturerManageStudentLeaveRoutes } from "./manage-student/student-leave-req/route";
 export { lLecturerLeaveReqRoutes } from "./my-leave-req/leave-req/route";
 export { lLecturerLeaveHistoryRoutes } from "./my-leave-req/leave-history/route";
-
+export { lecturerScheduleRoutes as lLecturerScheduleRoutes } from "./classes/schedule/route";
+export { lecturerMyClassesRoutes as lLecturerMyClassesRoutes } from "./classes/my-classes/route";
+export { studentAttendanceReportRoutes as lStudentAttendanceReportRoutes } from "./reports/student-att-report/route";
+export { lMyClassAttendanceReportRoutes } from "./reports/my-class-att/route";
+export { lStudentLeaveReqReportRoutes } from "./reports/student-leave-req/route";
+export { lLecturerTeachingSummaryReportRoutes } from "./reports/lecturer-teaching-summary/route";

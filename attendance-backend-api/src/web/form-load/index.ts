@@ -13,3 +13,7 @@ export * from "./student/model";
 export * from "./course-program/model";
 export * from "./lecturer-course/model";
 export * from "./lecturer-list/model";
+export * from "./user-list/model";
+export * from "./lecturer-classes/model";
+export * from "./student-course/model";
+export * from "./student-classes/model";

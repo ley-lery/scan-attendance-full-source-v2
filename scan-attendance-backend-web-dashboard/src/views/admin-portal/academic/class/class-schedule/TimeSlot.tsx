@@ -1,7 +1,10 @@
-import { Button, Tooltip } from "@heroui/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@/components/hero-ui";
+import { Button, Popover, PopoverContent, PopoverTrigger, Tooltip } from "@heroui/react";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { IoIosAddCircle, IoIosCloseCircle, IoIosCloseCircleOutline } from "react-icons/io";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { IoIosAddCircle, IoIosCloseCircle } from "react-icons/io";
+import { MdEdit } from "react-icons/md";
 
 interface TimeSlotProps {
   time: string;
@@ -9,6 +12,7 @@ interface TimeSlotProps {
   course: any;
   onSlotClick: (time: string, day: string) => void;
   onRemove?: (day: string, time: string) => void;
+  onEdit?: (time: string, day: string) => void;
   isEmpty?: boolean;
 }
 
@@ -18,6 +22,7 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({
   course, 
   onSlotClick, 
   onRemove,
+  onEdit,
   isEmpty 
 }) => {
   const { t } = useTranslation();
@@ -30,31 +35,71 @@ export const TimeSlot: React.FC<TimeSlotProps> = ({
     }
   };
 
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEdit) {
+      onEdit(time, day);
+    }
+  };
+
+  const handleCellClick = () => {
+    if (course && onEdit) {
+      onEdit(time, day);
+    } else {
+      onSlotClick(time, day);
+    }
+  };
+
   return (
     <td
-      onClick={() => onSlotClick(time, day)}
+      onClick={handleCellClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="border border-blue-950 h-32 min-h-32 min-w-40 w-40 cursor-pointer hover:bg-blue-50 transition-colors dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800 relative"
     >
       {course ? (
         <div className="flex flex-col justify-center items-center p-4 *:text-center relative">
-          {/* Remove button - shows on hover */}
-          {isHovered && onRemove && (
-            <Tooltip content={t("remove")} size="sm" showArrow color="danger" closeDelay={0} classNames={{base: "pointer-events-none"}}>
-              <Button 
-                isIconOnly 
-                startContent={<IoIosCloseCircle size={20} />} 
-                radius="full" 
-                color="danger" 
-                size="sm" 
-                variant="flat"
-                onClick={handleRemoveClick}
-                className="absolute top-2 right-2 z-10"
-              />
-            </Tooltip>
+          {/* Action buttons - show on hover */}
+          {isHovered && (
+            <div className="absolute top-2 right-2 z-10 flex gap-1">
+              <Popover className="w-40" classNames={{content: 'px-1'}}>
+                <PopoverTrigger>
+                  <Button 
+                    isIconOnly 
+                    startContent={<BsThreeDotsVertical size={15} />} 
+                    radius="full" 
+                    color="primary" 
+                    size="sm" 
+                    variant="flat"
+                  />
+                </PopoverTrigger>
+                <PopoverContent>
+                  <Button 
+                    startContent={<MdEdit size={20} />} 
+                    radius="md" 
+                    color="primary" 
+                    size="sm" 
+                    variant="light"
+                    onClick={handleEditClick}
+                    className="w-full justify-start"
+                  >
+                    Edit
+                  </Button>
+                  <Button 
+                    startContent={<IoIosCloseCircle size={20} />} 
+                    radius="md" 
+                    color="danger" 
+                    size="sm" 
+                    variant="light"
+                    onClick={handleRemoveClick}
+                    className="w-full justify-start"
+                  >
+                    Remove
+                  </Button>
+                </PopoverContent>
+              </Popover>
+            </div>
           )}
-
 
           <div className="flex items-start *:text-sm *:text-black *:dark:text-zinc-300">
             <p className="font-bold">{course.courseName}</p>

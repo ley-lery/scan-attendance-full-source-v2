@@ -41,7 +41,7 @@ const ButtonCancelLeave: FC<ButtonType> = ({ onPress, permissionType, isDisabled
   }, [userPermissionExists]);
 
   const handleNotPermission = () => {
-    ShowToast({ color: "danger", description: t("notPermission") });
+    ShowToast({ color: "danger", description: t("notPermission"), delay: 0 });
   };
 
  

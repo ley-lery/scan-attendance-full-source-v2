@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable, ShowToast } from "@/components/hero-ui";
 import Form from "./Form";
@@ -6,20 +6,22 @@ import View from "./View";
 import { useFetch } from "@/hooks/useFetch";
 import { useDisclosure } from "@/god-ui";
 import { useMutation } from "@/hooks/useMutation";
+import { useDebounce } from "@/hooks/useDebounce";
 
-// Custom hook for separate view dialog
+// Custom hook modal
 const useViewClosure = () => {
-  const { isOpen, onOpen, onClose, ...rest } = useDisclosure();
+  const { isOpen, onOpen, onClose } = useDisclosure();
   return {
     isOpenView: isOpen,
     onOpenView: onOpen,
     onCloseView: onClose,
-    ...rest,
   };
 };
 
 const Index = () => {
+  
   const { t } = useTranslation();
+
   // ==== State Modal Management ====
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpenView, onOpenView, onCloseView } = useViewClosure();
@@ -27,11 +29,9 @@ const Index = () => {
   // ==== State Management ====
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
+  const debouncedSearchKeyword = useDebounce(searchKeyword, 500);
   const [editRow, setEditRow] = useState<any>(null);
   const [viewRow, setViewRow] = useState<any>(null);
-
-  // ==== transition for smooth UI ====
-  const [isPending, startTransition] = useTransition();
 
   // ==== Pagination State ====
   const [pagination, setPagination] = useState({
@@ -39,16 +39,17 @@ const Index = () => {
     limit: parseInt(import.meta.env.VITE_DEFAULT_PAGE_LIMIT) || 10,
   });
 
-  // ==== Fetch Data with useFetch ====
+  // ================= Start Data Fetching Block =================
+
   const { data, loading, refetch } = useFetch<{ rows: any[]; total_count: number }>(
-    searchKeyword.trim() === "" ? "/field/list" : "/field/search", 
+    debouncedSearchKeyword.trim() === "" ? "/field/list" : "/field/search", 
     {
       params: {
         page: pagination.page,
         limit: pagination.limit,
-        ...(searchKeyword.trim() !== "" && { keyword: searchKeyword }), // add keyword only for search
+        ...(debouncedSearchKeyword.trim() !== "" && { keyword: debouncedSearchKeyword }), 
       },
-      deps: [pagination.page, pagination.limit, searchKeyword], // trigger when keyword changes
+      deps: [pagination.page, pagination.limit, debouncedSearchKeyword],
     }
   );
   
@@ -61,7 +62,12 @@ const Index = () => {
   const rows = dataRows || [];
   const totalPage = Math.ceil((data?.data?.total || 0) / pagination.limit) || 1;
 
-  // ==== Columns Definitions ====
+  // ================= End Data Fetching Block =================
+
+
+
+  // ================= Start Table Configuration Block =================
+
   const cols = useMemo(
     () => [
       { name: t("id"), uid: "id", sortable: true },
@@ -77,84 +83,84 @@ const Index = () => {
     [t],
   );
 
-  const visibleCols = [ "faculty_code", "faculty_name_en", "faculty_name_kh", "field_code", "field_name_en", "field_name_kh", "status", "actions"];
+  const visibleCols = [
+    "faculty_code",
+    "faculty_name_en",
+    "faculty_name_kh",
+    "field_code",
+    "field_name_en",
+    "field_name_kh",
+    "status",
+    "actions"
+  ];
 
   const status = [
     { name: "Active", uid: "Active" },
     { name: "Inactive", uid: "Inactive" },
   ];
 
-  
-  // ==== Search Handler (stable with useCallback) ====
-  const onSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    startTransition(() => {
-      setSearchKeyword(value);
-      setPagination((prev) => ({ ...prev, page: 1 }));
-    });
-  }, []);
+  // ================= End Table Configuration Block =================
 
-  const handleClearSearch = useCallback(() => {
-    startTransition(() => {
-      setSearchKeyword("");
-      setPagination((prev) => ({ ...prev, page: 1 }));
-    });
-  }, []);
 
-  // ==== CRUD Actions (stable) ====
-  const { mutate: deleteField } = useMutation({
-    onSuccess: () => {
-      refetch();
-      ShowToast({ color: "success", title: t("success"), description: t("fieldDeleted") });
-    },
-    onError: (err) => {
-      ShowToast({
-        color: "error",
-        title: t("error"),
-        description: err.message || t("failedToDelete"),
-      });
-    },
-  });
-  
-  const onCreate = useCallback(() => {
+  // ================= Start Event Handlers Block =================
+
+  const { mutate: deleteField } = useMutation();
+
+  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleClearSearch = () => {
+    setSearchKeyword("");
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+
+  const onCreate = () => {
     setIsEdit(false);
     onOpen();
-  }, [onOpen]);
+  };
 
-  const onEdit = useCallback((row: object) => {
+  const onEdit = (row: object) => {
     setEditRow(row);
     onOpen();
     setIsEdit(true);
-  }, [onOpen]);
+  };
 
-  const onDelete = useCallback(async (id: number) => {
-    await deleteField(`/field/${id}`, id, "DELETE");
-  }, [deleteField]);
-
-  const onView = useCallback((row: object) => {
+  const onView = (row: object) => {
     setViewRow(row);
     setIsEdit(false);
     onOpenView();
-  }, [onOpenView]);
+  };
 
-  const formProps = useMemo(() => {
-    return { isOpen, onClose, isEdit, row: editRow, loadList: refetch };
-  }, [isOpen, onClose, isEdit, editRow, refetch]);
+  const onDelete = async (id: number) => {
+    try {
 
-  const viewProps = useMemo(() => {
-    return { isOpen: isOpenView, onClose: onCloseView, row: viewRow };
-  }, [isOpenView, onCloseView, viewRow]);
+      await deleteField(`/field/${id}`, id, "DELETE");
+      await refetch();
+      ShowToast({ color: "success", title: "Success", description: "Field deleted successfully" });
+
+    } catch (error) {
+
+      console.error(error);
+      ShowToast({ color: "error", title: "Error", description: "Failed to delete field" });
+
+    }
+  };
+
+  // ================= End Event Handlers Block =================
+
 
   return (
     <div className="p-4">
-      <Form {...formProps} />
-      <View {...viewProps} />
+      <Form isOpen={isOpen} onClose={onClose} isEdit={isEdit} row={editRow} loadList={refetch} />
+      <View isOpen={isOpenView} onClose={onCloseView} row={viewRow} />
 
       <DataTable
+        loading={loading}
         dataApi={rows}
         cols={cols}
-        loading={loading}
-        isPending={isPending}
         visibleCols={visibleCols}
         onCreate={onCreate}
         onEdit={onEdit}

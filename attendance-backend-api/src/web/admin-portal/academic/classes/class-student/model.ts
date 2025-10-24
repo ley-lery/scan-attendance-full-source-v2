@@ -2,6 +2,23 @@ import { db } from "../../../../../config/db";
 import { StudentClass } from "../../../../../types/interface";
 import { Message } from "../../../../../utils/message";
 
+interface CreateMultipleData {
+    classId: number;
+    studentIds: number[];
+    status: 'Active' | 'Inactive' | 'Complete';
+    changedByUser: string;
+    clientIp: string;
+    sessionInfo: string;
+}
+
+interface UpdateMultipleData {
+    classId: number;
+    studentIds: number[];
+    status: 'Active' | 'Inactive' | 'Complete';
+    changedByUser: string;
+    clientIp: string;
+    sessionInfo: string;
+}
 
 export const ClassStudentModel = {
 
@@ -24,6 +41,17 @@ export const ClassStudentModel = {
     async update(id: number, data: StudentClass): Promise<any> {
          const { classId, studentId, status, changedByUser, clientIp, sessionInfo } = data;
         await db.query(`Call sp_class_student_update(?, ?, ?, ?, ?, ?, ?, @p_messages_json)`, [id, classId, studentId, status, changedByUser, clientIp, sessionInfo]);
+        return Message.callProcedureWithMessages();
+    },
+    async createMultiple(data: CreateMultipleData): Promise<any> {
+        const { classId, studentIds, status, changedByUser, clientIp, sessionInfo } = data;
+        await db.query(`Call sp_class_student_create_bulk(?, ?, ?, ?, ?, ?, @p_messages_json)`, [classId, JSON.stringify(studentIds), status, changedByUser, clientIp, sessionInfo]);
+        return Message.callProcedureWithMessages();
+    },
+
+    async updateMultiple(id: number, data: UpdateMultipleData): Promise<any> {
+         const { classId, studentIds, status, changedByUser, clientIp, sessionInfo } = data;
+        await db.query(`Call sp_class_student_update_bulk(?, ?, ?, ?, ?, ?, ?, @p_messages_json)`, [id, classId, JSON.stringify(studentIds), status, changedByUser, clientIp, sessionInfo]);
         return Message.callProcedureWithMessages();
     },
 

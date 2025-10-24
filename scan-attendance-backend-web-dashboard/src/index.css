@@ -230,23 +230,26 @@ input[type="number"] {
 
 /* =========== Input =========== */
 .input-small-ui{
-    @apply h-7 min-h-7 shadow-none;
+    @apply h-7 min-h-7 max-h-7 shadow-none;
 }
 .input-medium-ui{
-    @apply h-9 min-h-9 shadow-none;
+    @apply h-9 min-h-9 max-h-9 shadow-none;
 }
 .input-large-ui{
-    @apply h-11 min-h-11 shadow-none;
+    @apply h-11 min-h-11 max-h-11 shadow-none;
+}
+.input-label{
+    transform: translateY(0.5rem) !important;
 }
 /* =========== Autocomplete =========== */
 .autocomplete-sm-ui{
-    @apply h-7 min-h-7 shadow-none;
+    @apply h-7 min-h-7 max-h-7 shadow-none;
 }
 .autocomplete-md-ui{
-    @apply h-9 min-h-9 shadow-none;
+    @apply h-9 min-h-9 max-h-9 shadow-none;
 }
 .autocomplete-lg-ui{
-    @apply h-11 min-h-11 shadow-none;
+    @apply h-11 min-h-11 max-h-11 shadow-none;
 }
 .autocomplete-md-ui label{
     transform: translateY(0.5rem) !important;
@@ -256,15 +259,17 @@ input[type="number"] {
 }
 /* =========== Select =========== */
 .select-sm-ui{
-    @apply h-7 min-h-7 shadow-none;
+    @apply h-7 min-h-7 max-h-7 shadow-none;
 }
 .select-md-ui{
-    @apply h-9 min-h-9 shadow-none;
+    @apply h-9 min-h-9 max-h-9 shadow-none;
 }
 .select-lg-ui{
-    @apply h-11 min-h-11 shadow-none;
+    @apply h-11 min-h-11 max-h-11 shadow-none;
 }
-
+.select-md-ui label{
+    transform: translateY(0.5rem) !important;
+}
 /* =========== Textarea =========== */
 .textarea{
     @apply bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 shadow-none
@@ -309,3 +314,32 @@ input[type="number"] {
 .hover-text-edit{
     @apply hover:bg-zinc-300 rounded-xl cursor-pointer px-2 py-0.5;
 }
+
+
+
+/* ================= Report ================= */
+.report-table{
+    @apply w-full;
+}
+.report-table-head{
+    @apply sticky top-0 z-10;
+}
+.report-table-head tr th{
+    @apply px-3 py-1.5 whitespace-nowrap text-sm font-medium text-zinc-500 bg-zinc-200 border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800/95 dark:text-zinc-400;
+}
+.report-table-body tr{
+    @apply hover:bg-zinc-100 dark:hover:bg-zinc-900;
+}
+.report-table-body tr td{
+    @apply px-3 py-1 whitespace-nowrap text-sm text-zinc-500 bg-zinc-50 border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-400;
+}
+.report-table-footer tr td{
+    @apply  px-3 py-1 border border-zinc-200 dark:border-zinc-700 dark:bg-zinc-800/95 dark:text-zinc-400 text-right text-sm;
+}
+.report-cell-num {
+    @apply text-right;
+}
+.report-cell-code {
+    @apply text-center;
+}
+

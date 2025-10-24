@@ -181,6 +181,26 @@ export const protectedRouteLecturer: RouteConfig[] = [
     path: "lecturer/leave-management/leave-history",
     component: lazy(() => import("@/views/lecturer-portal/leave-management/my-leave-req/leave-history/Index")),
   },
+  {
+    name: "Class Attendance",
+    path: "lecturer/reports/class-attendance",
+    component: lazy(() => import("@/views/lecturer-portal/reports/class-attendance/Indext")),
+  },
+  {
+    name: "Teaching Summary",
+    path: "lecturer/reports/teaching-summary",
+    component: lazy(() => import("@/views/lecturer-portal/reports/teaching-summary/Indext")),
+  },
+  {
+    name: "My Classes",
+    path: "lecturer/classes/my-classes",
+    component: lazy(() => import("@/views/lecturer-portal/classes/my-classes/Index")),
+  },
+  {
+    name: "Class Schedule",
+    path: "lecturer/classes/class-schedule",
+    component: lazy(() => import("@/views/lecturer-portal/classes/class-schedule/Index")),
+  },
 ];
 
 // ============= Student Portal Protected Routes ============= 

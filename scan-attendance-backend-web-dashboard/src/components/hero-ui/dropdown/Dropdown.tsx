@@ -37,11 +37,7 @@ export const DropdownItem = extendVariants(DropdownItemComponent, {
 
 export const DropdownTrigger = extendVariants(DropdownTriggerComponent, {
   variants: {
-    size: {
-      sm: "btn-radius-sm btn-small-ui",
-      md: "btn-radius-md btn-medium-ui",
-      lg: "btn-radius-lg btn-large-ui",
-    },
+  
     
   },
   defaultVariants: {

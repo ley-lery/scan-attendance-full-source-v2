@@ -453,7 +453,7 @@ const Index = () => {
   const dataLoading = listLoading || filterLoading;
 
   return (
-    <div className="p-4">
+    <div className="p-4 ">
       <View isOpen={isOpenView} onClose={onCloseView} row={viewRow} />
       <Form
         isOpen={isOpenModal}

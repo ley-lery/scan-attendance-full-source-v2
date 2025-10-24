@@ -43,24 +43,25 @@ export const ClassStudentController = {
     },
 
     async create(req: RequestWithUser, res: FastifyReply): Promise<void> {
-        const data = req.body as Student;
+        const data = req.body as any;
         const userPayload = req.user as AuthUserPayload;
         
-        const updatedData: Student = {
+        const updatedData = {
             ...data,
             changedByUser: String(userPayload.user_id),
             clientIp: String(getClientIP(req)),
             sessionInfo: String(getSessionInfo(req))
         };
+        console.log(updatedData, 'Create');
         try {
             
-            const [result] = await model.create(updatedData);
+            const [result] = await model.createMultiple(updatedData);
             
             const messages = JSON.parse(result?.messages);
             if (messages && messages.length > 0 && messages[0].code === 0) {
                 sendSuccessResponse(res, true, messages, null, 200);
             }else{
-                res.send({ message: messages[0].message || "Error updating student class" });
+                res.status(400).send({ message: messages[0].message || "Error updating student class" });
             }
         } catch (e: any) {
             handleError(res, e as Error, "Error creating student class", 500);
@@ -69,10 +70,10 @@ export const ClassStudentController = {
 
     async update(req: RequestWithUser, res: FastifyReply): Promise<void> {
         const { id } = req.params as { id: number };
-        const data = req.body as Student;
+        const data = req.body as any;
         const userPayload = req.user as AuthUserPayload;
         
-        const updatedData: Student = {
+        const updatedData = {
             ...data,
             changedByUser: String(userPayload.user_id),
             clientIp: String(getClientIP(req)),
@@ -85,7 +86,7 @@ export const ClassStudentController = {
             if (messages && messages.length > 0 && messages[0].code === 0) {
                 sendSuccessResponse(res, true, messages, null, 200);
             }else{
-                res.send({ message: messages[0].message || "Error updating student class" });
+                res.status(400).send({ message: messages[0].message || "Error updating student class" });
             }
             
         } catch (e: any) {
