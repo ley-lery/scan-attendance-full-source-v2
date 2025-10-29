@@ -1,0 +1,68 @@
+import { db } from "../../../../config/db";
+import { Message } from "../../../../utils";
+
+type DataFilter = {
+    course: number
+    session: number
+    classStudentStatus: string | null
+    transferred: number | null
+    page: number
+    limit: number
+}
+
+
+type MarkSingleRecord = {
+    classId: number
+    course: number
+    student: number
+    session: number
+    status: string
+}
+
+type MarkMultiRecord = {
+    classId: number
+    course: number
+    session: number
+    attData: [
+        {
+            student: number,
+            status: string
+        }
+    ]
+}
+
+export const MarkAttStudentModel = {
+
+    async getAll(lecturerId: number, page: number, limit: number): Promise<any> {
+        const [result] = await db.query(`Call sp_lecturer_student_attendance_list_by_filters(?, ?, ?, ?, ?, ?, ?)`, [lecturerId, null, `s1`, null, 0, page, limit]);
+        return result;
+    },
+    async getStudentSessionDetail(lecturerId: number, data: {course: number, student: number}): Promise<any> {
+        const { course, student } = data;
+        const [result] = await db.query(`Call sp_lecturer_student_attendance_session_detail_get(?, ?, ?)`, [lecturerId, course, student]);
+        return result;
+    },
+    async filter(lecturerId: number, data: DataFilter): Promise<any> {
+        const { course, session, classStudentStatus, transferred, page, limit } = data;
+        const [result] = await db.query(`Call sp_lecturer_student_attendance_list_by_filters(?, ?, ?, ?, ?, ?, ?)`, [lecturerId, course, session, classStudentStatus, transferred, page, limit]);
+        return result;
+    },
+    async markSingleRecord(data: MarkSingleRecord): Promise<any> {
+        const { classId, course, student, session, status } = data;
+        await db.query(`Call sp_attendance_record_mark_single(?, ?, ?, ?, ?, @p_messages_json)`, [classId, course, student, session, status]);
+        return Message.callProcedureWithMessages();
+    },
+
+    async markMultiRecord(data: MarkMultiRecord): Promise<any> {
+        const { classId, course, session, attData } = data;
+        await db.query(
+            `CALL sp_attendance_record_mark_multi(?, ?, ?, ?, @p_messages_json)`,
+            [classId, course, session, JSON.stringify(attData)]
+        );
+        return Message.callProcedureWithMessages();
+    },
+
+  
+}
+
+
